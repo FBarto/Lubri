@@ -1,0 +1,240 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Client {
+  id        Int      @id @default(autoincrement())
+  name      String
+  phone     String   @unique
+  legacyId  String?  @unique
+  createdAt DateTime @default(now())
+  
+  vehicles     Vehicle[]
+  appointments Appointment[]
+  workOrders   WorkOrder[]
+  sales        Sale[]
+}
+
+model Vehicle {
+  id        Int      @id @default(autoincrement())
+  plate     String   @unique
+  brand     String?
+  model     String?
+  type      String?
+  year      Int?
+  notes     String?
+  mileage   Int?
+  
+  clientId  Int
+  client    Client   @relation(fields: [clientId], references: [id])
+  
+  appointments Appointment[]
+  workOrders   WorkOrder[]
+}
+
+model Service {
+  id          Int     @id @default(autoincrement())
+  name        String
+  category    String
+  duration    Int     // in minutes
+  price       Float
+  active      Boolean @default(true)
+  
+  appointments Appointment[]
+  workOrders   WorkOrder[]
+}
+
+model Appointment {
+  id        Int      @id @default(autoincrement())
+  date      DateTime // Start time
+  status    AppointmentStatus @default(REQUESTED)
+  
+  calendarEventId String?
+  reminderAt      DateTime?
+  reminderSentAt  DateTime?
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt @default(now())
+
+  notes     String?
+  
+  clientId  Int
+  client    Client   @relation(fields: [clientId], references: [id])
+  
+  vehicleId Int
+  vehicle   Vehicle  @relation(fields: [vehicleId], references: [id])
+  
+  serviceId Int
+  service   Service  @relation(fields: [serviceId], references: [id])
+  
+  workOrder WorkOrder?
+
+  whatsappMessages WhatsAppMessage[]
+  whatsappTokens   WhatsAppToken[]
+}
+
+model WorkOrder {
+  id            Int      @id @default(autoincrement())
+  status        WorkOrderStatus @default(PENDING)
+  date          DateTime @default(now()) // Started at
+  finishedAt    DateTime?
+  mileage       Int?
+  price         Float
+  notes         String?
+  
+  appointmentId Int?     @unique
+  appointment   Appointment? @relation(fields: [appointmentId], references: [id])
+  
+  clientId      Int
+  client        Client   @relation(fields: [clientId], references: [id])
+  
+  vehicleId     Int
+  vehicle       Vehicle  @relation(fields: [vehicleId], references: [id])
+  
+  serviceId     Int
+  service       Service  @relation(fields: [serviceId], references: [id])
+
+  saleId        Int?     
+  sale          Sale?    @relation(fields: [saleId], references: [id])
+  
+  saleItems     SaleItem[]
+
+  userId        Int?
+  user          User?    @relation(fields: [userId], references: [id])
+}
+
+model WhatsAppMessage {
+  id            Int      @id @default(autoincrement())
+  phone         String
+  template      String   // CONFIRMATION, REMINDER_24H, REMINDER_2H
+  variables     String?  // JSON with custom data
+  status        String   @default("PENDING") // PENDING, SENT, FAILED
+  scheduledAt   DateTime
+  sentAt        DateTime?
+  error         String?
+  
+  appointmentId Int
+  appointment   Appointment @relation(fields: [appointmentId], references: [id])
+  
+  createdAt     DateTime @default(now())
+}
+
+model WhatsAppToken {
+  id            Int      @id @default(autoincrement())
+  token         String   @unique
+  action        String   // CONFIRM, CANCEL
+  expiresAt     DateTime
+  usedAt        DateTime?
+  
+  appointmentId Int
+  appointment   Appointment @relation(fields: [appointmentId], references: [id])
+  
+  createdAt     DateTime @default(now())
+}
+
+model Product {
+  id          Int      @id @default(autoincrement())
+  name        String
+  code        String?  @unique
+  barcode     String?
+  category    String
+  price       Float
+  stock       Float    @default(0)
+  active      Boolean  @default(true)
+  
+  saleItems   SaleItem[]
+}
+
+model Sale {
+  id            Int      @id @default(autoincrement())
+  date          DateTime @default(now())
+  total         Float
+  paymentMethod String?
+  
+  clientId      Int?
+  client        Client?  @relation(fields: [clientId], references: [id])
+
+  items         SaleItem[]
+  workOrders    WorkOrder[]
+
+  userId        Int?
+  user          User?    @relation(fields: [userId], references: [id])
+}
+
+model SaleItem {
+  id          Int      @id @default(autoincrement())
+  saleId      Int
+  sale        Sale     @relation(fields: [saleId], references: [id])
+
+  type        String   // PRODUCT | SERVICE
+  description String
+  quantity    Float
+  unitPrice   Float
+  subtotal    Float
+
+  productId   Int?
+  product     Product? @relation(fields: [productId], references: [id])
+
+  workOrderId Int?
+  workOrder   WorkOrder? @relation(fields: [workOrderId], references: [id])
+}
+
+
+model User {
+  id            Int      @id @default(autoincrement())
+  name          String?
+  username      String   @unique
+  passwordHash  String
+  role          String   @default("EMPLOYEE") // ADMIN, EMPLOYEE
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  
+  auditLogs     AuditLog[]
+  sales         Sale[]
+  workOrders    WorkOrder[]
+}
+
+model AuditLog {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  action    String   // CREATE, UPDATE, DELETE, LOGIN, CHECKOUT
+  entity    String   // SALE, PRODUCT, CLIENT, etc.
+  entityId  String?  // ID del recurso afectado
+  details   String?  // JSON o texto con detalles del cambio
+  timestamp DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model PaymentPlan {
+  id            Int      @id @default(autoincrement())
+  name          String
+  installments  Int
+  interestRate  Float    // Percentage, e.g. 10.5 for 10.5%
+  active        Boolean  @default(true)
+}
+
+enum AppointmentStatus {
+  REQUESTED
+  CONFIRMED
+  TODAY_QUEUE
+  IN_PROGRESS
+  DONE
+  CANCELLED
+  NO_SHOW
+}
+
+enum WorkOrderStatus {
+  PENDING      // Ingresó
+  IN_PROGRESS  // En Servicio
+  COMPLETED    // Listo
+  DELIVERED    // Entregado
+}

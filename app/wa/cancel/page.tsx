@@ -1,0 +1,70 @@
+'use client';
+
+import { Suspense, useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
+
+function CancelContent() {
+    const searchParams = useSearchParams();
+    const token = searchParams.get('token');
+    const [status, setStatus] = useState<'loading' | 'success' | 'error'>(token ? 'loading' : 'error');
+    const [message, setMessage] = useState(token ? 'Procesando cancelación...' : 'Token inválido o ausente.');
+
+    useEffect(() => {
+        if (!token) return;
+
+        fetch('/api/wa/process-token', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token, action: 'CANCEL' })
+        })
+            .then(async res => {
+                const data = await res.json();
+                if (res.ok) {
+                    setStatus('success');
+                    setMessage('El turno ha sido cancelado. Gracias por avisar.');
+                } else {
+                    setStatus('error');
+                    setMessage(data.error || 'Error al cancelar el turno.');
+                }
+            })
+            .catch(() => {
+                setStatus('error');
+                setMessage('Error de conexión.');
+            });
+    }, [token]);
+
+    return (
+        <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
+            <div className="bg-white p-8 rounded-[2.5rem] shadow-xl max-w-sm w-full text-center space-y-6">
+                <div className={`w-20 h-20 mx-auto rounded-full flex items-center justify-center text-4xl shadow-inner
+                    ${status === 'success' ? 'bg-amber-100 text-amber-600' :
+                        status === 'error' ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600 animate-pulse'}
+                `}>
+                    {status === 'success' ? '🗑️' : status === 'error' ? '❌' : '⏳'}
+                </div>
+                <h1 className="text-2xl font-black text-slate-800">
+                    {status === 'success' ? 'Turno Cancelado' : status === 'error' ? 'Ups...' : 'Cargando'}
+                </h1>
+                <p className="text-slate-500 font-medium leading-relaxed">
+                    {message}
+                </p>
+                {status !== 'loading' && (
+                    <button
+                        onClick={() => window.close()}
+                        className="w-full bg-slate-900 text-white py-4 rounded-2xl font-bold hover:bg-slate-800 transition-all active:scale-95"
+                    >
+                        Cerrar Ventana
+                    </button>
+                )}
+            </div>
+        </div>
+    );
+}
+
+export default function WaCancelPage() {
+    return (
+        <Suspense fallback={<div>Cargando...</div>}>
+            <CancelContent />
+        </Suspense>
+    );
+}
