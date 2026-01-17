@@ -160,4 +160,33 @@ export class WhatsAppService {
 
         return results;
     }
+
+    /**
+     * Sends a budget approval request to the client.
+     */
+    static async sendBudgetApproval(workOrder: any, token: string) {
+        // In production, this link should come from env
+        const link = `https://lubricentro-fb.com/approval/${token}`;
+
+        return await client.sendMessage({
+            messaging_product: 'whatsapp',
+            to: workOrder.client.phone,
+            type: 'template',
+            template: {
+                name: 'budget_approval_v1', // Placeholder template name
+                language: { code: 'es_AR' },
+                components: [
+                    {
+                        type: 'body',
+                        parameters: [
+                            { type: 'text', text: workOrder.client.name },
+                            { type: 'text', text: `${workOrder.vehicle.brand} ${workOrder.vehicle.model}` },
+                            { type: 'text', text: `$${workOrder.price.toLocaleString()}` },
+                            { type: 'text', text: link }
+                        ]
+                    }
+                ]
+            }
+        });
+    }
 }

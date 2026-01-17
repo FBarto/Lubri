@@ -190,3 +190,23 @@ export async function processSale(data: ProcessSaleInput) {
         return { success: false, error: 'Transaction failed' };
     }
 }
+
+/**
+ * Updates the minimum stock level for a product.
+ * Used by the Employee Stock Viewer.
+ */
+export async function updateProductMinStock(productId: number, minStock: number) {
+    try {
+        await prisma.product.update({
+            where: { id: productId },
+            data: { minStock },
+        });
+
+        safeRevalidate('/employee');
+
+        return { success: true };
+    } catch (error) {
+        console.error('Error updating min stock:', error);
+        return { success: false, error: 'Failed to update min stock' };
+    }
+}

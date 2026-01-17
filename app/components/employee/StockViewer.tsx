@@ -28,20 +28,18 @@ export default function StockViewer() {
     };
 
     useEffect(() => {
-        fetch('/api/products')
+        fetch('/api/products?limit=1000')
             .then(res => res.json())
             .then(data => {
-                if (Array.isArray(data)) {
-                    setProducts(data);
-                } else if (data && Array.isArray(data.data)) {
-                    setProducts(data.data);
-                } else {
-                    console.error('API did not return a list:', data);
-                    setProducts([]);
-                }
-                setLoading(false);
+                // Handle both array and paginated response
+                const list = Array.isArray(data) ? data : (data.data || []);
+                setProducts(list);
             })
-            .catch(err => console.error(err));
+            .catch(err => {
+                console.error('Error fetching products:', err);
+                setProducts([]);
+            })
+            .finally(() => setLoading(false));
     }, []);
 
     const filtered = Array.isArray(products) ? products.filter(p =>
@@ -50,7 +48,7 @@ export default function StockViewer() {
     ) : [];
 
     return (
-        <div className="p-6 h-full flex flex-col">
+        <div className="p-6 h-[calc(100vh-140px)] flex flex-col">
             <div className="flex justify-between items-center mb-6">
                 <h2 className="text-2xl font-bold text-slate-800">Consulta de Stock</h2>
                 <div className="relative w-96">

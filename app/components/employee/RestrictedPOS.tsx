@@ -35,13 +35,15 @@ export default function RestrictedPOS({ cart, setCart }: RestrictedPOSProps) {
         async function fetchData() {
             try {
                 const [prodRes, servRes] = await Promise.all([
-                    fetch('/api/products'),
+                    fetch('/api/products?limit=1000'),
                     fetch('/api/services')
                 ]);
                 const prodData = await prodRes.json();
                 const servData = await servRes.json();
 
-                const normProds = prodData.map((p: any) => ({ ...p, type: 'PRODUCT' }));
+                // Safely extract product array from paginated response
+                const productsArray = Array.isArray(prodData) ? prodData : (prodData.data || []);
+                const normProds = productsArray.map((p: any) => ({ ...p, type: 'PRODUCT' }));
                 const normServs = servData.map((s: any) => ({ ...s, type: 'SERVICE' }));
 
                 setProducts(normProds);

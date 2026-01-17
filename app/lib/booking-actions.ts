@@ -2,6 +2,7 @@
 
 import { prisma } from '../../lib/prisma';
 import { safeRevalidate } from './server-utils';
+import { WhatsAppService } from './whatsapp/service';
 
 // --- Types ---
 export interface CreateClientInput {
@@ -197,6 +198,11 @@ export async function createAppointment(data: CreateAppointmentInput) {
                 notes: notes,
             }
         });
+
+        // Schedule WhatsApp Notifications (Async, don't block)
+        WhatsAppService.scheduleAppointmentNotifications(appointment.id).catch(e =>
+            console.error('Failed to schedule WA notifications:', e)
+        );
 
         safeRevalidate('/admin/calendar');
         return { success: true, appointment };

@@ -3,6 +3,8 @@
 import { prisma } from '../../lib/prisma';
 import crypto from 'crypto';
 
+import { WhatsAppService } from './whatsapp/service';
+
 /**
  * Sends a budget for approval to the client (Mock WhatsApp message).
  */
@@ -10,17 +12,19 @@ export async function sendBudgetForApproval(workOrderId: number) {
     try {
         const token = crypto.randomBytes(32).toString('hex');
 
-        await prisma.workOrder.update({
+        const updatedWo = await prisma.workOrder.update({
             where: { id: workOrderId },
             data: {
                 approvalToken: token,
                 approvalStatus: 'PENDING',
                 approvalSentAt: new Date()
-            }
+            },
+            include: { client: true, vehicle: true }
         });
 
-        // Mock sending WhatsApp
-        console.log(`[MOCK WA] Sending Budget Approval Link: /approval/${token}`);
+        // Send WhatsApp
+        await WhatsAppService.sendBudgetApproval(updatedWo, token);
+        console.log(`[WA] Budget Approval Sent: /approval/${token}`);
 
         return { success: true, token };
     } catch (error) {
