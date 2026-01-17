@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
-import { Play, CheckCircle, LogOut } from 'lucide-react';
+import { Play, CheckCircle, LogOut, Send, Clock, FileCheck, FileX } from 'lucide-react';
+import { sendBudgetForApproval } from '../../lib/approval-actions';
 
 type WorkOrderStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'DELIVERED';
 
@@ -14,6 +15,9 @@ interface WorkOrder {
     service: { name: string };
     user?: { name: string }; // Assigned employee
     date: string;
+    price: number;
+    approvalStatus: string; // IDLE, PENDING, APPROVED, REJECTED
+    approvalToken?: string;
 }
 
 export default function OperationalKanban() {
@@ -109,6 +113,23 @@ export default function OperationalKanban() {
                                                 </div>
                                             )}
 
+                                            {/* Approval Status Badge */}
+                                            {order.approvalStatus === 'PENDING' && (
+                                                <div className="mb-3 bg-amber-50 text-amber-600 px-2 py-1 rounded text-xs font-bold flex items-center gap-1 border border-amber-100">
+                                                    <Clock size={12} /> Esperando Aprobación
+                                                </div>
+                                            )}
+                                            {order.approvalStatus === 'APPROVED' && (
+                                                <div className="mb-3 bg-emerald-50 text-emerald-600 px-2 py-1 rounded text-xs font-bold flex items-center gap-1 border border-emerald-100">
+                                                    <FileCheck size={12} /> Presupuesto Aprobado
+                                                </div>
+                                            )}
+                                            {order.approvalStatus === 'REJECTED' && (
+                                                <div className="mb-3 bg-red-50 text-red-600 px-2 py-1 rounded text-xs font-bold flex items-center gap-1 border border-red-100">
+                                                    <FileX size={12} /> Presupuesto Rechazado
+                                                </div>
+                                            )}
+
                                             {/* Actions */}
                                             <div className="flex flex-col gap-2 mt-2">
                                                 {col.id === 'PENDING' && (
@@ -117,6 +138,25 @@ export default function OperationalKanban() {
                                                         className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors"
                                                     >
                                                         <Play className="w-4 h-4" /> Iniciar Service
+                                                    </button>
+                                                )}
+
+                                                {/* Budget Action */}
+                                                {(col.id === 'PENDING' || col.id === 'IN_PROGRESS') && (order.approvalStatus === 'IDLE' || order.approvalStatus === 'REJECTED') && (
+                                                    <button
+                                                        onClick={async () => {
+                                                            if (!confirm('¿Enviar presupuesto al cliente por WhatsApp?')) return;
+                                                            const res = await sendBudgetForApproval(order.id);
+                                                            if (res.success) {
+                                                                alert('Enlace generado: /approval/' + res.token);
+                                                                fetchOrders();
+                                                            } else {
+                                                                alert('Error al generar presupuesto');
+                                                            }
+                                                        }}
+                                                        className="w-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors text-xs"
+                                                    >
+                                                        <Send className="w-3 h-3" /> Enviar Presupuesto
                                                     </button>
                                                 )}
                                                 {col.id === 'IN_PROGRESS' && (

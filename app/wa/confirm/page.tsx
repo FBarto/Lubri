@@ -48,10 +48,19 @@ function ConfirmContent() {
                 <p className="text-slate-500 font-medium leading-relaxed">
                     {message}
                 </p>
+                {status === 'success' && token && (
+                    <a
+                        href={`/portal/${token}`}
+                        className="block w-full bg-blue-600 text-white py-4 rounded-2xl font-bold hover:bg-blue-700 transition-all active:scale-95 shadow-lg shadow-blue-200 mb-3"
+                    >
+                        📖 Ver Mi Libreta Digital
+                    </a>
+                )}
+
                 {status !== 'loading' && (
                     <button
                         onClick={() => window.close()}
-                        className="w-full bg-slate-900 text-white py-4 rounded-2xl font-bold hover:bg-slate-800 transition-all active:scale-95"
+                        className="w-full bg-slate-100 text-slate-500 py-4 rounded-2xl font-bold hover:bg-slate-200 transition-all active:scale-95"
                     >
                         Cerrar Ventana
                     </button>

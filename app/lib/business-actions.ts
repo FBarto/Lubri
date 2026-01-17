@@ -17,6 +17,7 @@ interface WorkOrderInput {
     notes?: string;
     appointmentId?: number;
     price: number;
+    attachments?: { url: string; type: string; description?: string }[];
 }
 
 interface SaleItemInput {
@@ -54,6 +55,13 @@ export async function createWorkOrder(data: WorkOrderInput) {
                 notes: data.notes,
                 appointmentId: data.appointmentId,
                 price: data.price,
+                attachments: data.attachments ? {
+                    create: data.attachments.map(a => ({
+                        url: a.url,
+                        type: a.type,
+                        description: a.description
+                    }))
+                } : undefined
             },
         });
 

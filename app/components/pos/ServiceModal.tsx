@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 
+import UploadComponent from '../dvi/UploadComponent';
+
 // Interfaces simplificadas para manejo local
 interface Client { id: number; name: string; phone: string; vehicles?: Vehicle[] }
 interface Vehicle { id: number; plate: string; model: string; clientId: number; client?: Client }
@@ -24,6 +26,7 @@ export default function ServiceModal({ isOpen, onClose, onConfirm, service }: Se
     const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
     const [mileage, setMileage] = useState('');
     const [notes, setNotes] = useState('');
+    const [attachments, setAttachments] = useState<any[]>([]);
 
     // Search Results
     const [clientResults, setClientResults] = useState<Client[]>([]);
@@ -37,6 +40,7 @@ export default function ServiceModal({ isOpen, onClose, onConfirm, service }: Se
         setPlateSearch('');
         setMileage('');
         setNotes('');
+        setAttachments([]);
         setClientResults([]);
         setVehicleResults([]);
     }, [service, isOpen]);
@@ -110,7 +114,8 @@ export default function ServiceModal({ isOpen, onClose, onConfirm, service }: Se
             mileage: mileage,
             notes: notes,
             clientName: selectedClient?.name,
-            vehiclePlate: selectedVehicle?.plate
+            vehiclePlate: selectedVehicle?.plate,
+            attachments: attachments
         });
         onClose();
     };
@@ -185,18 +190,23 @@ export default function ServiceModal({ isOpen, onClose, onConfirm, service }: Se
                             />
                         </div>
                     </div>
-
+                    {/* DVI Upload */}
+                    <div>
+                        <label className="block text-sm font-bold text-slate-700 mb-2">Evidencia Digital (DVI)</label>
+                        <UploadComponent onUploadComplete={setAttachments} />
+                    </div>
                 </div>
 
-                <div className="p-4 border-t border-slate-100 flex justify-end gap-3 bg-slate-50 shrink-0">
-                    <button onClick={onClose} className="px-6 py-3 rounded-xl font-bold text-slate-600 hover:bg-slate-200">Cancelar</button>
-                    <button
-                        onClick={handleConfirm}
-                        className="px-8 py-3 rounded-xl font-bold bg-slate-900 text-white hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transition-all"
-                    >
-                        Confirmar y Agregar
-                    </button>
-                </div>
+            </div>
+
+            <div className="p-4 border-t border-slate-100 flex justify-end gap-3 bg-slate-50 shrink-0">
+                <button onClick={onClose} className="px-6 py-3 rounded-xl font-bold text-slate-600 hover:bg-slate-200">Cancelar</button>
+                <button
+                    onClick={handleConfirm}
+                    className="px-8 py-3 rounded-xl font-bold bg-slate-900 text-white hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transition-all"
+                >
+                    Confirmar y Agregar
+                </button>
             </div>
         </div>
     );

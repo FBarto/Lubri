@@ -62,7 +62,8 @@ export default function ServicesWizard({ onAddService }: ServicesWizardProps) {
                 userId: session?.user?.id ? Number(session.user.id) : undefined,
                 mileage: data.mileage ? Number(data.mileage) : undefined,
                 notes: data.notes,
-                price: selectedService.price // Base price, editable later in cart?
+                price: selectedService.price, // Base price, editable later in cart?
+                attachments: data.attachments
             });
 
             if (data.clientId && !woResult.success) {

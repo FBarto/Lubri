@@ -18,3 +18,4 @@ if (!admin.apps.length) {
 }
 
 export const db = admin.firestore();
+export const storage = admin.storage();

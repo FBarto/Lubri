@@ -106,9 +106,14 @@ model WorkOrder {
   sale          Sale?    @relation(fields: [saleId], references: [id])
   
   saleItems     SaleItem[]
+  attachments   WorkOrderAttachment[]
 
   userId        Int?
   user          User?    @relation(fields: [userId], references: [id])
+
+  approvalStatus String   @default("IDLE") // IDLE, PENDING, APPROVED, REJECTED
+  approvalToken  String?  @unique
+  approvalSentAt DateTime?
 }
 
 model WhatsAppMessage {
@@ -148,6 +153,7 @@ model Product {
   category    String
   price       Float
   stock       Float    @default(0)
+  minStock    Float    @default(0)
   active      Boolean  @default(true)
   
   saleItems   SaleItem[]
@@ -237,4 +243,16 @@ enum WorkOrderStatus {
   IN_PROGRESS  // En Servicio
   COMPLETED    // Listo
   DELIVERED    // Entregado
+}
+
+model WorkOrderAttachment {
+  id          Int      @id @default(autoincrement())
+  url         String
+  type        String   // IMAGE, VIDEO
+  description String?
+  
+  workOrderId Int
+  workOrder   WorkOrder @relation(fields: [workOrderId], references: [id])
+  
+  createdAt   DateTime @default(now())
 }

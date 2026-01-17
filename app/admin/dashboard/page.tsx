@@ -1,6 +1,7 @@
 'use client';
 
 import KanbanBoard from '../../components/dashboard/KanbanBoard';
+import StockAlertWidget from '../../components/dashboard/StockAlertWidget';
 
 export default function KanbanDashboard() {
     return (
@@ -9,6 +10,9 @@ export default function KanbanDashboard() {
                 <div>
                     <h1 className="text-3xl font-black text-slate-900 tracking-tight">Tablero de Control</h1>
                     <p className="text-slate-500 font-medium text-sm">Gestión de turnos en tiempo real</p>
+                </div>
+                <div className="w-full md:w-auto">
+                    <StockAlertWidget />
                 </div>
             </header>
 

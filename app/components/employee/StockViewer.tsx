@@ -1,12 +1,31 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Search, AlertTriangle, CheckCircle } from 'lucide-react';
+import { Search, AlertTriangle, CheckCircle, Edit2, Save, X } from 'lucide-react';
+import { updateProductMinStock } from '../../lib/business-actions';
 
 export default function StockViewer() {
     const [products, setProducts] = useState<any[]>([]);
     const [search, setSearch] = useState('');
     const [loading, setLoading] = useState(true);
+    const [editingId, setEditingId] = useState<number | null>(null);
+    const [editValue, setEditValue] = useState('');
+
+    const startEdit = (product: any) => {
+        setEditingId(product.id);
+        setEditValue(String(product.minStock || 0));
+    };
+
+    const saveEdit = async (productId: number) => {
+        const val = parseFloat(editValue);
+        if (isNaN(val)) return;
+
+        await updateProductMinStock(productId, val);
+
+        // Optimistic update
+        setProducts(products.map(p => p.id === productId ? { ...p, minStock: val } : p));
+        setEditingId(null);
+    };
 
     useEffect(() => {
         fetch('/api/products')
@@ -55,6 +74,7 @@ export default function StockViewer() {
                                 <th className="p-4 font-bold text-slate-500 text-xs uppercase tracking-wider">Producto</th>
                                 <th className="p-4 font-bold text-slate-500 text-xs uppercase tracking-wider text-right">Precio</th>
                                 <th className="p-4 font-bold text-slate-500 text-xs uppercase tracking-wider text-center">Estado</th>
+                                <th className="p-4 font-bold text-slate-500 text-xs uppercase tracking-wider text-right">Mínimo</th>
                                 <th className="p-4 font-bold text-slate-500 text-xs uppercase tracking-wider text-right">Stock</th>
                             </tr>
                         </thead>
@@ -69,7 +89,7 @@ export default function StockViewer() {
                                             <span className="inline-flex items-center gap-1 bg-red-100 text-red-700 px-2 py-1 rounded text-xs font-bold uppercase">
                                                 <AlertTriangle size={12} /> Sin Stock
                                             </span>
-                                        ) : product.stock < 5 ? (
+                                        ) : product.stock <= (product.minStock || 0) ? (
                                             <span className="inline-flex items-center gap-1 bg-amber-100 text-amber-700 px-2 py-1 rounded text-xs font-bold uppercase">
                                                 <AlertTriangle size={12} /> Bajo
                                             </span>
@@ -77,6 +97,27 @@ export default function StockViewer() {
                                             <span className="inline-flex items-center gap-1 bg-emerald-100 text-emerald-700 px-2 py-1 rounded text-xs font-bold uppercase">
                                                 <CheckCircle size={12} /> Ok
                                             </span>
+                                        )}
+                                    </td>
+                                    <td className="p-4 text-right">
+                                        {editingId === product.id ? (
+                                            <div className="flex items-center justify-end gap-2">
+                                                <input
+                                                    type="number"
+                                                    className="w-16 border rounded p-1 text-sm bg-white"
+                                                    value={editValue}
+                                                    onChange={e => setEditValue(e.target.value)}
+                                                />
+                                                <button onClick={() => saveEdit(product.id)} className="text-green-600"><Save size={16} /></button>
+                                                <button onClick={() => setEditingId(null)} className="text-red-500"><X size={16} /></button>
+                                            </div>
+                                        ) : (
+                                            <div className="flex items-center justify-end gap-2 group">
+                                                <span className="text-slate-500">{product.minStock || 0}</span>
+                                                <button onClick={() => startEdit(product)} className="text-slate-300 hover:text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <Edit2 size={14} />
+                                                </button>
+                                            </div>
                                         )}
                                     </td>
                                     <td className={`p-4 font-bold text-right ${product.stock <= 0 ? 'text-red-500' : 'text-slate-700'}`}>
