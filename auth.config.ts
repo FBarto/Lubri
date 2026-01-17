@@ -13,12 +13,9 @@ export const authConfig = {
             const isEmployeeSection = nextUrl.pathname.startsWith('/employee');
             const isRoot = nextUrl.pathname === '/';
 
-            // 1. Root: Redirect to appropriate dashboard or login
+            // 1. Root: Allow public access
             if (isRoot) {
-                if (!isLoggedIn) return false; // Redirects to login
-                if (role === 'ADMIN') return Response.redirect(new URL('/admin/dashboard', nextUrl));
-                if (role === 'EMPLOYEE') return Response.redirect(new URL('/employee', nextUrl));
-                return Response.redirect(new URL('/login', nextUrl));
+                return true;
             }
 
             // 2. Admin Section
