@@ -1,7 +1,7 @@
+
 import fs from 'fs';
 import path from 'path';
 import { PrismaClient } from '@prisma/client';
-import { SyncService } from '@/lib/syncService';
 
 const prisma = new PrismaClient();
 const LEGACY_DIR = path.join(process.cwd(), '../Base de datos anterior');
@@ -27,27 +27,63 @@ function parseRow(rowStr: string): string[] {
 
 function parseValuesFromContent(content: string, tableName: string): string[][] {
     const values: string[][] = [];
-    const regex = new RegExp(`INSERT INTO \`?${tableName}\`?[\\s\\S]*?VALUES\\s*([\\s\\S]*?);`, 'gi');
-    let match;
-    while ((match = regex.exec(content)) !== null) {
-        const valuesBlock = match[1];
-        let depth = 0;
-        let start = 0;
-        let inQuote = false;
-        for (let i = 0; i < valuesBlock.length; i++) {
-            const char = valuesBlock[i];
-            if (char === "'" && (i === 0 || valuesBlock[i - 1] !== '\\')) inQuote = !inQuote;
-            if (!inQuote) {
-                if (char === '(') {
-                    if (depth === 0) start = i + 1;
-                    depth++;
-                } else if (char === ')') {
-                    depth--;
-                    if (depth === 0) {
-                        const rowStr = valuesBlock.substring(start, i);
-                        values.push(parseRow(rowStr));
-                    }
+
+    // Find start of relevant insert
+    const insertStartMarker = `INSERT INTO \`${tableName}\``;
+    const insertStartMarker2 = `INSERT INTO ${tableName}`; // without quotes
+
+    let startIndex = content.indexOf(insertStartMarker);
+    if (startIndex === -1) startIndex = content.indexOf(insertStartMarker2);
+    if (startIndex === -1) return [];
+
+    // Find VALUES after table name (skipping columns definition if any)
+    const valuesIndex = content.indexOf('VALUES', startIndex);
+    if (valuesIndex === -1) return [];
+
+    let currentIndex = valuesIndex + 'VALUES'.length;
+
+    // Scan until we find the first '('
+    while (currentIndex < content.length && content[currentIndex] !== '(') {
+        currentIndex++;
+    }
+
+    let depth = 0;
+    let start = 0;
+    let inQuote = false;
+    let isEscaping = false;
+
+    // State machine parser
+    for (let i = currentIndex; i < content.length; i++) {
+        const char = content[i];
+
+        if (isEscaping) {
+            isEscaping = false;
+            continue;
+        }
+
+        if (char === '\\') {
+            isEscaping = true;
+            continue;
+        }
+
+        if (char === "'" && !isEscaping) {
+            inQuote = !inQuote;
+            continue;
+        }
+
+        if (!inQuote) {
+            if (char === '(') {
+                if (depth === 0) start = i + 1;
+                depth++;
+            } else if (char === ')') {
+                depth--;
+                if (depth === 0) {
+                    const rowStr = content.substring(start, i);
+                    values.push(parseRow(rowStr));
                 }
+            } else if (char === ';') {
+                // End of statement
+                break;
             }
         }
     }
@@ -55,10 +91,26 @@ function parseValuesFromContent(content: string, tableName: string): string[][] 
 }
 
 async function migrateServices() {
-    console.log('Migrating History (Services) with Batching...');
+    console.log('🚀 Starting Optimized Service Migration...');
+
+    // 1. Parse File
+    console.log('📖 Reading srerice.sql...');
     const content = fs.readFileSync(path.join(LEGACY_DIR, 'srerice.sql'), 'utf-8');
     const rows = parseValuesFromContent(content, 'servicios');
+    console.log(`✅ Parsed ${rows.length} rows from SQL.`);
 
+    // 2. Fetch Master Data (Vehicles) for fast lookup
+    console.log('🚙 Fetching Vehicle cache...');
+    const allVehicles = await prisma.vehicle.findMany({
+        select: { id: true, plate: true, clientId: true }
+    });
+    const vehicleMap = new Map<string, { id: number, clientId: number }>();
+    for (const v of allVehicles) {
+        if (v.plate) vehicleMap.set(v.plate, v);
+    }
+    console.log(`✅ Cached ${allVehicles.length} vehicles.`);
+
+    // 3. Get/Create Service Ref
     let serviceRef = await prisma.service.findFirst({ where: { name: 'Servicio Histórico' } });
     if (!serviceRef) {
         serviceRef = await prisma.service.create({
@@ -72,72 +124,113 @@ async function migrateServices() {
         });
     }
 
-    let count = 0;
-    const batchSize = 50;
-    let batchPromises: Promise<any>[] = [];
+    const workOrdersPayload: any[] = [];
+    const vehicleSpecsMap = new Map<string, any>();
 
+    console.log('⚙️  Processing rows...');
     for (const row of rows) {
         if (row.length < 5) continue;
         const patente = row[1];
         if (!patente) continue;
 
+        // Fast Lookup
+        const vehicle = vehicleMap.get(patente);
+        if (!vehicle) continue; // Skip if vehicle not found
+
         const dateStr = row[2];
+        const date = new Date(dateStr);
+        if (isNaN(date.getTime())) continue;
+
         const mileage = parseInt(row[3]) || 0;
 
-        // details
-        let notes = '';
-        const fields = ['Faire', 'Faceite', 'Fcombustible', 'Fhabitaculo', 'Aceite', 'Aceite2', 'GrasaCaja', 'GrasaDif', 'hidraulico', 'Varios', 'observaciones', 'Varios2', 'Varios3'];
-        // Indices 5 to 17
-        for (let i = 0; i < fields.length; i++) {
-            const valIndex = i + 5;
-            if (valIndex < row.length) {
-                const val = row[valIndex];
-                if (val && val !== 'NULL' && val.trim() !== '') {
-                    notes += `${fields[i]}: ${val}\n`;
-                }
-            }
-        }
+        // Parse Details
+        const getVal = (idx: number) => (row[idx] && row[idx] !== 'NULL' && row[idx].trim() !== '') ? row[idx].trim() : null;
 
-        const vehicle = await prisma.vehicle.findUnique({ where: { plate: patente } });
-        if (vehicle) {
-            const date = new Date(dateStr);
-            if (isNaN(date.getTime())) continue;
+        const details: any = {};
+        const filters: any = {};
+        const fluids: any = {};
 
-            try {
-                // Create locally 
-                const wo = await prisma.workOrder.create({
-                    data: {
-                        date: date,
-                        finishedAt: date,
-                        mileage: mileage,
-                        price: 0,
-                        notes: notes,
+        const fAire = getVal(5); if (fAire) filters.air = fAire;
+        const fAceite = getVal(6); if (fAceite) filters.oil = fAceite;
+        const fComb = getVal(7); if (fComb) filters.fuel = fComb;
+        const fHab = getVal(8); if (fHab) filters.cabin = fHab;
 
-                        clientId: vehicle.clientId,
-                        vehicleId: vehicle.id,
-                        serviceId: serviceRef.id
-                    }
+        const oilType = getVal(9);
+        const oilLiters = getVal(10);
+        if (oilType || oilLiters) details.oil = { type: oilType || '', liters: oilLiters || '' };
+
+        const grasaCaja = getVal(11); if (grasaCaja) fluids.gearbox = grasaCaja;
+        const grasaDif = getVal(12); if (grasaDif) fluids.differential = grasaDif;
+        const hidraulico = getVal(13); if (hidraulico) fluids.steering = hidraulico;
+
+        if (Object.keys(filters).length > 0) details.filters = filters;
+        if (Object.keys(fluids).length > 0) details.fluids = fluids;
+
+        const notas = [getVal(14), getVal(15)].filter(Boolean).join('. ');
+
+        // Specs Logic
+        if (filters.oil || filters.air) {
+            const existing = vehicleSpecsMap.get(patente);
+            if (!existing || existing.date < date) {
+                vehicleSpecsMap.set(patente, {
+                    date: date,
+                    specs: { filters, oil: details.oil }
                 });
-
-                // Add sync to batch
-                batchPromises.push(SyncService.syncWorkOrder(wo));
-                count++;
-
-                if (batchPromises.length >= batchSize) {
-                    await Promise.all(batchPromises);
-                    batchPromises = [];
-                    console.log(`Synced batch up to ${count}`);
-                }
-            } catch (e) {
-                // console.error(e);
             }
         }
+
+        // Push to payload
+        workOrdersPayload.push({
+            date: date,
+            finishedAt: date,
+            mileage: mileage,
+            price: 0,
+            notes: notas,
+            status: 'COMPLETED',
+            clientId: vehicle.clientId,
+            vehicleId: vehicle.id,
+            serviceId: serviceRef.id,
+            serviceDetails: details
+        });
     }
-    // Final batch
-    if (batchPromises.length > 0) {
-        await Promise.all(batchPromises);
+
+    // 4. Batch Insert WorkOrders
+    console.log(`\n💾 Inserting ${workOrdersPayload.length} WorkOrders...`);
+    // Split into chunks of 1000
+    const CHUNK_SIZE = 1000;
+    for (let i = 0; i < workOrdersPayload.length; i += CHUNK_SIZE) {
+        const chunk = workOrdersPayload.slice(i, i + CHUNK_SIZE);
+        try {
+            // @ts-ignore
+            await prisma.workOrder.createMany({
+                data: chunk
+            });
+            process.stdout.write('.');
+        } catch (e) {
+            console.error(`Error inserting chunk ${i}:`, e);
+        }
     }
-    console.log(`Migrated ${count} service history records.`);
+    console.log('\n✅ WorkOrders Inserted.');
+
+    // 5. Update Specs (Concurrency controlled)
+    console.log(`\n🧠 Updating Specs for ${vehicleSpecsMap.size} vehicles...`);
+    const specs = Array.from(vehicleSpecsMap.entries());
+    const UPDATE_CONCURRENCY = 20;
+
+    for (let i = 0; i < specs.length; i += UPDATE_CONCURRENCY) {
+        const batch = specs.slice(i, i + UPDATE_CONCURRENCY);
+        await Promise.all(batch.map(async ([plate, data]) => {
+            try {
+                // @ts-ignore
+                await prisma.vehicle.update({
+                    where: { plate },
+                    data: { specifications: data.specs }
+                });
+            } catch (e) { }
+        }));
+        process.stdout.write('.');
+    }
+    console.log('\n✅ Specifications Updated.');
 }
 
 migrateServices()

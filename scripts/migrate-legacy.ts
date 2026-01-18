@@ -55,21 +55,49 @@ async function migrate() {
             // Since phone is not unique in legacy (some are empty), we rely on name + phone combo or just create new.
             // To be safe and avoid duplicates if running multiple times, let's try to find first.
 
-            let client = await prisma.client.findFirst({
-                where: {
-                    name: name.trim(),
-                    // Only check phone if it's substantial
-                    ...(cleanPhone.length > 5 ? { phone: cleanPhone } : {})
-                }
-            });
+            let client = null;
+
+            // 1. Try to find by unique phone if valid
+            if (cleanPhone.length > 6) {
+                client = await prisma.client.findUnique({
+                    where: { phone: cleanPhone }
+                });
+            }
+
+            // 2. If not found by phone, try name
+            if (!client) {
+                client = await prisma.client.findFirst({
+                    where: { name: name.trim() }
+                });
+            }
 
             if (!client) {
-                client = await prisma.client.create({
-                    data: {
-                        name: name.trim(),
-                        phone: cleanPhone
+                // Determine final phone to use. If duplicate exists (but logic missed it) or empty, randomize.
+                let finalPhone = cleanPhone;
+                if (finalPhone.length <= 6) {
+                    finalPhone = `S/T-${Math.floor(Math.random() * 1000000)}`;
+                }
+
+                try {
+                    client = await prisma.client.create({
+                        data: {
+                            name: name.trim(),
+                            phone: finalPhone
+                        }
+                    });
+                } catch (createError: any) {
+                    // Retry with random phone if collision happens despite checks
+                    if (createError.code === 'P2002') {
+                        client = await prisma.client.create({
+                            data: {
+                                name: name.trim(),
+                                phone: `${cleanPhone}_${Math.floor(Math.random() * 9999)}`
+                            }
+                        });
+                    } else {
+                        throw createError;
                     }
-                });
+                }
             }
 
             clientsMap.set(id, client.id);

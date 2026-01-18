@@ -38,6 +38,8 @@ model Vehicle {
   
   appointments Appointment[]
   workOrders   WorkOrder[]
+  
+  specifications Json?   // Learned preferences: oil type, filters, etc.
 }
 
 model Service {
@@ -114,6 +116,8 @@ model WorkOrder {
   approvalStatus String   @default("IDLE") // IDLE, PENDING, APPROVED, REJECTED
   approvalToken  String?  @unique
   approvalSentAt DateTime?
+
+  serviceDetails Json?    // Structured data: oil, filters, checklist
 }
 
 model WhatsAppMessage {
