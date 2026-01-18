@@ -5,9 +5,10 @@ const prisma = new PrismaClient();
 
 async function main() {
     const plans = [
-        { name: '1 Cuota', installments: 1, interestRate: 12.0 },
-        { name: '3 Cuotas', installments: 3, interestRate: 22.0 },
-        { name: '6 Cuotas', installments: 6, interestRate: 34.0 },
+        { name: '1 Cuota (Lista)', installments: 1, interestRate: 12.0 },
+        { name: 'Cuota Simple 3', installments: 3, interestRate: 11.5 },
+        { name: 'Cuota Simple 6', installments: 6, interestRate: 23.0 },
+        { name: 'Cuota Simple 12', installments: 12, interestRate: 45.0 },
     ];
 
     console.log('Seeding payment plans...');
@@ -17,13 +18,20 @@ async function main() {
             where: { installments: plan.installments }
         });
 
-        if (!existing) {
+        if (existing) {
+            await prisma.paymentPlan.update({
+                where: { id: existing.id },
+                data: {
+                    name: plan.name,
+                    interestRate: plan.interestRate
+                }
+            });
+            console.log(`Updated plan: ${plan.name} (${plan.interestRate}%)`);
+        } else {
             await prisma.paymentPlan.create({
                 data: plan
             });
             console.log(`Created plan: ${plan.name}`);
-        } else {
-            console.log(`Plan exists: ${plan.name}`);
         }
     }
 }
