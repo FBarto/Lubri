@@ -14,11 +14,11 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "FB Lubricentro | Servicio Automotriz y Mecánica Ligera",
-  description: "Servicio profesional de lubricentro, cambio de aceite, filtros y mecánica ligera. Agenda tu turno online de forma rápida y sencilla.",
+  title: "FB Lubricentro y Baterías | Villa Carlos Paz",
+  description: "Tu lubricentro de confianza en Villa Carlos Paz. Cambio de aceite, filtros, baterías y gomería. Atención por orden de llegada o con turno online.",
   openGraph: {
-    title: "FB Lubricentro",
-    description: "Tu lubricentro de confianza. Reserva tu turno online.",
+    title: "FB Lubricentro y Baterías",
+    description: "Mantenimiento vehicular en Villa Carlos Paz. Asunción 505.",
     type: "website",
     locale: "es_AR",
   },
@@ -32,28 +32,46 @@ export default function RootLayout({
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "AutoRepair",
-    "name": "FB Lubricentro",
-    "image": "https://lubri-app.vercel.app/og-image.jpg", // Placeholder
-    "description": "Servicio de lubricentro y mecánica ligera.",
+    "name": "FB Lubricentro y Baterías",
+    "image": "https://lubri-app.vercel.app/og-image.jpg",
+    "description": "Lubricentro y venta de baterías en Villa Carlos Paz.",
     "url": "https://lubri-app.vercel.app",
+    "telephone": "+5493516756248",
     "address": {
       "@type": "PostalAddress",
-      "addressLocality": "Argentina",
+      "streetAddress": "Asunción 505",
+      "addressLocality": "Villa Carlos Paz",
+      "addressRegion": "Córdoba",
+      "postalCode": "X5152",
       "addressCountry": "AR"
+    },
+    "geo": {
+      "@type": "GeoCoordinates",
+      "latitude": -31.420783,
+      "longitude": -64.500248
     },
     "openingHoursSpecification": [
       {
         "@type": "OpeningHoursSpecification",
         "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
-        "opens": "08:00",
-        "closes": "18:00"
+        "opens": "08:30",
+        "closes": "13:00"
+      },
+      {
+        "@type": "OpeningHoursSpecification",
+        "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+        "opens": "16:30",
+        "closes": "20:30"
       },
       {
         "@type": "OpeningHoursSpecification",
         "dayOfWeek": ["Saturday"],
-        "opens": "08:00",
+        "opens": "09:00",
         "closes": "13:00"
       }
+    ],
+    "sameAs": [
+      "https://wa.me/5493516756248"
     ]
   };
 
