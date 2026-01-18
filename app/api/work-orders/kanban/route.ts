@@ -11,9 +11,13 @@ export async function GET(request: Request) {
 
         const workOrders = await prisma.workOrder.findMany({
             where: {
-                status: {
-                    in: ['PENDING', 'IN_PROGRESS', 'COMPLETED']
-                }
+                OR: [
+                    { status: { in: ['PENDING', 'IN_PROGRESS'] } },
+                    {
+                        status: 'COMPLETED',
+                        date: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } // Only last 24h
+                    }
+                ]
             },
             include: {
                 client: true,

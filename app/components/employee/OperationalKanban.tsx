@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
-import { Play, CheckCircle, LogOut, Send, Clock, FileCheck, FileX } from 'lucide-react';
+import { Play, CheckCircle, LogOut, Send, Clock, FileCheck, FileX, PenTool } from 'lucide-react';
 import { sendBudgetForApproval } from '../../lib/approval-actions';
+import EditWorkOrderModal from './EditWorkOrderModal';
 
 type WorkOrderStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'DELIVERED';
 
@@ -18,6 +19,7 @@ interface WorkOrder {
     price: number;
     approvalStatus: string; // IDLE, PENDING, APPROVED, REJECTED
     approvalToken?: string;
+    serviceDetails?: any;
 }
 
 export default function OperationalKanban() {
@@ -27,6 +29,7 @@ export default function OperationalKanban() {
 
     // Modal States
     const [finishModalOpen, setFinishModalOpen] = useState(false);
+    const [editModalOpen, setEditModalOpen] = useState(false);
     const [selectedOrder, setSelectedOrder] = useState<WorkOrder | null>(null);
     const [mileage, setMileage] = useState('');
 
@@ -159,6 +162,16 @@ export default function OperationalKanban() {
                                                         <Send className="w-3 h-3" /> Enviar Presupuesto
                                                     </button>
                                                 )}
+                                                {/* Edit Action - Available in PENDING and IN_PROGRESS */}
+                                                {(col.id === 'PENDING' || col.id === 'IN_PROGRESS') && (
+                                                    <button
+                                                        onClick={() => { setSelectedOrder(order); setEditModalOpen(true); }}
+                                                        className="w-full bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors border border-indigo-200"
+                                                    >
+                                                        <PenTool className="w-4 h-4" /> Agregar Insumos
+                                                    </button>
+                                                )}
+
                                                 {col.id === 'IN_PROGRESS' && (
                                                     <button
                                                         onClick={() => { setSelectedOrder(order); setFinishModalOpen(true); }}
@@ -185,6 +198,14 @@ export default function OperationalKanban() {
                     })}
                 </div>
             </div>
+
+            {/* Edit Modal */}
+            <EditWorkOrderModal
+                isOpen={editModalOpen}
+                onClose={() => setEditModalOpen(false)}
+                workOrder={selectedOrder}
+                onUpdate={fetchOrders}
+            />
 
             {/* Finish Modal */}
             {finishModalOpen && selectedOrder && (

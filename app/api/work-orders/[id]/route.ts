@@ -29,7 +29,7 @@ export async function PUT(request: Request, context: { params: Promise<{ id: str
     try {
         const { id } = await context.params;
         const body = await request.json();
-        const { price, notes, mileage, finishedAt } = body;
+        const { price, notes, mileage, finishedAt, serviceDetails } = body;
 
         const workOrder = await prisma.workOrder.update({
             where: { id: Number(id) },
@@ -37,7 +37,8 @@ export async function PUT(request: Request, context: { params: Promise<{ id: str
                 price: price !== undefined ? Number(price) : undefined,
                 notes: notes,
                 mileage: mileage !== undefined ? Number(mileage) : undefined,
-                finishedAt: finishedAt ? new Date(finishedAt) : undefined
+                finishedAt: finishedAt ? new Date(finishedAt) : undefined,
+                serviceDetails: serviceDetails ?? undefined // Update if provided
             }
         });
 
