@@ -11,9 +11,11 @@ type WorkOrderStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'DELIVERED';
 interface WorkOrder {
     id: number;
     status: WorkOrderStatus;
+    clientId: number;
+    vehicleId: number;
     client: { name: string };
     vehicle: { plate: string; brand: string; model: string };
-    service: { name: string };
+    service: { id: number; name: string; price: number };
     user?: { name: string }; // Assigned employee
     date: string;
     price: number;
@@ -22,7 +24,11 @@ interface WorkOrder {
     serviceDetails?: any;
 }
 
-export default function OperationalKanban() {
+interface OperationalKanbanProps {
+    onPassToCheckout?: (workOrder: WorkOrder) => void;
+}
+
+export default function OperationalKanban({ onPassToCheckout }: OperationalKanbanProps) {
     const { data: session } = useSession();
     const [orders, setOrders] = useState<WorkOrder[]>([]);
     const [loading, setLoading] = useState(true);
@@ -182,7 +188,10 @@ export default function OperationalKanban() {
                                                 )}
                                                 {col.id === 'COMPLETED' && (
                                                     <button
-                                                        onClick={() => handleTransition(order.id, 'DELIVERED')}
+                                                        onClick={async () => {
+                                                            await handleTransition(order.id, 'DELIVERED');
+                                                            if (onPassToCheckout) onPassToCheckout(order);
+                                                        }}
                                                         className="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors"
                                                     >
                                                         <LogOut className="w-4 h-4" /> Pasar a Caja

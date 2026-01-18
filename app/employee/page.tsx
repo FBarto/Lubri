@@ -106,7 +106,42 @@ export default function EmployeePage() {
                 )}
                 {activeTab === 'TALLER' && (
                     <div className="flex-1 overflow-hidden">
-                        <OperationalKanban />
+                        <OperationalKanban onPassToCheckout={(wo) => {
+                            // 1. Convert Base Service
+                            const baseItem = {
+                                type: 'SERVICE',
+                                id: wo.service.id,
+                                name: wo.service.name + ' - ' + wo.vehicle.plate,
+                                price: wo.service.price, // Use Service Price or WO Price?? WO Price might include extras?
+                                // Usually WO Price is the final price.
+                                // But if we have extra items, we should separate them?
+                                // Let's use wo.price as the base if it exists, or service.price.
+                                // Actually, if we added items, we want to list them separately for stock deduction.
+                                // So Base Item Price should be the Service Price.
+                                // And Extra Items should be added separately.
+                                quantity: 1,
+                                vehicleId: wo.vehicleId,
+                                clientId: wo.clientId,
+                                workOrderId: wo.id,
+                                uniqueId: Math.random().toString(36).substr(2, 9),
+                                subtotal: wo.service.price
+                            };
+
+                            // 2. Convert Extra Items (from serviceDetails)
+                            const extraItems = (wo.serviceDetails as any)?.items?.map((item: any) => ({
+                                type: 'PRODUCT', // Assume products for now
+                                id: item.productId,
+                                name: item.name,
+                                price: item.unitPrice,
+                                quantity: item.quantity,
+                                uniqueId: Math.random().toString(36).substr(2, 9),
+                                subtotal: item.quantity * item.unitPrice,
+                                workOrderId: wo.id
+                            })) || [];
+
+                            setCart([baseItem, ...extraItems]);
+                            setActiveTab('VENDER');
+                        }} />
                     </div>
                 )}
             </div>
