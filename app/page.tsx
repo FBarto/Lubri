@@ -26,6 +26,14 @@ export default function Home() {
             <span className="text-red-500 font-bold tracking-widest text-xs uppercase">Villa Carlos Paz</span>
           </div>
 
+          <Link
+            href="/login"
+            className="absolute top-6 right-6 md:top-10 md:right-10 px-6 py-2 rounded-full border border-white/20 bg-white/5 backdrop-blur-md text-white font-bold text-sm uppercase tracking-wider hover:bg-white/10 hover:border-red-500 transition-all duration-300 z-50 flex items-center gap-2 group"
+          >
+            <span>Ingresar</span>
+            <div className="w-2 h-2 rounded-full bg-red-600 group-hover:animate-pulse"></div>
+          </Link>
+
           <h1 className="text-5xl md:text-7xl lg:text-8xl font-black italic tracking-tighter text-white mb-6 leading-[0.9]">
             MÁXIMO <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-600 to-red-500">RENDIMIENTO</span>
           </h1>
