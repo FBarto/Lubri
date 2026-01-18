@@ -31,12 +31,19 @@ export function getAvailableSlots(date: Date, serviceDuration: number, appointme
         { start: afternoonStart, end: afternoonEnd }
     ];
 
+    // Argentina is UTC-3. 
+    // If the server is in UTC, "08:30" becomes "08:30 UTC" which displays as "05:30" in AR.
+    // We want "08:30 AR" which is "11:30 UTC".
+    // So we add 3 hours to the generated UTC time.
+    const TIMEZONE_OFFSET_HOURS = 3;
+
     for (const range of ranges) {
         let currentTime = range.start;
 
         // Loop until the service can no longer fit in the remaining time
         while (currentTime + serviceDuration <= range.end) {
-            const slotStart = new Date(baseDate.getTime() + currentTime * 60000);
+            // Add offset to make it 11:30 UTC (08:30 Local) instead of 08:30 UTC
+            const slotStart = new Date(baseDate.getTime() + (currentTime + TIMEZONE_OFFSET_HOURS * 60) * 60000);
             const slotEnd = new Date(slotStart.getTime() + serviceDuration * 60000);
 
             // Check overlap

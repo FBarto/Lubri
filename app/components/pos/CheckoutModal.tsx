@@ -250,8 +250,10 @@ export default function CheckoutModal({
                         </button>
                         <button
                             onClick={() => onConfirm(payments)}
-                            disabled={!isFullyPaid}
-                            className="px-10 py-4 rounded-xl font-bold text-white bg-slate-900 hover:bg-emerald-600 disabled:bg-slate-200 disabled:text-slate-400 shadow-xl disabled:shadow-none hover:shadow-emerald-500/30 active:scale-95 transition-all flex items-center gap-2"
+                            className={`px-10 py-4 rounded-xl font-bold text-white shadow-xl active:scale-95 transition-all flex items-center gap-2 ${isFullyPaid
+                                    ? 'bg-slate-900 hover:bg-emerald-600 hover:shadow-emerald-500/30'
+                                    : 'bg-amber-500 hover:bg-amber-600 text-white shadow-amber-500/30'
+                                }`}
                         >
                             {isFullyPaid ? (
                                 <>
@@ -259,7 +261,10 @@ export default function CheckoutModal({
                                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
                                 </>
                             ) : (
-                                <span>FALTA PAGO</span>
+                                <>
+                                    <span>DEJAR SALDO</span>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M12 9v4" /><path d="M12 17h.01" /></svg>
+                                </>
                             )}
                         </button>
                     </div>

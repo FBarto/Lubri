@@ -191,7 +191,12 @@ export default function ClientsPage() {
                                                     ))}
                                                 </div>
                                             ) : (
-                                                <span className="text-slate-300 italic text-sm">Sin vehículos</span>
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-slate-300 italic text-sm">Sin vehículos</span>
+                                                    <a href={`/admin/vehicles?new=true&clientId=${c.id}`} className="p-1 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-400 hover:text-indigo-600 transition-colors" title="Agregar Vehículo">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /><path d="M12 5v14" /></svg>
+                                                    </a>
+                                                </div>
                                             )}
                                         </td>
                                         <td className="px-6 py-5 text-right space-x-2">
