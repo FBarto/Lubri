@@ -4,9 +4,15 @@ import * as admin from 'firebase-admin';
 // Check if already initialized to avoid hot-reload errors
 if (!admin.apps.length) {
     try {
-        // import serviceAccount from '../firebase-service-account.json';
-        // eslint-disable-next-line @typescript-eslint/no-require-imports
-        const serviceAccount = require('../firebase-service-account.json');
+        // Initialize with environment variable (Best for Vercel)
+        const serviceAccountStr = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+
+        if (!serviceAccountStr) {
+            throw new Error('FIREBASE_SERVICE_ACCOUNT_KEY is missing');
+        }
+
+        // Handle potential escaped newlines in env vars
+        const serviceAccount = JSON.parse(serviceAccountStr);
 
         admin.initializeApp({
             credential: admin.credential.cert(serviceAccount)
