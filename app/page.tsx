@@ -1,6 +1,7 @@
 
 import Link from 'next/link';
 import { Clock, CheckCircle2, Award, Zap, Shield, MapPin, Phone, MessageCircle, Droplet, Disc, ChevronDown, HelpCircle, Bell, X, User } from 'lucide-react';
+import GoogleReviews from './components/GoogleReviews';
 
 export default function Home() {
   return (
@@ -175,6 +176,9 @@ export default function Home() {
           </div>
         </section>
       </main>
+
+      {/* --- GOOGLE REVIEWS --- */}
+      <GoogleReviews />
 
       {/* --- FOOTER --- */}
       <footer className="bg-neutral-950 pt-20 pb-10 border-t border-neutral-900">
