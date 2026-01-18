@@ -16,7 +16,7 @@ export async function GET() {
                 id: true,
                 status: true,
                 date: true,
-                updatedAt: false, // Not needed
+
                 vehicle: {
                     select: {
                         brand: true,
