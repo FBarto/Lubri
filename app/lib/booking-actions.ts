@@ -163,9 +163,12 @@ export async function createAppointment(data: CreateAppointmentInput) {
 
         const startTime = new Date(date);
 
-        // 1. Validate Business Hours
-        const hour = startTime.getHours();
-        const minutes = startTime.getMinutes();
+        // 1. Validate Business Hours (Argentina UTC-3)
+        const ARG_OFFSET = 3;
+        const arDate = new Date(startTime.getTime() - ARG_OFFSET * 60 * 60 * 1000); // Shift to AR Time (effectively looking at UTC as Local)
+
+        const hour = arDate.getUTCHours();
+        const minutes = arDate.getUTCMinutes();
         const timeInMinutes = hour * 60 + minutes;
 
         const morningStart = 8 * 60 + 30; // 08:30
