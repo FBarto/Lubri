@@ -2,9 +2,10 @@
 
 import { useState } from 'react';
 import { LeadCase, CaseChecklistItem, CaseLog, CaseStatus, LogChannel, ChecklistTemplate } from '@prisma/client';
-import { ArrowLeft, CheckCircle2, Circle, Copy, Send, Save, AlertCircle } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Circle, Copy, Send, Save, AlertCircle, Sparkles } from 'lucide-react';
 import { updateChecklistItem, addCaseLog, updateCaseStatus } from '../../lib/inbox-actions';
 import { useRouter } from 'next/navigation';
+import SmartInput from './SmartInput';
 
 interface CaseDetailProps {
     leadCase: LeadCase & {
@@ -160,8 +161,8 @@ export default function CaseDetailView({ leadCase, currentUserId }: CaseDetailPr
                                                 key={opt}
                                                 onClick={() => handleChecklistChange(item, opt, true)}
                                                 className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${item.value === opt
-                                                        ? 'bg-blue-600 text-white border-blue-600 shadow-md'
-                                                        : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                                                    ? 'bg-blue-600 text-white border-blue-600 shadow-md'
+                                                    : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
                                                     }`}
                                             >
                                                 {opt}
