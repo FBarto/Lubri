@@ -215,3 +215,72 @@ export async function getInboxCases() {
         return { success: false, error: 'Failed to fetch' };
     }
 }
+// --- CONVERSION & UTILS ---
+
+export async function getServicesList() {
+    try {
+        const services = await prisma.service.findMany({
+            where: { active: true },
+            select: { id: true, name: true, duration: true, price: true }
+        });
+        return { success: true, data: services };
+    } catch (error) {
+        return { success: false, error: 'Failed' };
+    }
+}
+
+export async function convertCaseToAppointment(input: {
+    caseId: string;
+    date: Date;
+    serviceId: number;
+    notes?: string;
+}) {
+    try {
+        const { caseId, date, serviceId, notes } = input;
+
+        // 1. Get Case to reuse Client/Vehicle
+        const leadCase = await prisma.leadCase.findUnique({
+            where: { id: caseId }
+        });
+
+        if (!leadCase || !leadCase.clientId || !leadCase.vehicleId) {
+            return { success: false, error: 'Case needs linked Client/Vehicle first' };
+        }
+
+        // 2. Create Appointment
+        const appointment = await prisma.appointment.create({
+            data: {
+                date,
+                status: 'CONFIRMED',
+                clientId: leadCase.clientId,
+                vehicleId: leadCase.vehicleId,
+                serviceId,
+                notes: notes || leadCase.summary,
+                leadCaseId: caseId
+            }
+        });
+
+        // 3. Update Case Status
+        await prisma.leadCase.update({
+            where: { id: caseId },
+            data: { status: 'SCHEDULED' }
+        });
+
+        // 4. Log it
+        await prisma.caseLog.create({
+            data: {
+                leadCaseId: caseId,
+                authorUserId: leadCase.assignedToUserId || 1, // fallback
+                channel: 'INTERNAL_NOTE',
+                message: `Caso convertido a Turno #${appointment.id} para el ${date.toLocaleDateString()}`
+            }
+        });
+
+        revalidatePath(`/admin/inbox/${caseId}`);
+        return { success: true, data: appointment };
+
+    } catch (error) {
+        console.error('Convert Error:', error);
+        return { success: false, error: 'Conversion failed' };
+    }
+}

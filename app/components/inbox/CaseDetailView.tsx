@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import { LeadCase, CaseChecklistItem, CaseLog, CaseStatus, LogChannel, ChecklistTemplate } from '@prisma/client';
-import { ArrowLeft, CheckCircle2, Circle, Copy, Send, Save, AlertCircle, Sparkles } from 'lucide-react';
-import { updateChecklistItem, addCaseLog, updateCaseStatus } from '../../lib/inbox-actions';
+import { ArrowLeft, CheckCircle2, Circle, Copy, Send, Save, AlertCircle, Sparkles, CalendarClock, X } from 'lucide-react';
+import { updateChecklistItem, addCaseLog, updateCaseStatus, convertCaseToAppointment, getServicesList } from '../../lib/inbox-actions';
 import { useRouter } from 'next/navigation';
 import SmartInput from './SmartInput';
 
@@ -49,6 +49,46 @@ export default function CaseDetailView({ leadCase, currentUserId }: CaseDetailPr
     const [newMessage, setNewMessage] = useState('');
     const [isSending, setIsSending] = useState(false);
     const router = useRouter();
+
+    // Conversion Modal State
+    const [isConvertModalOpen, setIsConvertModalOpen] = useState(false);
+    const [convertDate, setConvertDate] = useState('');
+    const [convertTime, setConvertTime] = useState('');
+    const [services, setServices] = useState<any[]>([]);
+    const [selectedServiceId, setSelectedServiceId] = useState<number | null>(null);
+
+    const openConvertModal = async () => {
+        setIsConvertModalOpen(true);
+        const res = await getServicesList();
+        if (res.success && res.data) {
+            setServices(res.data);
+        }
+    };
+
+    const handleConvert = async () => {
+        if (!convertDate || !convertTime || !selectedServiceId) {
+            alert('Completa fecha, hora y servicio.');
+            return;
+        }
+
+        const isoDate = new Date(`${convertDate}T${convertTime}:00`);
+
+        setIsSending(true);
+        const res = await convertCaseToAppointment({
+            caseId: leadCase.id,
+            date: isoDate,
+            serviceId: selectedServiceId,
+            notes: `[Desde Inbox] ${leadCase.summary}`
+        });
+
+        if (res.success) {
+            alert('¡Turno creado!');
+            router.push('/admin/appointments');
+        } else {
+            alert('Error: ' + res.error);
+        }
+        setIsSending(false);
+    };
 
     const handleChecklistChange = async (item: CaseChecklistItem, value: any, isDone: boolean) => {
         // Optimistic update
@@ -237,6 +277,7 @@ export default function CaseDetailView({ leadCase, currentUserId }: CaseDetailPr
                             placeholder="Escribir nota interna..."
                             className="flex-1 bg-slate-100 border-none rounded-xl px-4 text-sm focus:ring-2 focus:ring-blue-100"
                         />
+
                         <button
                             onClick={handleSendLog}
                             disabled={isSending}
@@ -249,9 +290,18 @@ export default function CaseDetailView({ leadCase, currentUserId }: CaseDetailPr
 
                 {/* Status Actions */}
                 <div className="flex flex-col gap-2">
+                    {/* Convert Button */}
                     <button
-                        onClick={() => router.push('/admin/inbox')} // Placeholder
-                        className="w-full py-4 bg-slate-900 text-white rounded-xl font-bold shadow-lg hover:bg-slate-800 transition-all active:scale-95 flex justify-center items-center gap-2"
+                        onClick={openConvertModal}
+                        className="w-full py-3 bg-emerald-600 text-white rounded-xl font-bold shadow-sm hover:bg-emerald-700 transition-all active:scale-95 flex justify-center items-center gap-2"
+                    >
+                        <CalendarClock className="w-4 h-4" />
+                        Agendar Turno
+                    </button>
+
+                    <button
+                        onClick={() => router.push('/admin/inbox')}
+                        className="w-full py-3 bg-slate-900 text-white rounded-xl font-bold shadow-lg hover:bg-slate-800 transition-all active:scale-95 flex justify-center items-center gap-2"
                     >
                         <Save className="w-4 h-4" />
                         Guardar y Volver
@@ -259,6 +309,73 @@ export default function CaseDetailView({ leadCase, currentUserId }: CaseDetailPr
                 </div>
 
             </div>
+
+            {/* MODAL */}
+            {isConvertModalOpen && (
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
+                        <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                            <h3 className="font-bold text-lg text-slate-800">Agendar Turno</h3>
+                            <button onClick={() => setIsConvertModalOpen(false)} className="text-slate-400 hover:text-slate-600">
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        <div className="p-6 space-y-4">
+                            {!leadCase.clientId || !leadCase.vehicleId ? (
+                                <div className="p-3 bg-amber-50 text-amber-700 rounded-lg text-sm border border-amber-200 flex gap-2">
+                                    <AlertCircle className="w-5 h-5 shrink-0" />
+                                    <p>Primero debes asociar un Cliente y Vehículo al caso (usa el chat para pedir datos o edítalo).</p>
+                                </div>
+                            ) : (
+                                <>
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Fecha y Hora</label>
+                                        <div className="flex gap-2">
+                                            <input
+                                                type="date"
+                                                value={convertDate}
+                                                onChange={e => setConvertDate(e.target.value)}
+                                                className="flex-1 border border-slate-200 rounded-lg px-3 py-2 text-sm"
+                                            />
+                                            <input
+                                                type="time"
+                                                value={convertTime}
+                                                onChange={e => setConvertTime(e.target.value)}
+                                                className="w-32 border border-slate-200 rounded-lg px-3 py-2 text-sm"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Servicio a Realizar</label>
+                                        <select
+                                            value={selectedServiceId || ''}
+                                            onChange={e => setSelectedServiceId(Number(e.target.value))}
+                                            className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm"
+                                        >
+                                            <option value="">Seleccionar...</option>
+                                            {services.map(s => (
+                                                <option key={s.id} value={s.id}>{s.name} (${s.price})</option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    <div className="pt-2">
+                                        <button
+                                            onClick={handleConvert}
+                                            disabled={isSending}
+                                            className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-md transition-all active:scale-95"
+                                        >
+                                            {isSending ? 'Creando...' : 'Confirmar Turno'}
+                                        </button>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
 
         </div>
     );
