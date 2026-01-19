@@ -3,7 +3,7 @@
 import { CaseChecklistItem, InputType } from '@prisma/client';
 import { updateChecklistItem } from '@/app/lib/actions/inbox-actions';
 import { useState } from 'react';
-import { debounce } from '@/lib/utils'; // Assuming generic utils or I'll implement local debounce
+
 
 export default function ChecklistWidget({ items }: { items: CaseChecklistItem[] }) {
 
