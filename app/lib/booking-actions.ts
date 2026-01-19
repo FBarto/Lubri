@@ -1,6 +1,6 @@
 'use server';
 
-import { prisma } from '../../lib/prisma';
+import { prisma } from '@/lib/prisma';
 import { safeRevalidate } from './server-utils';
 import { WhatsAppService } from './whatsapp/service';
 
@@ -32,6 +32,7 @@ export interface CreateAppointmentInput {
         plate: string;
         model?: string;
     };
+    leadCaseId?: string;
 }
 
 // --- Actions ---
@@ -111,7 +112,7 @@ export async function updateVehicle(id: number, data: Partial<CreateVehicleInput
 export async function createAppointment(data: CreateAppointmentInput) {
     try {
         let { clientId, vehicleId } = data;
-        const { serviceId, date, notes, guestData } = data;
+        const { serviceId, date, notes, guestData, leadCaseId } = data;
 
         // 0. Handle Guest Data (Find or Create Client/Vehicle)
         if (!clientId || !vehicleId) {
@@ -221,8 +222,17 @@ export async function createAppointment(data: CreateAppointmentInput) {
                 serviceId: Number(serviceId),
                 status: 'REQUESTED',
                 notes: notes,
+                leadCaseId: leadCaseId,
             }
         });
+
+        // 5. Update LeadCase if applicable
+        if (leadCaseId) {
+            await prisma.leadCase.update({
+                where: { id: leadCaseId },
+                data: { status: 'SCHEDULED' }
+            });
+        }
 
         // Schedule WhatsApp Notifications (Async, don't block)
         WhatsAppService.scheduleAppointmentNotifications(appointment.id).catch(e =>
