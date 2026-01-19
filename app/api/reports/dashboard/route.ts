@@ -26,6 +26,15 @@ export async function GET() {
             }
         });
 
+        // 2b. KPI: Inbox Active Cases
+        const pendingInbox = await prisma.leadCase.count({
+            where: {
+                status: { in: ['NEW', 'IN_PROGRESS', 'WAITING_CUSTOMER', 'READY_TO_SCHEDULE'] }
+            }
+        });
+
+        // 3. KPI: Low Stock Items
+
         // 3. KPI: Low Stock Items
         // Prisma doesn't support comparing two columns directly in `where` easily in all DBs, 
         // but for SQLite/Postgres we usually use raw query or fetch and filter if dataset is small.
@@ -104,6 +113,7 @@ export async function GET() {
             kpi: {
                 salesToday: salesToday._sum.total || 0,
                 pendingOrders: pendingWOs,
+                pendingInbox: pendingInbox,
                 lowStock: lowStockCount
             },
             chart: chartData,

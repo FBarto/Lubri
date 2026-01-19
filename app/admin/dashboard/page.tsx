@@ -7,7 +7,7 @@ import StatCard from '../../components/dashboard/StatCard';
 import SalesChart from '../../components/dashboard/SalesChart';
 import TopProductsTable from '../../components/dashboard/TopProductsTable';
 import OpportunitiesWidget from '../../components/dashboard/OpportunitiesWidget';
-import { DollarSign, AlertCircle, ShoppingBag, TrendingUp } from 'lucide-react';
+import { DollarSign, AlertCircle, ShoppingBag, TrendingUp, Inbox } from 'lucide-react';
 
 export default function KanbanDashboard() {
     const [data, setData] = useState<any>(null);
@@ -36,12 +36,19 @@ export default function KanbanDashboard() {
                 </div>
             </header>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 shrink-0">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6 shrink-0">
                 <StatCard
                     title="Ventas Hoy (Estimado)"
                     value={new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(data?.kpi?.salesToday || 0)}
                     icon={<DollarSign />}
                     trend="+12% vs ayer"
+                    trendUp={true}
+                />
+                <StatCard
+                    title="Ventas Inbox"
+                    value={data?.kpi?.pendingInbox || 0}
+                    icon={<Inbox />}
+                    trend="Consultas abiertas"
                     trendUp={true}
                 />
                 <StatCard

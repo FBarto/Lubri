@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import { LeadCase, CaseChecklistItem, CaseLog, CaseStatus, LogChannel, ChecklistTemplate } from '@prisma/client';
-import { ArrowLeft, CheckCircle2, Circle, Copy, Send, Save, AlertCircle, Sparkles, CalendarClock, X } from 'lucide-react';
-import { updateChecklistItem, addCaseLog, updateCaseStatus, convertCaseToAppointment, getServicesList } from '../../lib/inbox-actions';
+import { ArrowLeft, CheckCircle2, Circle, Copy, Send, Save, AlertCircle, Sparkles, CalendarClock, X, MessageCircle } from 'lucide-react';
+import { updateChecklistItem, addCaseLog, updateCaseStatus, convertCaseToAppointment, getServicesList, generateWhatsAppLink } from '../../lib/inbox-actions';
 import { useRouter } from 'next/navigation';
 import SmartInput from './SmartInput';
 
@@ -104,6 +104,17 @@ export default function CaseDetailView({ leadCase, currentUserId }: CaseDetailPr
         if (res.success && res.data) {
             setLogs(prev => [res.data as any, ...prev]);
             setNewMessage('');
+        }
+        setIsSending(false);
+    };
+
+    const handleWhatsApp = async () => {
+        setIsSending(true);
+        const res = await generateWhatsAppLink(leadCase.id);
+        if (res.success && res.url) {
+            window.open(res.url, '_blank');
+        } else {
+            alert('Error generando link: ' + res.error);
         }
         setIsSending(false);
     };
@@ -290,6 +301,16 @@ export default function CaseDetailView({ leadCase, currentUserId }: CaseDetailPr
 
                 {/* Status Actions */}
                 <div className="flex flex-col gap-2">
+
+                    {/* WhatsApp Button */}
+                    <button
+                        onClick={handleWhatsApp}
+                        className="w-full py-3 bg-green-500 text-white rounded-xl font-bold shadow-sm hover:bg-green-600 transition-all active:scale-95 flex justify-center items-center gap-2"
+                    >
+                        <MessageCircle className="w-4 h-4" />
+                        Enviar Presupuesto
+                    </button>
+
                     {/* Convert Button */}
                     <button
                         onClick={openConvertModal}

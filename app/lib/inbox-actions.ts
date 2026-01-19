@@ -284,3 +284,59 @@ export async function convertCaseToAppointment(input: {
         return { success: false, error: 'Conversion failed' };
     }
 }
+
+export async function generateWhatsAppLink(caseId: string) {
+    try {
+        const leadCase = await prisma.leadCase.findUnique({
+            where: { id: caseId },
+            include: { checklist: true, client: true, vehicle: true }
+        });
+
+        if (!leadCase) return { success: false, error: 'Case not found' };
+        if (!leadCase.client?.phone) return { success: false, error: 'Client needs a phone number' };
+
+        // 1. Format Message
+        let message = `*Hola ${leadCase.client.name.split(' ')[0]}!* 👋\n`;
+        message += `Te escribimos de Lubri por: _${leadCase.summary}_\n\n`;
+
+        if (leadCase.vehicle) {
+            message += `🚗 *Vehículo:* ${leadCase.vehicle.model} (${leadCase.vehicle.plate})\n`;
+        }
+
+        const filledItems = leadCase.checklist
+            .filter(i => i.isDone && i.value)
+            .sort((a, b) => a.sortOrder - b.sortOrder);
+
+        if (filledItems.length > 0) {
+            message += `\n📋 *Detalle:*\n`;
+            filledItems.forEach(item => {
+                const val = item.value === 'true' ? 'Sí' : item.value;
+                if (val !== 'false' && val !== 'null') {
+                    message += `- ${item.label}: ${val}\n`;
+                }
+            });
+        }
+
+        message += `\nAvísanos si querés avanzar! 🔧`;
+
+        // 2. Log Action
+        await prisma.caseLog.create({
+            data: {
+                leadCaseId: caseId,
+                authorUserId: leadCase.assignedToUserId || 1,
+                channel: 'WHATSAPP',
+                message: 'Link de WhatsApp generado.'
+            }
+        });
+
+        // 3. Return URL
+        const cleanPhone = leadCase.client.phone.replace(/\D/g, '');
+        const url = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
+
+        revalidatePath(`/admin/inbox/${caseId}`);
+        return { success: true, url };
+
+    } catch (error) {
+        return { success: false, error: 'Failed' };
+    }
+}
