@@ -1,9 +1,9 @@
 
 import { prisma } from '@/lib/prisma';
-import CaseDetailView from '../../components/inbox/CaseDetailView';
+import CaseDetailView from '../../../components/inbox/CaseDetailView';
 import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
-import EmployeeLayout from '../../components/employee/EmployeeLayout';
+import EmployeeLayout from '../../../components/employee/EmployeeLayout';
 
 export default async function Page({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;

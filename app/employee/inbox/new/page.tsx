@@ -1,8 +1,8 @@
 
 import { auth } from '@/auth';
-import NewCaseForm from '../../components/inbox/NewCaseForm';
+import NewCaseForm from '../../../components/inbox/NewCaseForm';
 import { redirect } from 'next/navigation';
-import EmployeeLayout from '../../components/employee/EmployeeLayout';
+import EmployeeLayout from '../../../components/employee/EmployeeLayout';
 
 export default async function Page() {
     const session = await auth();
