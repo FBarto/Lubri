@@ -6,6 +6,7 @@ import ChecklistWidget from '../components/ChecklistWidget';
 import TimelineWidget from '../components/TimelineWidget';
 import QuickReplies from '../components/QuickReplies';
 import QuoteBuilder from '../components/QuoteBuilder';
+import LinkClientVehicleWidget from '../components/LinkClientVehicleWidget';
 import { prisma } from '@/lib/prisma';
 import Link from 'next/link';
 
@@ -61,37 +62,11 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
 
                 {/* LEFT COL: INFO */}
                 <div className="space-y-6">
-                    {/* Client Card */}
-                    <div className="bg-white p-4 rounded-lg shadow border">
-                        <h3 className="font-bold text-slate-700 mb-3 border-b pb-2">Cliente</h3>
-                        {caseItem.client ? (
-                            <div>
-                                <p className="font-semibold">{caseItem.client.name}</p>
-                                <p className="text-sm text-slate-500">{caseItem.client.phone}</p>
-                            </div>
-                        ) : (
-                            <div className="text-center py-4 bg-slate-50 rounded border border-dashed text-slate-400 text-sm">
-                                <p>Sin cliente asociado</p>
-                                <button className="mt-2 text-blue-600 hover:underline">Buscar / Crear</button>
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Vehicle Card */}
-                    <div className="bg-white p-4 rounded-lg shadow border">
-                        <h3 className="font-bold text-slate-700 mb-3 border-b pb-2">Vehículo</h3>
-                        {caseItem.vehicle ? (
-                            <div>
-                                <p className="font-semibold text-lg">{caseItem.vehicle.plate}</p>
-                                <p className="text-sm text-slate-500">{caseItem.vehicle.brand} {caseItem.vehicle.model}</p>
-                            </div>
-                        ) : (
-                            <div className="text-center py-4 bg-slate-50 rounded border border-dashed text-slate-400 text-sm">
-                                <p>Sin vehículo asociado</p>
-                                <button className="mt-2 text-blue-600 hover:underline">Buscar / Crear</button>
-                            </div>
-                        )}
-                    </div>
+                    <LinkClientVehicleWidget
+                        caseId={caseItem.id}
+                        linkedClient={caseItem.client}
+                        linkedVehicle={caseItem.vehicle}
+                    />
 
                     {/* Original Message */}
                     <div className="bg-white p-4 rounded-lg shadow border">
