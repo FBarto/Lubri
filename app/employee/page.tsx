@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { ShoppingCart, Wrench, Package, ArrowDownToLine, Calendar } from 'lucide-react';
+import { ShoppingCart, Wrench, Package, ArrowDownToLine, Calendar, Inbox } from 'lucide-react';
 import EmployeeLayout from '../components/employee/EmployeeLayout';
 
 import RestrictedPOS from '../components/employee/RestrictedPOS';
@@ -10,9 +10,10 @@ import StockViewer from '../components/employee/StockViewer';
 import StockIngest from '../components/employee/StockIngest';
 import KanbanBoard from '../components/dashboard/KanbanBoard';
 import OperationalKanban from '../components/employee/OperationalKanban';
+import EmployeeInbox from '../components/employee/EmployeeInbox';
 
 export default function EmployeePage() {
-    const [activeTab, setActiveTab] = useState<'VENDER' | 'SERVICIOS' | 'STOCK' | 'INGRESAR' | 'TURNOS' | 'TALLER'>('TALLER');
+    const [activeTab, setActiveTab] = useState<'VENDER' | 'SERVICIOS' | 'STOCK' | 'INGRESAR' | 'TURNOS' | 'TALLER' | 'INBOX'>('TALLER');
     const [cart, setCart] = useState<any[]>([]);
 
     const handleAddFromWizard = (newItem: any) => {
@@ -82,6 +83,16 @@ export default function EmployeePage() {
                     TURNOS
                 </button>
                 <button
+                    onClick={() => setActiveTab('INBOX')}
+                    className={`flex items-center gap-2 px-6 py-3 rounded-t-lg font-bold text-sm transition-all ${activeTab === 'INBOX'
+                        ? 'bg-sky-600 text-white shadow-sm'
+                        : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                        }`}
+                >
+                    <Inbox className="w-4 h-4" />
+                    INBOX
+                </button>
+                <button
                     onClick={() => setActiveTab('TALLER')}
                     className={`flex items-center gap-2 px-6 py-3 rounded-t-lg font-bold text-sm transition-all ${activeTab === 'TALLER'
                         ? 'bg-red-600 text-white shadow-sm'
@@ -102,6 +113,11 @@ export default function EmployeePage() {
                 {activeTab === 'TURNOS' && (
                     <div className="flex-1 overflow-hidden p-4">
                         <KanbanBoard title="Tablero de Turnos" showHeader={true} />
+                    </div>
+                )}
+                {activeTab === 'INBOX' && (
+                    <div className="flex-1 overflow-hidden">
+                        <EmployeeInbox />
                     </div>
                 )}
                 {activeTab === 'TALLER' && (

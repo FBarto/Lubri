@@ -194,3 +194,24 @@ export async function assignClientToCase(caseId: string, clientId: number, vehic
         return { success: false, error: 'Associate failed' };
     }
 }
+
+export async function getInboxCases() {
+    try {
+        const cases = await prisma.leadCase.findMany({
+            where: {
+                status: { not: 'CLOSED' }
+            },
+            include: {
+                assignedToUser: true,
+                client: true,
+                vehicle: true
+            },
+            orderBy: {
+                slaDueAt: 'asc'
+            }
+        });
+        return { success: true, data: cases };
+    } catch (error) {
+        return { success: false, error: 'Failed to fetch' };
+    }
+}
