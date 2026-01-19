@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Search, Plus, Edit, Trash2, AlertTriangle, CheckCircle, Package } from 'lucide-react';
+import { Search, Plus, Edit, Trash2, AlertTriangle, CheckCircle, Package, FileUp } from 'lucide-react';
+import Link from 'next/link';
 
 interface Product {
     id: number;
@@ -152,6 +153,12 @@ export default function AdminProductsPage() {
                     </h1>
                     <p className="text-slate-500">Administra tus productos ({totalRecords} total)</p>
                 </div>
+                <Link
+                    href="/admin/products/import"
+                    className="bg-slate-100 hover:bg-slate-200 text-slate-600 px-6 py-3 rounded-2xl font-bold transition-all flex items-center gap-2 shrink-0 border border-slate-200"
+                >
+                    <FileUp size={20} /> Importar CSV
+                </Link>
                 <button
                     onClick={() => { setShowModal(true); setEditingProduct(null); setFormData({ name: '', code: '', category: '', price: '', stock: '0', barcode: '' }); }}
                     className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-2xl font-bold transition-all shadow-lg hover:shadow-blue-200 active:scale-95 flex items-center gap-2 shrink-0"

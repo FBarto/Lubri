@@ -15,12 +15,14 @@ type Vehicle = {
     plate: string;
     brand?: string;
     model?: string;
+    type?: string;
     clientId: number;
 };
 
 type Service = {
     id: number;
     name: string;
+    category: string;
     price: number;
     duration: number;
 };
@@ -32,7 +34,7 @@ export default function BookAppointment() {
     const [error, setError] = useState('');
 
     // Data
-    const [phone, setPhone] = useState('');
+    const [phone, setPhone] = useState('+549');
     const [client, setClient] = useState<Client | null>(null);
     const [clientName, setClientName] = useState(''); // For new clients
 
@@ -144,6 +146,35 @@ export default function BookAppointment() {
             setLoading(false);
         }
     };
+
+    // Auto-Fill Logic
+    useEffect(() => {
+        const lookup = async () => {
+            if (plate.length >= 6 && !loading) {
+                // Debounce simple
+                try {
+                    const res = await fetch(`/api/vehicles/lookup?plate=${plate}`);
+                    const data = await res.json();
+                    if (data && data.id) {
+                        setVehicle(data);
+                        setVehicleInfo({ brand: data.brand || '', model: data.model || '' });
+                        // Also auto-link client if not set?
+                        if (data.client && !client) {
+                            setClient(data.client);
+                            setPhone(data.client.phone);
+                        }
+                    } else {
+                        // Not found, ensure we allow manual entry
+                        if (vehicle?.id) setVehicle(null); // Reset if was previously set to another real car
+                    }
+                } catch (e) {
+                    console.error(e);
+                }
+            }
+        };
+        const timer = setTimeout(lookup, 1000);
+        return () => clearTimeout(timer);
+    }, [plate]);
 
     // --- STEP 3: SERVICE ---
     const fetchServices = async () => {
@@ -333,19 +364,34 @@ export default function BookAppointment() {
                         <p className="text-slate-500 mb-6">Seleccioná qué necesitás realizar.</p>
 
                         <div className="space-y-3">
-                            {services.map(s => (
-                                <button
-                                    key={s.id}
-                                    onClick={() => selectService(s)}
-                                    className="w-full p-4 rounded-xl border border-slate-200 flex justify-between items-center hover:border-blue-500 hover:bg-blue-50 transition-all text-left"
-                                >
-                                    <div>
-                                        <span className="block font-bold text-slate-800 text-lg">{s.name}</span>
-                                        <span className="text-sm text-slate-500">{s.duration} min</span>
-                                    </div>
-                                    <span className="font-black text-red-600 text-lg">${s.price}</span>
-                                </button>
-                            ))}
+                            {services
+                                .filter(s => {
+                                    if (!vehicle?.type) return true; // Show all if unknown
+                                    // Logic: If car is AUTO, hide MOTO. If car is MOTO, hide AUTO.
+                                    // Assuming Service Category: 'AUTO', 'MOTO', 'GENERAL'
+                                    const vType = vehicle.type.toUpperCase();
+                                    const sCat = s.category.toUpperCase();
+
+                                    if (sCat === 'GENERAL') return true;
+                                    if (vType === 'AUTO' && sCat === 'MOTO') return false;
+                                    if (vType === 'MOTO' && sCat === 'AUTO') return false;
+                                    if (vType === 'CAMIONETA' && sCat === 'MOTO') return false;
+
+                                    return true;
+                                })
+                                .map(s => (
+                                    <button
+                                        key={s.id}
+                                        onClick={() => selectService(s)}
+                                        className="w-full p-4 rounded-xl border border-slate-200 flex justify-between items-center hover:border-blue-500 hover:bg-blue-50 transition-all text-left"
+                                    >
+                                        <div>
+                                            <span className="block font-bold text-slate-800 text-lg">{s.name}</span>
+                                            <span className="text-sm text-slate-500">{s.duration} min</span>
+                                        </div>
+                                        <span className="font-black text-red-600 text-lg">${s.price}</span>
+                                    </button>
+                                ))}
                         </div>
                     </div>
                 )}

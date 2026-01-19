@@ -39,7 +39,14 @@ model Vehicle {
   appointments Appointment[]
   workOrders   WorkOrder[]
   
+  
   specifications Json?   // Learned preferences: oil type, filters, etc.
+  
+  // Predictive Maintenance Fields
+  averageDailyKm      Float?    @default(0)
+  lastServiceDate     DateTime?
+  lastServiceMileage  Int?
+  predictedNextService DateTime? // The "Golden Date"
 }
 
 model Service {

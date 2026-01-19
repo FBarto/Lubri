@@ -7,6 +7,7 @@ import ServiceModal from '@/app/components/pos/ServiceModal';
 import CheckoutModal from '@/app/components/pos/CheckoutModal';
 import PriceReasonModal from './PriceReasonModal';
 import CancellationModal from './CancellationModal';
+import DailyCloseModal from '@/app/components/pos/DailyCloseModal';
 import { useSession } from 'next-auth/react';
 
 interface RestrictedPOSProps {
@@ -28,6 +29,7 @@ export default function RestrictedPOS({ cart, setCart }: RestrictedPOSProps) {
     const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
     const [isPriceModalOpen, setIsPriceModalOpen] = useState(false);
     const [isCancellationModalOpen, setIsCancellationModalOpen] = useState(false);
+    const [isDailyCloseOpen, setIsDailyCloseOpen] = useState(false);
     const [priceEditTargetId, setPriceEditTargetId] = useState<string | null>(null);
     const [priceEditCurrentPrice, setPriceEditCurrentPrice] = useState(0);
 
@@ -68,10 +70,24 @@ export default function RestrictedPOS({ cart, setCart }: RestrictedPOSProps) {
 
     const addToCart = (item: any, serviceData: any = {}) => {
         setCart(prev => {
-            const existing = prev.find(i => i.id === item.id && i.type === item.type && /* If creating new service instance, don't merge based only on ID if notes differ? For simplicity POS logic usually merges products */ item.type === 'PRODUCT');
+            const existing = prev.find(i => i.id === item.id && i.type === item.type && item.type === 'PRODUCT');
 
+            // Stock Check for Existing Item
             if (existing && item.type === 'PRODUCT') {
-                return prev.map(i => i.uniqueId === existing.uniqueId ? { ...i, quantity: i.quantity + 1, subtotal: (i.quantity + 1) * i.price } : i);
+                const newQty = existing.quantity + 1;
+                if (existing.stock !== undefined && newQty > existing.stock) {
+                    if (!confirm(`⚠️ STOCK BAJO: Solo quedan ${existing.stock} unidades de "${existing.name}".\n\n¿Agregar igual y dejar stock negativo?`)) {
+                        return prev; // User cancelled
+                    }
+                }
+                return prev.map(i => i.uniqueId === existing.uniqueId ? { ...i, quantity: newQty, subtotal: newQty * i.price } : i);
+            }
+
+            // Stock Check for New Item
+            if (item.type === 'PRODUCT' && item.stock !== undefined && 1 > item.stock) {
+                if (!confirm(`⚠️ STOCK BAJO: Solo quedan ${item.stock} unidades de "${item.name}".\n\n¿Agregar igual y dejar stock negativo?`)) {
+                    return prev;
+                }
             }
 
             return [...prev, {
@@ -91,6 +107,15 @@ export default function RestrictedPOS({ cart, setCart }: RestrictedPOSProps) {
     const handleUpdateQuantity = (uniqueId: string, q: number) => {
         setCart(prev => prev.map(item => {
             if (item.uniqueId === uniqueId) {
+                // Stock Check
+                if (item.type === 'PRODUCT' && item.stock !== undefined && q > item.stock) {
+                    // Only warn if increasing (to avoid annoying loops when decreasing)
+                    if (q > item.quantity) {
+                        if (!confirm(`⚠️ STOCK BAJO: Solo quedan ${item.stock} unidades.\n\n¿Cambiar a ${q} y dejar stock negativo?`)) {
+                            return item; // Keep old quantity
+                        }
+                    }
+                }
                 return { ...item, quantity: q, subtotal: q * item.price };
             }
             return item;
@@ -242,6 +267,7 @@ export default function RestrictedPOS({ cart, setCart }: RestrictedPOSProps) {
                         restrictedMode={true}
                         onRequestPriceEdit={handleRequestPriceEdit}
                         onCancelSale={handleRequestCancellation}
+                        onShowDailyClose={() => setIsDailyCloseOpen(true)}
                     />
                 </div>
 
@@ -276,6 +302,11 @@ export default function RestrictedPOS({ cart, setCart }: RestrictedPOSProps) {
                 isOpen={isCancellationModalOpen}
                 onClose={() => setIsCancellationModalOpen(false)}
                 onConfirm={handleConfirmCancellation}
+            />
+
+            <DailyCloseModal
+                isOpen={isDailyCloseOpen}
+                onClose={() => setIsDailyCloseOpen(false)}
             />
         </div>
     );

@@ -6,6 +6,7 @@ import StockAlertWidget from '../../components/dashboard/StockAlertWidget';
 import StatCard from '../../components/dashboard/StatCard';
 import SalesChart from '../../components/dashboard/SalesChart';
 import TopProductsTable from '../../components/dashboard/TopProductsTable';
+import OpportunitiesWidget from '../../components/dashboard/OpportunitiesWidget';
 import { DollarSign, AlertCircle, ShoppingBag, TrendingUp } from 'lucide-react';
 
 export default function KanbanDashboard() {
@@ -57,6 +58,11 @@ export default function KanbanDashboard() {
                     trend={data?.kpi?.lowStock > 0 ? "Reponer urgente" : "Stock saludable"}
                     trendUp={data?.kpi?.lowStock === 0}
                 />
+            </div>
+
+            {/* AI Opportunities Widget */}
+            <div className="mb-8 shrink-0">
+                <OpportunitiesWidget />
             </div>
 
             <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-6 overflow-hidden min-h-0">
