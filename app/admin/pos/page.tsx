@@ -132,11 +132,12 @@ export default function POSPage() {
                 setIsCheckoutOpen(false);
                 alert('Venta Exitosa!');
             } else {
-                alert('Error al guardar venta');
+                const data = await res.json();
+                alert(`Error al guardar venta: ${data.error || 'Error desconocido'}`);
             }
-        } catch (e) {
+        } catch (e: any) {
             console.error(e);
-            alert('Error de conexión');
+            alert(`Error de conexión: ${e.message}`);
         }
     };
 

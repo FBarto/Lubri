@@ -4,6 +4,7 @@ import { processSale } from '@/app/lib/business-actions';
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
+        console.log('API Sales Payload:', JSON.stringify(body, null, 2));
 
         // Map API body to action input if necessary
         // The script sends: clientId, paymentMethod, total, items: [{ type, id, name, price, quantity, workOrderId }]
