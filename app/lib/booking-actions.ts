@@ -86,6 +86,28 @@ export async function createVehicle(data: CreateVehicleInput) {
     }
 }
 
+export async function updateVehicle(id: number, data: Partial<CreateVehicleInput>) {
+    try {
+        const vehicle = await prisma.vehicle.update({
+            where: { id },
+            data: {
+                brand: data.brand,
+                model: data.model,
+                type: data.type,
+                notes: data.notes,
+                mileage: data.mileage,
+                clientId: data.clientId
+            }
+        });
+
+        safeRevalidate('/admin/vehicles');
+        return { success: true, vehicle };
+    } catch (error: any) {
+        console.error('Error updating vehicle:', error);
+        return { success: false, error: error.message };
+    }
+}
+
 export async function createAppointment(data: CreateAppointmentInput) {
     try {
         let { clientId, vehicleId } = data;
