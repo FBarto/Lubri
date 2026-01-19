@@ -62,6 +62,14 @@ export default function AdminLayout({
                         <span>Dashboard</span>
                     </Link>
                     <Link
+                        href="/admin/inbox"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                        className="flex items-center space-x-3 p-3 rounded-xl hover:bg-slate-800 transition-all border border-transparent hover:border-slate-700"
+                    >
+                        <span>📥</span>
+                        <span>Inbox Romi</span>
+                    </Link>
+                    <Link
                         href="/admin/reports"
                         onClick={() => setIsMobileMenuOpen(false)}
                         className="flex items-center space-x-3 p-3 rounded-xl hover:bg-slate-800 transition-all border border-transparent hover:border-slate-700"
@@ -154,6 +162,6 @@ export default function AdminLayout({
             <main className="flex-1 p-4 md:p-8 max-w-7xl mx-auto w-full pt-20 md:pt-8 bg-slate-50 min-h-screen">
                 {children}
             </main>
-        </div>
+        </div >
     );
 }

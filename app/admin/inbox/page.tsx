@@ -1,73 +1,128 @@
 
-import { getLeadCases } from '@/app/lib/actions/inbox-actions';
+import { prisma } from '@/lib/prisma';
 import Link from 'next/link';
+import { Badge } from 'lucide-react'; // Placeholder - using generic or custom badge
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 
+// Simple Badge component since we don't have a UI lib installed
+const StatusBadge = ({ status }: { status: string }) => {
+    const colors: any = {
+        NEW: 'bg-blue-100 text-blue-700',
+        IN_PROGRESS: 'bg-amber-100 text-amber-700',
+        WAITING_CUSTOMER: 'bg-purple-100 text-purple-700',
+        READY_TO_SCHEDULE: 'bg-emerald-100 text-emerald-700',
+        SCHEDULED: 'bg-green-100 text-green-700',
+        QUOTED: 'bg-indigo-100 text-indigo-700',
+        WON: 'bg-teal-100 text-teal-700',
+        LOST: 'bg-red-100 text-red-700',
+        CLOSED: 'bg-gray-100 text-gray-700',
+    };
+    return (
+        <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${colors[status] || 'bg-gray-100'}`}>
+            {status.replace(/_/g, ' ')}
+        </span>
+    );
+};
+
 export default async function InboxPage() {
-    const cases = await getLeadCases({ status: undefined }); // Fetch all or filter by 'OPEN' logic later
+    const cases = await prisma.leadCase.findMany({
+        where: {
+            status: { not: 'CLOSED' } // Default filter
+        },
+        include: {
+            assignedToUser: true,
+            client: true,
+            vehicle: true
+        },
+        orderBy: {
+            slaDueAt: 'asc' // Urgent first
+        }
+    });
 
     return (
-        <div className="p-6 space-y-6">
-            <div className="flex justify-between items-center">
-                <h1 className="text-2xl font-bold text-slate-800">Inbox Operativo (Romi)</h1>
-                <Link href="/admin/inbox/new" className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+        <div className="p-6 max-w-7xl mx-auto">
+            <div className="flex justify-between items-center mb-8">
+                <div>
+                    <h1 className="text-3xl font-black text-slate-900 tracking-tight">Inbox Operativo</h1>
+                    <p className="text-slate-500">Gestión de Turnos y Presupuestos (Romi)</p>
+                </div>
+                <Link
+                    href="/admin/inbox/new"
+                    className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-xl shadow-lg transition-all active:scale-95"
+                >
                     + Nuevo Caso
                 </Link>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {cases.length === 0 && (
-                    <div className="text-slate-500 col-span-full text-center py-10">
-                        No hay casos activos.
-                    </div>
-                )}
-                {cases.map((c) => (
-                    <Link key={c.id} href={`/admin/inbox/${c.id}`} className="block">
-                        <div className={`border rounded-lg p-4 bg-white shadow-sm hover:shadow-md transition-shadow relative overflow-hidden`}>
-                            {/* SLA Indicator Line */}
-                            <div className={`absolute left-0 top-0 bottom-0 w-1 ${new Date() > c.slaDueAt ? 'bg-red-500' : 'bg-green-500'
-                                }`} />
-
-                            <div className="flex justify-between items-start mb-2 pl-3">
-                                <span className={`px-2 py-0.5 text-xs rounded-full font-bold ${c.priority === 'HIGH' ? 'bg-red-100 text-red-700' :
-                                        c.priority === 'MEDIUM' ? 'bg-yellow-100 text-yellow-800' :
-                                            'bg-green-100 text-green-800'
-                                    }`}>
-                                    {c.priority}
-                                </span>
-                                <span className="text-xs text-slate-500 max-w-[100px] truncate text-right">
-                                    {formatDistanceToNow(c.createdAt, { addSuffix: true, locale: es })}
-                                </span>
-                            </div>
-
-                            <h3 className="font-semibold text-slate-900 pl-3 mb-1 truncate">{c.summary}</h3>
-                            <p className="text-sm text-slate-500 pl-3 mb-3 uppercase tracking-wider text-xs">{c.serviceCategory}</p>
-
-                            <div className="pl-3 border-t pt-2 mt-2 text-sm text-slate-600 space-y-1">
-                                <div className="flex items-center gap-2">
-                                    <span className="w-4 h-4 flex items-center justify-center bg-slate-100 rounded-full text-xs">👤</span>
-                                    <span>{c.client?.name || 'Prospecto'}</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <span className="w-4 h-4 flex items-center justify-center bg-slate-100 rounded-full text-xs">🚗</span>
-                                    <span>{c.vehicle?.plate || '-'}</span>
-                                </div>
-                            </div>
-
-                            <div className="pl-3 mt-3 flex gap-2">
-                                <span className={`text-xs px-2 py-1 rounded bg-slate-100 text-slate-600`}>
-                                    {c.status}
-                                </span>
-                                {c.assignedToUser && (
-                                    <span className="text-xs px-2 py-1 rounded bg-blue-50 text-blue-700">
-                                        @{c.assignedToUser.username}
-                                    </span>
-                                )}
-                            </div>
-                        </div>
-                    </Link>
-                ))}
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <table className="w-full text-left">
+                    <thead className="bg-slate-50 border-b border-slate-200">
+                        <tr>
+                            <th className="p-4 font-bold text-slate-500 text-xs uppercase tracking-wider">Estado</th>
+                            <th className="p-4 font-bold text-slate-500 text-xs uppercase tracking-wider">SLA</th>
+                            <th className="p-4 font-bold text-slate-500 text-xs uppercase tracking-wider">Resumen / Cliente</th>
+                            <th className="p-4 font-bold text-slate-500 text-xs uppercase tracking-wider">Categoría</th>
+                            <th className="p-4 font-bold text-slate-500 text-xs uppercase tracking-wider">Asignado</th>
+                            <th className="p-4 font-bold text-slate-500 text-xs uppercase tracking-wider">Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                        {cases.length === 0 && (
+                            <tr>
+                                <td colSpan={6} className="p-8 text-center text-slate-400">
+                                    No hay casos activos. ¡Buen trabajo! 💪
+                                </td>
+                            </tr>
+                        )}
+                        {cases.map(c => {
+                            const isOverdue = new Date() > c.slaDueAt;
+                            return (
+                                <tr key={c.id} className="hover:bg-slate-50 transition-colors group">
+                                    <td className="p-4">
+                                        <StatusBadge status={c.status} />
+                                    </td>
+                                    <td className="p-4">
+                                        <span className={`font-mono font-bold text-xs ${isOverdue ? 'text-red-600 animate-pulse' : 'text-slate-500'}`}>
+                                            {formatDistanceToNow(c.slaDueAt, { addSuffix: true, locale: es })}
+                                        </span>
+                                    </td>
+                                    <td className="p-4">
+                                        <p className="font-bold text-slate-800">{c.summary}</p>
+                                        <p className="text-xs text-slate-400">
+                                            {c.client ? c.client.name : 'Sin cliente'} • {c.vehicle ? `${c.vehicle.brand} ${c.vehicle.model}` : 'Sin vehículo'}
+                                        </p>
+                                    </td>
+                                    <td className="p-4">
+                                        <span className="text-xs font-bold text-slate-600 bg-slate-100 px-2 py-1 rounded">
+                                            {c.serviceCategory}
+                                        </span>
+                                    </td>
+                                    <td className="p-4">
+                                        {c.assignedToUser ? (
+                                            <div className="flex items-center gap-2">
+                                                <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold border border-blue-200">
+                                                    {c.assignedToUser.username[0].toUpperCase()}
+                                                </div>
+                                                <span className="text-sm font-medium">{c.assignedToUser.username}</span>
+                                            </div>
+                                        ) : (
+                                            <span className="text-slate-300 text-xs italic">Sin asignar</span>
+                                        )}
+                                    </td>
+                                    <td className="p-4">
+                                        <Link
+                                            href={`/admin/inbox/${c.id}`}
+                                            className="text-blue-600 font-bold text-sm hover:underline opacity-0 group-hover:opacity-100 transition-opacity"
+                                        >
+                                            Ver Detalle →
+                                        </Link>
+                                    </td>
+                                </tr>
+                            );
+                        })}
+                    </tbody>
+                </table>
             </div>
         </div>
     );

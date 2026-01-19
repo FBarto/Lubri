@@ -278,6 +278,7 @@ model WorkOrderAttachment {
   createdAt   DateTime @default(now())
 }
 
+
 // --- REDES / INBOX MODULE ---
 
 enum CaseType {
