@@ -1,9 +1,9 @@
 
 import Link from 'next/link';
-import { Clock, CheckCircle2, Award, Zap, Shield, MapPin, Phone, MessageCircle, Droplet, Disc, ChevronDown, HelpCircle, Bell, X, User } from 'lucide-react';
+import { Clock, CheckCircle2, Award, Zap, Shield, MapPin, Phone, MessageCircle, Droplet, Disc, ChevronDown, Bell, X, User } from 'lucide-react';
 import GoogleReviews from './components/GoogleReviews';
 
-export default function Home() {
+export default async function Home() {
   return (
     <div className="min-h-screen bg-neutral-950 text-white font-sans selection:bg-red-600 selection:text-white overflow-x-hidden">
 
@@ -49,7 +49,7 @@ export default function Home() {
             <div className="flex flex-col md:flex-row gap-4 justify-center items-center">
               <Link
                 href="/book"
-                className="group relative bg-red-600 hover:bg-red-700 text-white px-10 py-5 rounded-lg font-black text-xl transition-all shadow-[0_0_30px_-5px_bg-red-600] hover:shadow-[0_0_50px_-10px_#dc2626] active:scale-95 uppercase italic tracking-wider clip-path-slant"
+                className="group relative bg-red-600 hover:bg-red-700 text-white px-10 py-5 rounded-lg font-black text-xl transition-all shadow-[0_0_30px_-5px_rgba(220,38,38,0.5)] hover:shadow-[0_0_50px_-10px_#dc2626] active:scale-95 uppercase italic tracking-wider clip-path-slant"
               >
                 <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out clip-path-slant"></div>
                 <span className="relative">Sacar Turno Ahora</span>
@@ -235,7 +235,7 @@ export default function Home() {
         </div>
 
         <div className="border-t border-neutral-900 pt-8 text-center text-neutral-600 text-sm">
-          <p>&copy; {new Date().getFullYear()} FB Lubricentro y Baterías. Todos los derechos reservados.</p>
+          <p>&copy; 2026 FB Lubricentro y Baterías. Todos los derechos reservados.</p>
           <div className="mt-2 text-xs">
             <Link href="/login" className="hover:text-neutral-400 transition-colors">Acceso Interno</Link>
           </div>

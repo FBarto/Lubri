@@ -8,7 +8,7 @@ import type { GoogleReview } from '@/lib/google-reviews';
 export default function ReviewsCarousel({ reviews }: { reviews: GoogleReview[] }) {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isPaused, setIsPaused] = useState(false);
-    const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const timeoutRef = useRef<any>(null);
 
     const nextSlide = () => {
         setCurrentIndex((prev) => (prev + 1) % reviews.length);
@@ -67,7 +67,7 @@ export default function ReviewsCarousel({ reviews }: { reviews: GoogleReview[] }
                                             <img src={review.profile_photo_url} alt={review.author_name} className="w-20 h-20 rounded-full border-4 border-neutral-700 shadow-lg" />
                                         ) : (
                                             <div className="w-20 h-20 rounded-full bg-gradient-to-br from-red-600 to-red-800 flex items-center justify-center font-bold text-3xl text-white border-4 border-neutral-700 shadow-lg">
-                                                {review.author_name[0]}
+                                                {review.author_name ? review.author_name[0] : 'C'}
                                             </div>
                                         )}
                                     </div>
