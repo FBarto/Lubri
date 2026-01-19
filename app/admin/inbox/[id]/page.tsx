@@ -47,7 +47,7 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
                 <div className="flex gap-2">
                     {/* Actions will go here (Close, Convert, etc) */}
                     <button className="px-4 py-2 bg-slate-800 text-white rounded shadow hover:bg-slate-700">Guardar Cambios</button>
-                    {caseItem.status !== 'WON' && caseItem.status !== 'CANCELLED' && (
+                    {caseItem.status !== 'WON' && caseItem.status !== 'LOST' && caseItem.status !== 'CLOSED' && (
                         <Link
                             href={`/admin/calendar?caseId=${caseItem.id}&clientId=${caseItem.clientId || ''}&vehicleId=${caseItem.vehicleId || ''}`}
                             className="px-4 py-2 bg-blue-600 text-white rounded shadow hover:bg-blue-700 font-bold"
