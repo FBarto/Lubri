@@ -138,6 +138,11 @@ export default function BookAppointment() {
                 fetchServices();
                 setStep(3);
             } else {
+                if (data.error === 'A vehicle with this plate already exists') {
+                    // It exists, so let's just use it!
+                    await checkVehicle();
+                    return;
+                }
                 setError(data.error);
             }
         } catch (e: any) {

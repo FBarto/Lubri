@@ -29,10 +29,12 @@ export default function Home() {
 
             <Link
               href="/login"
-              className="absolute top-6 right-6 md:top-10 md:right-10 px-6 py-2 rounded-full border border-white/20 bg-white/5 backdrop-blur-md text-white font-bold text-sm uppercase tracking-wider hover:bg-white/10 hover:border-red-500 transition-all duration-300 z-50 flex items-center gap-2 group"
+              className="absolute top-6 right-6 md:top-10 md:right-10 group px-5 py-2.5 rounded-full bg-black/30 hover:bg-black/50 backdrop-blur-xl border border-white/10 hover:border-red-500/50 transition-all duration-300 shadow-[0_4px_20px_-5px_rgba(0,0,0,0.5)] hover:shadow-[0_4px_25px_-5px_rgba(220,38,38,0.3)] z-50 flex items-center gap-2 overflow-hidden text-sm font-medium tracking-wide text-white/90"
             >
-              <span>Ingresar</span>
-              <div className="w-2 h-2 rounded-full bg-red-600 group-hover:animate-pulse"></div>
+              <div className="p-1 bg-white/10 rounded-full group-hover:bg-red-600 transition-colors duration-300">
+                <User size={14} className="text-white" />
+              </div>
+              <span className="group-hover:text-white transition-colors">Ingresar</span>
             </Link>
 
             <h1 className="text-4xl md:text-6xl lg:text-8xl font-black italic tracking-tighter text-white mb-6 leading-[0.9]">
