@@ -21,6 +21,7 @@ model Client {
   appointments Appointment[]
   workOrders   WorkOrder[]
   sales        Sale[]
+  leadCases    LeadCase[]
 }
 
 model Vehicle {
@@ -38,6 +39,8 @@ model Vehicle {
   
   appointments Appointment[]
   workOrders   WorkOrder[]
+  leadCases    LeadCase[]
+  
   
   
   specifications Json?   // Learned preferences: oil type, filters, etc.
@@ -88,6 +91,9 @@ model Appointment {
 
   whatsappMessages WhatsAppMessage[]
   whatsappTokens   WhatsAppToken[]
+  
+  leadCaseId    String?   @unique
+  leadCase      LeadCase? @relation(fields: [leadCaseId], references: [id])
 }
 
 model WorkOrder {
@@ -217,6 +223,10 @@ model User {
   auditLogs     AuditLog[]
   sales         Sale[]
   workOrders    WorkOrder[]
+  
+  assignedCases LeadCase[]
+  createdLogs   CaseLog[]
+  notifications Notification[]
 }
 
 model AuditLog {
@@ -266,4 +276,178 @@ model WorkOrderAttachment {
   workOrder   WorkOrder @relation(fields: [workOrderId], references: [id])
   
   createdAt   DateTime @default(now())
+}
+
+// --- REDES / INBOX MODULE ---
+
+enum CaseType {
+  APPOINTMENT
+  QUOTE
+}
+
+enum CaseStatus {
+  NEW
+  IN_PROGRESS
+  WAITING_CUSTOMER
+  READY_TO_SCHEDULE
+  SCHEDULED
+  QUOTED
+  WON
+  LOST
+  CLOSED
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum ServiceCategory {
+  TYRES
+  BATTERY
+  OIL_SERVICE
+  OTHER
+}
+
+enum ChecklistTemplate {
+  TYRES
+  BATTERY
+  OIL_SERVICE
+  GENERIC
+}
+
+enum LogChannel {
+  INTERNAL_NOTE
+  WHATSAPP
+  CALL
+  IN_PERSON
+}
+
+enum QuoteStatus {
+  DRAFT
+  SENT
+  ACCEPTED
+  REJECTED
+}
+
+enum InputType {
+  TEXT
+  NUMBER
+  MONEY
+  BOOLEAN
+  SELECT
+  MULTISELECT
+}
+
+model LeadCase {
+  id              String          @id @default(cuid())
+  type            CaseType
+  status          CaseStatus      @default(NEW)
+  priority        Priority        @default(MEDIUM)
+  serviceCategory ServiceCategory
+  summary         String
+  notes           String?
+  
+  slaDueAt        DateTime
+  lastContactAt   DateTime?
+  
+  // Relations
+  assignedToUserId Int?
+  assignedToUser   User?   @relation(fields: [assignedToUserId], references: [id])
+  
+  clientId        Int?
+  client          Client? @relation(fields: [clientId], references: [id])
+  
+  vehicleId       Int?
+  vehicle         Vehicle? @relation(fields: [vehicleId], references: [id])
+  
+  intakeRawText   String?
+  intakeParsedJson Json?
+  
+  closeReason     String?
+  closeDetail     String?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  logs            CaseLog[]
+  quote           Quote?
+  checklist       CaseChecklistItem[]
+  appointment     Appointment?
+}
+
+model CaseLog {
+  id           String      @id @default(cuid())
+  leadCaseId   String
+  leadCase     LeadCase    @relation(fields: [leadCaseId], references: [id])
+  
+  authorUserId Int
+  authorUser   User        @relation(fields: [authorUserId], references: [id])
+  
+  channel      LogChannel
+  message      String
+  
+  createdAt    DateTime    @default(now())
+}
+
+model Quote {
+  id           String      @id @default(cuid())
+  leadCaseId   String      @unique
+  leadCase     LeadCase    @relation(fields: [leadCaseId], references: [id])
+  
+  subtotal     Float       @default(0)
+  discount     Float?      @default(0)
+  total        Float       @default(0)
+  paymentTerms String?
+  validUntil   DateTime?
+  status       QuoteStatus @default(DRAFT)
+  
+  items        QuoteItem[]
+  
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+}
+
+model QuoteItem {
+  id          String  @id @default(cuid())
+  quoteId     String
+  quote       Quote   @relation(fields: [quoteId], references: [id])
+  
+  description String
+  quantity    Float
+  unitPrice   Float
+  lineTotal   Float
+  kind        String  @default("PRODUCT") // PRODUCT | LABOR | OTHER
+}
+
+model CaseChecklistItem {
+  id           String            @id @default(cuid())
+  leadCaseId   String
+  leadCase     LeadCase          @relation(fields: [leadCaseId], references: [id])
+  
+  templateKey  ChecklistTemplate
+  key          String
+  label        String
+  value        String?
+  inputType    InputType
+  options      Json?             // Array of strings for SELECT
+  isRequired   Boolean           @default(false)
+  isDone       Boolean           @default(false)
+  sortOrder    Int               @default(0)
+  
+  createdAt    DateTime          @default(now())
+}
+
+model Notification {
+  id           String   @id @default(cuid())
+  userId       Int
+  user         User     @relation(fields: [userId], references: [id])
+  
+  leadCaseId   String?
+  type         String   // SLA_DUE | CASE_ASSIGNED | REMINDER_DUE
+  message      String
+  isRead       Boolean  @default(false)
+  
+  createdAt    DateTime @default(now())
 }
