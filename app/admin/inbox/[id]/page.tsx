@@ -5,6 +5,7 @@ import { auth } from '@/auth';
 import ChecklistWidget from '../components/ChecklistWidget';
 import TimelineWidget from '../components/TimelineWidget';
 import QuickReplies from '../components/QuickReplies';
+import QuoteBuilder from '../components/QuoteBuilder';
 import { prisma } from '@/lib/prisma';
 import Link from 'next/link';
 
@@ -104,6 +105,7 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
                 {/* CENTER COL: ACTION */}
                 <div className="space-y-6">
                     <QuickReplies category={caseItem.serviceCategory} />
+                    <QuoteBuilder caseId={caseItem.id} initialQuote={caseItem.quote} />
                     <TimelineWidget
                         logs={caseItem.logs}
                         caseId={caseItem.id}
