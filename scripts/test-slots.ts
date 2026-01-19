@@ -35,6 +35,7 @@ function createAppointment(start: string, duration: number = 30): Appointment & 
         calendarEventId: null,
         reminderAt: null,
         reminderSentAt: null,
+        leadCaseId: null,
 
         service: {
             ...mockService,
