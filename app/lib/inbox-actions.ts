@@ -524,3 +524,45 @@ export async function searchProductsForQuote(query: string) {
         return { success: false, error: 'Search Failed' };
     }
 }
+
+export async function getInboxStats(year: number, month: number) {
+    try {
+        const startDate = new Date(year, month - 1, 1);
+        const endDate = new Date(year, month, 0, 23, 59, 59);
+
+        const cases = await prisma.leadCase.findMany({
+            where: {
+                createdAt: {
+                    gte: startDate,
+                    lte: endDate
+                }
+            },
+            select: { status: true }
+        });
+
+        const total = cases.length;
+        const won = cases.filter(c => c.status === 'WON').length;
+        const lost = cases.filter(c => c.status === 'LOST').length;
+        const conversionRate = total > 0 ? (won / total) * 100 : 0;
+
+        // Status Distribution
+        const distribution = cases.reduce((acc, curr) => {
+            acc[curr.status] = (acc[curr.status] || 0) + 1;
+            return acc;
+        }, {} as Record<string, number>);
+
+        return {
+            success: true,
+            data: {
+                total,
+                won,
+                lost,
+                conversionRate,
+                distribution
+            }
+        };
+
+    } catch (e) {
+        return { success: false, error: 'Stats Failed' };
+    }
+}
