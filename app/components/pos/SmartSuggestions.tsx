@@ -9,7 +9,7 @@ interface SmartSuggestionsProps {
 
 export default function SmartSuggestions({ cart, allItems, onAddItem }: SmartSuggestionsProps) {
     // 1. Analyze Cart Intent
-    const hasOil = cart.some(i => i.name.toLowerCase().includes('aceite') || i.name.toLowerCase().includes('sintetico'));
+    const hasOil = cart.some(i => i.name.toLowerCase().includes('aceite') || i.name.toLowerCase().includes('sintetico') || i.name.toLowerCase().includes('elaion'));
     const hasFilter = cart.some(i => i.name.toLowerCase().includes('filtro'));
     const hasBattery = cart.some(i => i.name.toLowerCase().includes('bateria') || i.name.toLowerCase().includes('moura'));
     const hasBulb = cart.some(i => i.name.toLowerCase().includes('lampara'));
@@ -17,22 +17,46 @@ export default function SmartSuggestions({ cart, allItems, onAddItem }: SmartSug
     // 2. Generate Suggestions
     const suggestions: any[] = [];
 
-    // Rule: Oil -> Suggest Oil Filter (if not present)
-    if (hasOil && !hasFilter) {
-        // Find generic or common filters
-        const filters = allItems.filter(i => i.name.toLowerCase().includes('filtro aceite') && i.stock > 0).slice(0, 2);
-        suggestions.push(...filters);
+    // Rule: Oil -> Suggest Oil Filter + Coolant + Gearbox Oil + Additives
+    if (hasOil) {
+        // 1. Filters (High Priority)
+        if (!hasFilter) {
+            const filters = allItems.filter(i => i.name.toLowerCase().includes('filtro aceite') && i.stock > 0).slice(0, 2);
+            suggestions.push(...filters);
+        }
+
+        // 2. Coolant (Add-on)
+        const coolants = allItems.filter(i =>
+            (i.name.toLowerCase().includes('glacelf') || i.name.toLowerCase().includes('refrigerante')) && i.stock > 0
+        ).slice(0, 1);
+        suggestions.push(...coolants);
+
+        // 3. Gearbox Oil specific (75w90 etc)
+        const gearOil = allItems.filter(i =>
+            (i.name.toLowerCase().includes('75w') || i.name.toLowerCase().includes('caja')) &&
+            i.stock > 0
+        ).slice(0, 1);
+        suggestions.push(...gearOil);
     }
 
     // Rule: Battery -> Suggest Alternator Check Service?
     if (hasBattery) {
-        // Find existing service or generic check
         const check = allItems.find(i => i.type === 'SERVICE' && i.name.toLowerCase().includes('control carga'));
         if (check) suggestions.push(check);
     }
 
-    // Rule: Bulb -> Suggest another one (pair)?
-    // Simple logic: Cross-sell windshield fluid if cart value > X?
+    // General Add-ons (if cart is not empty)
+    if (cart.length > 0) {
+        // Always good to suggest a windshield fluid or distilled water if not present
+        const water = allItems.filter(i => (i.name.toLowerCase().includes('destilada') || i.name.toLowerCase().includes('limpia parabrisas')) && i.stock > 0).slice(0, 1);
+        suggestions.push(...water);
+
+        // Suggest Bulb check/replacement if nothing else
+        if (!hasBulb && !hasOil) {
+            const bulbs = allItems.filter(i => i.name.toLowerCase().includes('lampara') && i.stock > 0).slice(0, 2);
+            suggestions.push(...bulbs);
+        }
+    }
 
     if (suggestions.length === 0) return null;
 
