@@ -1,11 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Search, AlertTriangle, CheckCircle, Edit2, Save, X } from 'lucide-react';
-import { updateProductMinStock } from '../../lib/business-actions';
+import { Search, AlertTriangle, CheckCircle, Edit2, Save, X, TrendingDown, Clock } from 'lucide-react';
+import { updateProductMinStock, getStockStats } from '../../lib/business-actions';
 
 export default function StockViewer() {
     const [products, setProducts] = useState<any[]>([]);
+    const [stats, setStats] = useState<Record<number, { weeklyRate: number }>>({});
     const [search, setSearch] = useState('');
     const [loading, setLoading] = useState(true);
     const [editingId, setEditingId] = useState<number | null>(null);
@@ -28,17 +29,19 @@ export default function StockViewer() {
     };
 
     useEffect(() => {
-        fetch('/api/products?limit=1000')
+        const p1 = fetch('/api/products?limit=1000')
             .then(res => res.json())
             .then(data => {
-                // Handle both array and paginated response
                 const list = Array.isArray(data) ? data : (data.data || []);
                 setProducts(list);
-            })
-            .catch(err => {
-                console.error('Error fetching products:', err);
-                setProducts([]);
-            })
+            });
+
+        const p2 = getStockStats().then(res => {
+            if (res.success && res.data) setStats(res.data);
+        });
+
+        Promise.all([p1, p2])
+            .catch(err => console.error('Error fetching data:', err))
             .finally(() => setLoading(false));
     }, []);
 
@@ -71,6 +74,7 @@ export default function StockViewer() {
                                 <th className="p-4 font-bold text-slate-500 text-xs uppercase tracking-wider">Código</th>
                                 <th className="p-4 font-bold text-slate-500 text-xs uppercase tracking-wider">Producto</th>
                                 <th className="p-4 font-bold text-slate-500 text-xs uppercase tracking-wider text-right">Precio</th>
+                                <th className="p-4 font-bold text-slate-500 text-xs uppercase tracking-wider text-center">Consumo (30d)</th>
                                 <th className="p-4 font-bold text-slate-500 text-xs uppercase tracking-wider text-center">Estado</th>
                                 <th className="p-4 font-bold text-slate-500 text-xs uppercase tracking-wider text-right">Mínimo</th>
                                 <th className="p-4 font-bold text-slate-500 text-xs uppercase tracking-wider text-right">Stock</th>
@@ -82,6 +86,24 @@ export default function StockViewer() {
                                     <td className="p-4 font-mono text-slate-500 text-sm">{product.code || '-'}</td>
                                     <td className="p-4 font-medium text-slate-800">{product.name}</td>
                                     <td className="p-4 font-bold text-slate-600 text-right">${product.price}</td>
+                                    <td className="p-4 text-center">
+                                        {stats[product.id] ? (
+                                            <div className="flex flex-col items-center">
+                                                <span className="text-xs font-bold text-slate-700 flex items-center gap-1">
+                                                    <TrendingDown className="w-3 h-3 text-slate-400" />
+                                                    {stats[product.id].weeklyRate}/sem
+                                                </span>
+                                                {product.stock > 0 && stats[product.id].weeklyRate > 0 && (
+                                                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full mt-1 font-bold ${(product.stock / (stats[product.id].weeklyRate / 7)) < 7 ? 'bg-red-100 text-red-600' : 'bg-slate-100 text-slate-500'
+                                                        }`}>
+                                                        {Math.round(product.stock / (stats[product.id].weeklyRate / 7))} días
+                                                    </span>
+                                                )}
+                                            </div>
+                                        ) : (
+                                            <span className="text-xs text-slate-300">-</span>
+                                        )}
+                                    </td>
                                     <td className="p-4 text-center">
                                         {product.stock <= 0 ? (
                                             <span className="inline-flex items-center gap-1 bg-red-100 text-red-700 px-2 py-1 rounded text-xs font-bold uppercase">

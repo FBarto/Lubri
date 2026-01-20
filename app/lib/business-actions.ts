@@ -210,3 +210,45 @@ export async function updateProductMinStock(productId: number, minStock: number)
         return { success: false, error: 'Failed to update min stock' };
     }
 }
+
+export async function getStockStats() {
+    try {
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+        // Group sales by product for last 30 days
+        const salesStats = await prisma.saleItem.groupBy({
+            by: ['productId'],
+            where: {
+                type: 'PRODUCT',
+                sale: {
+                    date: { gte: thirtyDaysAgo }
+                }
+            },
+            _sum: {
+                quantity: true
+            }
+        });
+
+        // Convert to map
+        const stats: Record<number, { weeklyRate: number }> = {};
+
+        salesStats.forEach(stat => {
+            if (stat.productId && stat._sum.quantity) {
+                const totalSold = stat._sum.quantity;
+                const dailyRate = totalSold / 30;
+                const weeklyRate = dailyRate * 7;
+
+                stats[stat.productId] = {
+                    weeklyRate: Number(weeklyRate.toFixed(1))
+                };
+            }
+        });
+
+        return { success: true, data: stats };
+
+    } catch (error) {
+        console.error('Stats Calc Error:', error);
+        return { success: false, error: 'Failed' };
+    }
+}
