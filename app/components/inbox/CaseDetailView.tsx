@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import { LeadCase, CaseChecklistItem, CaseLog, CaseStatus, LogChannel, ChecklistTemplate } from '@prisma/client';
-import { ArrowLeft, CheckCircle2, Circle, Copy, Send, Save, AlertCircle, Sparkles, CalendarClock, X, MessageCircle } from 'lucide-react';
-import { updateChecklistItem, addCaseLog, updateCaseStatus, convertCaseToAppointment, getServicesList, generateWhatsAppLink } from '../../lib/inbox-actions';
+import { ArrowLeft, CheckCircle2, Circle, Copy, Send, Save, AlertCircle, Sparkles, CalendarClock, X, MessageCircle, UserPlus, Car } from 'lucide-react';
+import { updateChecklistItem, addCaseLog, updateCaseStatus, convertCaseToAppointment, getServicesList, generateWhatsAppLink, searchClients, assignClientToCase, createQuickClient, createQuickVehicle, getClientVehicles } from '../../lib/inbox-actions';
 import { useRouter } from 'next/navigation';
 import SmartInput from './SmartInput';
 
@@ -104,6 +104,81 @@ export default function CaseDetailView({ leadCase, currentUserId }: CaseDetailPr
         if (res.success && res.data) {
             setLogs(prev => [res.data as any, ...prev]);
             setNewMessage('');
+        }
+        setIsSending(false);
+    };
+
+    // Quick Fix State
+    const [currentClient, setCurrentClient] = useState(leadCase.client);
+    const [currentVehicle, setCurrentVehicle] = useState(leadCase.vehicle);
+
+    // Client Search
+    const [clientSearch, setClientSearch] = useState('');
+    const [foundClients, setFoundClients] = useState<any[]>([]);
+    const [isSearchingClient, setIsSearchingClient] = useState(false);
+
+    // Client Creation
+    const [isCreatingClient, setIsCreatingClient] = useState(false);
+    const [newClientName, setNewClientName] = useState('');
+    const [newClientPhone, setNewClientPhone] = useState('');
+
+    // Vehicle Selection/Creation
+    const [clientVehicles, setClientVehicles] = useState<any[]>([]);
+    const [isCreatingVehicle, setIsCreatingVehicle] = useState(false);
+    const [newVehBrand, setNewVehBrand] = useState('');
+    const [newVehModel, setNewVehModel] = useState('');
+    const [newVehPlate, setNewVehPlate] = useState('');
+
+    const runClientSearch = async (q: string) => {
+        setClientSearch(q);
+        if (q.length > 2) {
+            setIsSearchingClient(true);
+            const res = await searchClients(q);
+            setFoundClients(res.data || []);
+            setIsSearchingClient(false);
+        }
+    };
+
+    const handleSelectClient = async (c: any) => {
+        setIsSending(true);
+        // Link to case
+        await assignClientToCase(leadCase.id, c.id);
+        setCurrentClient(c);
+        // Fetch vehicles
+        const res = await getClientVehicles(c.id);
+        setClientVehicles(res.data || []);
+        setIsSending(false);
+    };
+
+    const handleCreateClient = async () => {
+        if (!newClientName || !newClientPhone) return;
+        setIsSending(true);
+        const res = await createQuickClient(newClientName, newClientPhone);
+        if (res.success && res.data) {
+            await handleSelectClient(res.data);
+            setIsCreatingClient(false);
+        } else {
+            alert('Error al crear cliente');
+        }
+        setIsSending(false);
+    };
+
+    const handleSelectVehicle = async (v: any) => {
+        setIsSending(true);
+        await assignClientToCase(leadCase.id, currentClient.id, v.id);
+        setCurrentVehicle(v);
+        setIsSending(false);
+    };
+
+    const handleCreateVehicle = async () => {
+        if (!newVehPlate || !newVehModel) return;
+        setIsSending(true);
+        const res = await createQuickVehicle(currentClient.id, newVehBrand, newVehModel, newVehPlate);
+        if (res.success && res.data) {
+            await handleSelectVehicle(res.data);
+            setIsCreatingVehicle(false);
+        } else {
+            alert('Error al crear vehículo');
         }
         setIsSending(false);
     };
@@ -343,13 +418,98 @@ export default function CaseDetailView({ leadCase, currentUserId }: CaseDetailPr
                         </div>
 
                         <div className="p-6 space-y-4">
-                            {!leadCase.clientId || !leadCase.vehicleId ? (
-                                <div className="p-3 bg-amber-50 text-amber-700 rounded-lg text-sm border border-amber-200 flex gap-2">
-                                    <AlertCircle className="w-5 h-5 shrink-0" />
-                                    <p>Primero debes asociar un Cliente y Vehículo al caso (usa el chat para pedir datos o edítalo).</p>
+                            {!currentClient ? (
+                                // STEP 1: CLIENT
+                                <div>
+                                    <div className="flex items-center gap-2 mb-4 bg-amber-50 p-2 rounded-lg text-amber-700 text-sm">
+                                        <AlertCircle className="w-4 h-4" />
+                                        <span>Falta asociar el Cliente</span>
+                                    </div>
+
+                                    {!isCreatingClient ? (
+                                        <>
+                                            <input
+                                                autoFocus
+                                                type="text"
+                                                placeholder="Buscar por nombre, tel o patente..."
+                                                className="w-full p-2 border rounded-lg mb-2"
+                                                value={clientSearch}
+                                                onChange={e => runClientSearch(e.target.value)}
+                                            />
+                                            <div className="max-h-40 overflow-y-auto mb-2 space-y-1">
+                                                {foundClients.map(c => (
+                                                    <button key={c.id} onClick={() => handleSelectClient(c)} className="w-full text-left p-2 hover:bg-slate-50 border rounded-lg text-sm">
+                                                        <div className="font-bold">{c.name}</div>
+                                                        <div className="text-xs text-slate-500">{c.phone}</div>
+                                                    </button>
+                                                ))}
+                                                {clientSearch.length > 2 && foundClients.length === 0 && !isSearchingClient && (
+                                                    <p className="text-xs text-slate-400 p-2">No se encontraron resultados.</p>
+                                                )}
+                                            </div>
+
+                                            <button onClick={() => setIsCreatingClient(true)} className="w-full py-2 bg-blue-100 text-blue-700 rounded-lg font-bold text-sm flex justify-center items-center gap-2 hover:bg-blue-200">
+                                                <UserPlus className="w-4 h-4" /> Crear Nuevo Cliente
+                                            </button>
+                                        </>
+                                    ) : (
+                                        <div className="space-y-2 animate-in fade-in slide-in-from-bottom-2">
+                                            <input placeholder="Nombre Completo" className="w-full p-2 border rounded-lg" value={newClientName} onChange={e => setNewClientName(e.target.value)} />
+                                            <input placeholder="Teléfono (Whatsapp)" className="w-full p-2 border rounded-lg" value={newClientPhone} onChange={e => setNewClientPhone(e.target.value)} />
+                                            <div className="flex gap-2 pt-2">
+                                                <button onClick={() => setIsCreatingClient(false)} className="px-4 py-2 text-slate-500 font-bold border rounded-lg">Volver</button>
+                                                <button onClick={handleCreateClient} disabled={!newClientName || !newClientPhone || isSending} className="flex-1 py-2 bg-blue-600 text-white rounded-lg font-bold">Guardar</button>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            ) : !currentVehicle ? (
+                                // STEP 2: VEHICLE
+                                <div>
+                                    <div className="flex items-center gap-2 mb-4 bg-amber-50 p-2 rounded-lg text-amber-700 text-sm">
+                                        <Car className="w-4 h-4" />
+                                        <span>Falta asociar el Vehículo de <span className="font-bold">{currentClient.name}</span></span>
+                                    </div>
+
+                                    {!isCreatingVehicle ? (
+                                        <>
+                                            <div className="space-y-2 mb-4">
+                                                {clientVehicles.map(v => (
+                                                    <button key={v.id} onClick={() => handleSelectVehicle(v)} className="w-full text-left p-3 hover:bg-slate-50 border rounded-lg flex justify-between items-center group">
+                                                        <div>
+                                                            <div className="font-bold text-slate-800">{v.model}</div>
+                                                            <div className="text-xs text-slate-500">{v.brand} - {v.plate}</div>
+                                                        </div>
+                                                        <CheckCircle2 className="w-4 h-4 text-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                    </button>
+                                                ))}
+                                                {clientVehicles.length === 0 && <p className="text-center text-sm text-slate-400 py-4">Este cliente no tiene vehículos registrados.</p>}
+                                            </div>
+
+                                            <button onClick={() => setIsCreatingVehicle(true)} className="w-full py-2 bg-blue-100 text-blue-700 rounded-lg font-bold text-sm flex justify-center items-center gap-2 hover:bg-blue-200">
+                                                <Car className="w-4 h-4" /> Registrar Vehículo
+                                            </button>
+                                        </>
+                                    ) : (
+                                        <div className="space-y-2 animate-in fade-in slide-in-from-bottom-2">
+                                            <input placeholder="Marca (ej: Ford)" className="w-full p-2 border rounded-lg" value={newVehBrand} onChange={e => setNewVehBrand(e.target.value)} />
+                                            <input placeholder="Modelo (ej: Focus)" className="w-full p-2 border rounded-lg" value={newVehModel} onChange={e => setNewVehModel(e.target.value)} />
+                                            <input placeholder="Patente (ej: AA123BB)" className="w-full p-2 border rounded-lg" value={newVehPlate} onChange={e => setNewVehPlate(e.target.value)} />
+                                            <div className="flex gap-2 pt-2">
+                                                <button onClick={() => setIsCreatingVehicle(false)} className="px-4 py-2 text-slate-500 font-bold border rounded-lg">Volver</button>
+                                                <button onClick={handleCreateVehicle} disabled={!newVehPlate || !newVehModel || isSending} className="flex-1 py-2 bg-blue-600 text-white rounded-lg font-bold">Guardar</button>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             ) : (
+                                // STEP 3: SCHEDULE (Original)
                                 <>
+                                    <div className="bg-emerald-50 border border-emerald-100 p-2 rounded-lg text-xs text-emerald-700 mb-4 flex gap-2 items-center">
+                                        <CheckCircle2 className="w-3 h-3" />
+                                        <span>Turno para: <b>{currentClient.name}</b> - {currentVehicle.model} ({currentVehicle.plate})</span>
+                                    </div>
+
                                     <div>
                                         <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Fecha y Hora</label>
                                         <div className="flex gap-2">

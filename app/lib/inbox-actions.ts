@@ -340,3 +340,58 @@ export async function generateWhatsAppLink(caseId: string) {
         return { success: false, error: 'Failed' };
     }
 }
+
+// --- QUICK ACTIONS FOR MODAL ---
+
+export async function searchClients(query: string) {
+    if (query.length < 2) return { success: true, data: [] };
+    try {
+        const clients = await prisma.client.findMany({
+            where: {
+                OR: [
+                    { name: { contains: query, mode: 'insensitive' } },
+                    { phone: { contains: query, mode: 'insensitive' } },
+                    { vehicles: { some: { plate: { contains: query, mode: 'insensitive' } } } }
+                ]
+            },
+            take: 5,
+            include: { vehicles: true }
+        });
+        return { success: true, data: clients };
+    } catch (e) {
+        return { success: false, error: 'Search failed' };
+    }
+}
+
+export async function getClientVehicles(clientId: number) {
+    try {
+        const vehicles = await prisma.vehicle.findMany({
+            where: { clientId }
+        });
+        return { success: true, data: vehicles };
+    } catch (e) {
+        return { success: false, error: 'Fetch failed' };
+    }
+}
+
+export async function createQuickClient(name: string, phone: string) {
+    try {
+        const client = await prisma.client.create({
+            data: { name, phone }
+        });
+        return { success: true, data: client };
+    } catch (e) {
+        return { success: false, error: 'Create failed' };
+    }
+}
+
+export async function createQuickVehicle(clientId: number, brand: string, model: string, plate: string) {
+    try {
+        const vehicle = await prisma.vehicle.create({
+            data: { clientId, brand, model, plate, type: 'CAR' }
+        });
+        return { success: true, data: vehicle };
+    } catch (e) {
+        return { success: false, error: 'Create vehicle failed' };
+    }
+}
