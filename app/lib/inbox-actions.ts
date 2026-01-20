@@ -395,3 +395,132 @@ export async function createQuickVehicle(clientId: number, brand: string, model:
         return { success: false, error: 'Create vehicle failed' };
     }
 }
+
+export async function getInboxKanbanBoard() {
+    try {
+        const cases = await prisma.leadCase.findMany({
+            where: {
+                status: {
+                    in: ['NEW', 'IN_PROGRESS', 'WAITING_CUSTOMER', 'READY_TO_SCHEDULE', 'SCHEDULED']
+                }
+            },
+            include: {
+                client: true,
+                vehicle: true,
+                assignedToUser: true
+            },
+            orderBy: { slaDueAt: 'asc' }
+        });
+        return { success: true, data: cases };
+    } catch (e) {
+        return { success: false, error: 'Failed' };
+    }
+}
+
+// --- QUOTE BUILDER ACTIONS ---
+
+export async function getQuote(caseId: string) {
+    try {
+        const quote = await prisma.quote.findUnique({
+            where: { leadCaseId: caseId },
+            include: { items: true }
+        });
+        return { success: true, data: quote };
+    } catch (e) {
+        return { success: false, error: 'Fetch Quote Failed' };
+    }
+}
+
+export async function createOrUpdateQuote(caseId: string, items: any[], discount: number = 0) {
+    try {
+        // Calculate totals
+        const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        const total = subtotal - discount;
+
+        // Upsert Quote
+        const quote = await prisma.quote.upsert({
+            where: { leadCaseId: caseId },
+            update: {
+                subtotal,
+                discount,
+                total,
+                items: {
+                    deleteMany: {},
+                    create: items.map(item => ({
+                        description: item.name,
+                        quantity: Number(item.quantity),
+                        unitPrice: Number(item.price),
+                        lineTotal: Number(item.price) * Number(item.quantity),
+                        kind: item.type || 'PRODUCT'
+                    }))
+                },
+                updatedAt: new Date()
+            },
+            create: {
+                leadCaseId: caseId,
+                subtotal,
+                discount,
+                total,
+                status: 'DRAFT',
+                items: {
+                    create: items.map(item => ({
+                        description: item.name,
+                        quantity: Number(item.quantity),
+                        unitPrice: Number(item.price),
+                        lineTotal: Number(item.price) * Number(item.quantity),
+                        kind: item.type || 'PRODUCT'
+                    }))
+                }
+            }
+        });
+
+        // Update Case Status if Draft
+        await prisma.leadCase.update({
+            where: { id: caseId },
+            data: { status: 'QUOTED' }
+        });
+
+        revalidatePath(`/admin/inbox/${caseId}`);
+        return { success: true, data: quote };
+    } catch (e) {
+        console.error(e);
+        return { success: false, error: 'Save Quote Failed' };
+    }
+}
+
+export async function searchProductsForQuote(query: string) {
+    try {
+        if (query.length < 2) return { success: true, data: [] };
+
+        // Search Products
+        const products = await prisma.product.findMany({
+            where: {
+                OR: [
+                    { name: { contains: query, mode: 'insensitive' } },
+                    { code: { contains: query, mode: 'insensitive' } }
+                ],
+                active: true
+            },
+            take: 10
+        });
+
+        // Search Services
+        const services = await prisma.service.findMany({
+            where: {
+                name: { contains: query, mode: 'insensitive' },
+                active: true
+            },
+            take: 5
+        });
+
+        // Normalize
+        const results = [
+            ...products.map(p => ({ id: p.id, name: p.name, price: p.price, type: 'PRODUCT', stock: p.stock })),
+            ...services.map(s => ({ id: s.id, name: s.name, price: s.price, type: 'SERVICE', stock: null }))
+        ];
+
+        return { success: true, data: results };
+    } catch (e) {
+        return { success: false, error: 'Search Failed' };
+    }
+}
