@@ -5,12 +5,16 @@ import { getInboxKanbanBoard, updateCaseStatus } from '../../lib/inbox-actions';
 import { useRouter } from 'next/navigation';
 import { Loader2, AlertCircle, Clock, CheckCircle2, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
+import { LeadCase, CaseStatus } from '@prisma/client';
 
-type CaseStatus = 'NEW' | 'IN_PROGRESS' | 'WAITING_CUSTOMER' | 'READY_TO_SCHEDULE' | 'SCHEDULED';
+interface InboxKanbanBoardProps {
+    initialCases: any[]; // Using any[] to match the structure from findMany with includes
+}
 
-export default function InboxKanbanBoard() {
-    const [cases, setCases] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
+export default function InboxKanbanBoard({ initialCases }: InboxKanbanBoardProps) {
+    const [cases, setCases] = useState<any[]>(initialCases);
+    const [loading, setLoading] = useState(false);
+    const [draggedCaseId, setDraggedCaseId] = useState<string | null>(null);
     const router = useRouter();
 
     const fetchBoard = async () => {
@@ -18,25 +22,46 @@ export default function InboxKanbanBoard() {
         if (res.success && res.data) {
             setCases(res.data);
         }
-        setLoading(false);
     };
 
     useEffect(() => {
-        fetchBoard();
-        const interval = setInterval(fetchBoard, 30000); // 30s poll
+        // Poll for updates every 30s
+        const interval = setInterval(fetchBoard, 30000);
         return () => clearInterval(interval);
     }, []);
 
     const handleMove = async (id: string, newStatus: CaseStatus) => {
-        // Optimistic
+        // Optimistic update
         const oldCases = [...cases];
         setCases(prev => prev.map(c => c.id === id ? { ...c, status: newStatus } : c));
 
         const res = await updateCaseStatus(id, newStatus);
         if (!res.success) {
-            alert('Error al mover caso');
+            alert('Error al mover caso: ' + res.error);
             setCases(oldCases); // Revert
+        } else {
+            router.refresh(); // Sync server components
         }
+    };
+
+    const onDragStart = (e: React.DragEvent, id: string) => {
+        setDraggedCaseId(id);
+        e.dataTransfer.setData('caseId', id);
+        e.dataTransfer.effectAllowed = 'move';
+    };
+
+    const onDragOver = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+    };
+
+    const onDrop = (e: React.DragEvent, status: CaseStatus) => {
+        e.preventDefault();
+        const id = e.dataTransfer.getData('caseId');
+        if (id && id === draggedCaseId) {
+            handleMove(id, status);
+        }
+        setDraggedCaseId(null);
     };
 
     const columns: { id: CaseStatus; title: string; color: string }[] = [
@@ -46,13 +71,11 @@ export default function InboxKanbanBoard() {
         { id: 'READY_TO_SCHEDULE', title: 'LISTO PARA AGENDAR', color: 'bg-emerald-50 border-emerald-200' }
     ];
 
-    if (loading) return <div className="p-12 flex justify-center text-slate-400"><Loader2 className="animate-spin" /></div>;
-
     return (
         <div className="h-full flex flex-col">
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-2xl font-bold text-slate-800">Tablero Inbox</h1>
-                <button onClick={fetchBoard} className="text-sm px-3 py-1 bg-white border rounded shadow-sm hover:bg-slate-50">
+                <button onClick={fetchBoard} className="text-sm px-3 py-1 bg-white border rounded shadow-sm hover:bg-slate-50 transition-colors">
                     ↻ Actualizar
                 </button>
             </div>
@@ -62,7 +85,12 @@ export default function InboxKanbanBoard() {
                     {columns.map(col => {
                         const colCases = cases.filter(c => c.status === col.id);
                         return (
-                            <div key={col.id} className={`flex-1 flex flex-col rounded-xl border-t-4 ${col.color} bg-white shadow-sm h-full`}>
+                            <div
+                                key={col.id}
+                                className={`flex-1 flex flex-col rounded-xl border-t-4 ${col.color} bg-white shadow-sm h-full transition-colors ${draggedCaseId ? 'hover:bg-opacity-80' : ''}`}
+                                onDragOver={onDragOver}
+                                onDrop={(e) => onDrop(e, col.id)}
+                            >
                                 <div className="p-3 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
                                     <h3 className="font-bold text-slate-700 text-sm tracking-wide">{col.title}</h3>
                                     <span className="text-xs font-bold bg-white px-2 py-0.5 rounded-full shadow-sm">{colCases.length}</span>
@@ -70,7 +98,12 @@ export default function InboxKanbanBoard() {
 
                                 <div className="flex-1 overflow-y-auto p-3 space-y-3 bg-slate-50/30">
                                     {colCases.map(c => (
-                                        <div key={c.id} className="bg-white p-3 rounded-lg border border-slate-200 shadow-sm hover:shadow-md transition-all group relative">
+                                        <div
+                                            key={c.id}
+                                            draggable
+                                            onDragStart={(e) => onDragStart(e, c.id)}
+                                            className="bg-white p-3 rounded-lg border border-slate-200 shadow-sm hover:shadow-md transition-all group relative cursor-grab active:cursor-grabbing"
+                                        >
                                             {/* SLA Badge */}
                                             {new Date(c.slaDueAt) < new Date() && (
                                                 <div className="absolute top-2 right-2 text-red-500 font-bold text-[10px] flex items-center gap-1 bg-red-50 px-1.5 py-0.5 rounded">
@@ -96,8 +129,8 @@ export default function InboxKanbanBoard() {
                                                     Ver Detalle
                                                 </Link>
 
-                                                {/* Quick Actions */}
-                                                <div className="flex gap-1">
+                                                {/* Manual Move Buttons (Backup for Mobile/Access) */}
+                                                <div className="flex gap-1 opacity-50 group-hover:opacity-100 transition-opacity">
                                                     {col.id === 'NEW' && (
                                                         <button onClick={() => handleMove(c.id, 'IN_PROGRESS')} className="p-1 hover:bg-blue-100 rounded text-blue-600" title="Pasar a Gestión">
                                                             <ArrowRight className="w-4 h-4" />
