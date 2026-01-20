@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import ItemsGrid from '@/app/components/pos/ItemsGrid';
 import Cart from '@/app/components/pos/Cart';
 import ServiceModal from '@/app/components/pos/ServiceModal';
+import SmartSuggestions from '@/app/components/pos/SmartSuggestions';
 import CheckoutModal from '@/app/components/pos/CheckoutModal';
 import PriceReasonModal from './PriceReasonModal';
 import CancellationModal from './CancellationModal';
@@ -272,8 +273,15 @@ export default function RestrictedPOS({ cart, setCart }: RestrictedPOSProps) {
                 </div>
 
                 {/* Right: Grid (7 cols) */}
-                <div className="col-span-12 md:col-span-7 h-full overflow-hidden bg-white rounded-xl border border-slate-200">
-                    <ItemsGrid items={allItems} onAddItem={handleAddItem} />
+                <div className="col-span-12 md:col-span-7 h-full overflow-hidden bg-white rounded-xl border border-slate-200 flex flex-col p-4">
+                    <SmartSuggestions
+                        cart={cart}
+                        allItems={allItems}
+                        onAddItem={handleAddItem}
+                    />
+                    <div className="flex-1 overflow-hidden">
+                        <ItemsGrid items={allItems} onAddItem={handleAddItem} />
+                    </div>
                 </div>
             </div>
 
