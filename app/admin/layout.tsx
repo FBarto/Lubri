@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { logout } from '@/app/lib/actions';
 import { useState } from 'react';
 import { Menu, X } from 'lucide-react';
+import { useSession } from 'next-auth/react';
+import NotificationsWidget from '../components/admin/NotificationsWidget';
 
 export default function AdminLayout({
     children,
@@ -11,6 +13,8 @@ export default function AdminLayout({
     children: React.ReactNode;
 }) {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const { data: session } = useSession();
+    const userId = session?.user?.id ? Number(session.user.id) : 0;
 
     return (
         <div className="flex min-h-screen bg-slate-50 text-slate-900 font-sans">
@@ -19,12 +23,15 @@ export default function AdminLayout({
                 <span className="text-xl font-bold bg-gradient-to-r from-blue-400 to-indigo-500 bg-clip-text text-transparent">
                     FB Lubricentro
                 </span>
-                <button
-                    onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                    className="text-white p-2 hover:bg-slate-800 rounded-lg transition-colors"
-                >
-                    {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-                </button>
+                <div className="flex items-center gap-2">
+                    {userId > 0 && <NotificationsWidget userId={userId} />}
+                    <button
+                        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                        className="text-white p-2 hover:bg-slate-800 rounded-lg transition-colors"
+                    >
+                        {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+                    </button>
+                </div>
             </div>
 
             {/* Overlay */}
@@ -159,7 +166,11 @@ export default function AdminLayout({
             </aside>
 
             {/* Main Content */}
-            <main className="flex-1 p-4 md:p-8 max-w-7xl mx-auto w-full pt-20 md:pt-8 bg-slate-50 min-h-screen">
+            <main className="flex-1 p-4 md:p-8 max-w-7xl mx-auto w-full pt-20 md:pt-8 bg-slate-50 min-h-screen relative">
+                {/* Desktop Top Bar (Hidden on Mobile) */}
+                <div className="absolute top-4 right-8 hidden md:block z-20">
+                    {userId > 0 && <NotificationsWidget userId={userId} />}
+                </div>
                 {children}
             </main>
         </div >
