@@ -30,15 +30,14 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
             // Validation
             if (!mileage) {
                 // strict validation? For now let's allow optional but recommend.
-                // prompt says: "valida checklist, KM"
             }
             if (mileage) {
-                // Update vehicle mileage too?
-                await prisma.vehicle.update({
-                    where: { id: currentWO.vehicleId },
-                    data: { mileage: parseInt(mileage) }
-                });
-                dataToUpdate.mileage = parseInt(mileage);
+                const m = parseInt(mileage);
+                // Update vehicle mileage and projections
+                const { updateVehicleProjections } = await import('@/app/lib/maintenance-actions');
+                await updateVehicleProjections(currentWO.vehicleId, m);
+
+                dataToUpdate.mileage = m;
             }
             dataToUpdate.finishedAt = new Date();
         }

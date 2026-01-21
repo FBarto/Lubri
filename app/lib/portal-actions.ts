@@ -43,7 +43,6 @@ export async function getClientDataByToken(token: string) {
             client: {
                 name: client.name,
                 phone: client.phone,
-                vehicles: client.vehicles,
                 workOrders: client.workOrders.map(wo => ({
                     id: wo.id,
                     date: wo.date,
@@ -53,7 +52,17 @@ export async function getClientDataByToken(token: string) {
                     mileage: wo.mileage,
                     status: wo.status,
                     price: wo.price,
+                    serviceDetails: wo.serviceDetails,
                     attachments: wo.attachments
+                })),
+                vehicles: await Promise.all(client.vehicles.map(async v => {
+                    const { getVehicleMaintenanceHistory } = await import('./maintenance-actions');
+                    const history = await getVehicleMaintenanceHistory(v.id);
+                    return {
+                        ...v,
+                        predictedNextService: v.predictedNextService,
+                        maintenanceStatus: history.success ? history.data : null
+                    };
                 }))
             }
         };

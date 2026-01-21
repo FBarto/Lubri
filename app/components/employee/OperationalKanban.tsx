@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { Play, CheckCircle, LogOut, Send, Clock, FileCheck, FileX, PenTool } from 'lucide-react';
-import { sendBudgetForApproval } from '../../lib/approval-actions';
+import { sendBudgetForApproval, generateVehicleReadyWhatsAppLink } from '../../lib/approval-actions';
 import EditWorkOrderModal from './EditWorkOrderModal';
 
 type WorkOrderStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'DELIVERED';
@@ -67,6 +67,14 @@ export default function OperationalKanban({ onPassToCheckout }: OperationalKanba
                 body: JSON.stringify({ status, userId: session?.user?.id, ...extraData })
             });
             if (res.ok) {
+                // If Completed, trigger Frictionless WhatsApp (Vehicle Ready)
+                if (status === 'COMPLETED') {
+                    const waRes = await generateVehicleReadyWhatsAppLink(id);
+                    if (waRes.success && waRes.waUrl) {
+                        window.open(waRes.waUrl, '_blank');
+                    }
+                }
+
                 fetchOrders();
                 setFinishModalOpen(false);
                 setMileage('');
@@ -156,8 +164,8 @@ export default function OperationalKanban({ onPassToCheckout }: OperationalKanba
                                                         onClick={async () => {
                                                             if (!confirm('¿Enviar presupuesto al cliente por WhatsApp?')) return;
                                                             const res = await sendBudgetForApproval(order.id);
-                                                            if (res.success) {
-                                                                alert('Enlace generado: /approval/' + res.token);
+                                                            if (res.success && res.waUrl) {
+                                                                window.open(res.waUrl, '_blank');
                                                                 fetchOrders();
                                                             } else {
                                                                 alert('Error al generar presupuesto');

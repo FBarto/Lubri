@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Search, Plus, Trash2, Save, FileText, Send, X, Loader2 } from 'lucide-react';
+import { Search, Plus, Trash2, Save, FileText, Send, X, Loader2, Sparkles } from 'lucide-react';
 import { searchProductsForQuote, createOrUpdateQuote, getQuote } from '../../lib/inbox-actions';
+import { suggestServiceItems } from '../../lib/smart-actions';
 
 interface QuoteBuilderProps {
     leadCaseId: string;
@@ -17,6 +18,7 @@ export default function QuoteBuilder({ leadCaseId, clientPhone, onClose }: Quote
     const [query, setQuery] = useState('');
     const [searchResults, setSearchResults] = useState<any[]>([]);
     const [discount, setDiscount] = useState(0);
+    const [suggestionMethod, setSuggestionMethod] = useState<string | null>(null);
     const searchTimeout = useRef<NodeJS.Timeout | null>(null);
 
     useEffect(() => {
@@ -34,6 +36,35 @@ export default function QuoteBuilder({ leadCaseId, clientPhone, onClose }: Quote
                 type: i.kind
             })));
             setDiscount(res.data.discount || 0);
+        }
+        setLoading(false);
+    };
+
+    const handleSuggest = async () => {
+        setLoading(true);
+        // Actually getQuote returns leadCase with vehicle.
+        const currentQuote = await getQuote(leadCaseId);
+        const vehicleId = currentQuote.data?.leadCase?.vehicleId;
+
+        if (!vehicleId) {
+            alert('Este caso no tiene vehículo asignado.');
+            setLoading(false);
+            return;
+        }
+
+        const suggestion = await suggestServiceItems(vehicleId);
+
+        if (suggestion.success && suggestion.items) {
+            setItems(suggestion.items.map((i: any) => ({
+                id: i.id || Math.random(),
+                name: i.name,
+                price: i.price,
+                quantity: i.quantity,
+                type: i.type
+            })));
+            setSuggestionMethod(suggestion.method || 'SMART');
+        } else {
+            alert(suggestion.error || 'No se encontraron sugerencias.');
         }
         setLoading(false);
     };
@@ -94,14 +125,28 @@ export default function QuoteBuilder({ leadCaseId, clientPhone, onClose }: Quote
         await handleSave(); // Save first
         const { total } = calculateTotals();
 
-        let msg = `*Presupuesto FB Lubricentro*\n\n`;
+        // Get Client/Vehicle info from loaded quote data (assuming items refetch updated state)
+        // We'll trust the latest 'items' but we need the 'res.data' from loadQuote or store it in state.
+        // Let's assume we can fetch it again or store it.
+        // Quick fix: fetch fresh data to be sure
+        const res = await getQuote(leadCaseId);
+        const quoteData = res.data;
+
+        const clientName = quoteData?.leadCase?.client?.name?.split(' ')[0] || 'Cliente';
+        const vehicle = quoteData?.leadCase?.vehicle ? `${quoteData.leadCase.vehicle.brand} ${quoteData.leadCase.vehicle.model}` : 'tu vehículo';
+
+        let msg = `*Hola ${clientName}!* 👋\n\n`;
+        msg += `Te pasamos el presupuesto detallado para ${vehicle}:\n\n`;
+
         items.forEach(i => {
-            msg += `- ${i.name} (x${i.quantity}): $${(i.price * i.quantity).toLocaleString()}\n`;
+            msg += `🔧 *${i.name}* (x${i.quantity})\n   💲 $${(i.price * i.quantity).toLocaleString()}\n`;
         });
 
-        if (discount > 0) msg += `\nDescuento: -$${discount.toLocaleString()}`;
-        msg += `\n\n*TOTAL: $${total.toLocaleString()}*`;
-        msg += `\n\nValidez: 7 días.`;
+        if (discount > 0) msg += `\n📉 *Descuento:* -$${discount.toLocaleString()}`;
+        msg += `\n➖➖➖➖➖➖➖➖\n`;
+        msg += `💰 *TOTAL: $${total.toLocaleString()}*\n`;
+        msg += `➖➖➖➖➖➖➖➖\n`;
+        msg += `\n📅 _Validez: 7 días._\n\nAvísanos si avanzamos! 🚀`;
 
         const url = `https://wa.me/${clientPhone?.replace(/\D/g, '')}?text=${encodeURIComponent(msg)}`;
         window.open(url, '_blank');

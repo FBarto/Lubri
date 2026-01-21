@@ -3,14 +3,40 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createLeadCase } from '../../lib/inbox-actions';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Sparkles } from 'lucide-react';
+import { parseLeadIntake } from '../../lib/gemini';
 
 export default function NewCaseForm({ currentUserId }: { currentUserId: number }) {
     const [summary, setSummary] = useState('');
     const [category, setCategory] = useState('TYRES');
     const [type, setType] = useState('APPOINTMENT');
+    const [rawText, setRawText] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isAnalyzing, setIsAnalyzing] = useState(false);
     const router = useRouter();
+
+    const handleAIAnalyze = async () => {
+        if (!rawText.trim()) return;
+        setIsAnalyzing(true);
+        try {
+            const res = await parseLeadIntake(rawText);
+            if (res.success && res.data) {
+                if (res.data.summary) setSummary(res.data.summary);
+            } else {
+                // If it's a quota error, we show a friendly message
+                if (res.error?.includes('429')) {
+                    alert('La IA está un poco ocupada (límite de cuota). Por favor, intenta de nuevo en unos segundos.');
+                } else {
+                    alert('No se pudo analizar el mensaje. Intenta escribir el título manualmente.');
+                }
+            }
+        } catch (e) {
+            console.error(e);
+            alert('Error técnico al conectar con la IA.');
+        } finally {
+            setIsAnalyzing(false);
+        }
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -22,7 +48,7 @@ export default function NewCaseForm({ currentUserId }: { currentUserId: number }
             type: type as any,
             serviceCategory: category as any,
             authorUserId: currentUserId,
-            rawText: ''
+            rawText
         });
 
         if (res.success && res.data) {
@@ -75,6 +101,32 @@ export default function NewCaseForm({ currentUserId }: { currentUserId: number }
                             <option value="QUOTE">Presupuesto</option>
                         </select>
                     </div>
+                </div>
+
+                <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-2">Mensaje del Cliente (WhatsApp/Chat)</label>
+                    <div className="relative">
+                        <textarea
+                            value={rawText}
+                            onChange={e => setRawText(e.target.value)}
+                            placeholder="Pega aquí el mensaje tal cual lo recibiste..."
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-violet-500 outline-none font-medium h-32 resize-none pr-12"
+                        />
+                        {rawText.length > 10 && (
+                            <button
+                                type="button"
+                                onClick={handleAIAnalyze}
+                                disabled={isAnalyzing}
+                                className="absolute top-3 right-3 p-2 bg-violet-100 text-violet-700 rounded-lg hover:bg-violet-200 transition-all shadow-sm group"
+                                title="Autocompletar Título"
+                            >
+                                <Sparkles className={`w-4 h-4 ${isAnalyzing ? 'animate-spin' : 'group-hover:scale-110 transition-transform'}`} />
+                            </button>
+                        )}
+                    </div>
+                    <p className="text-[10px] text-slate-400 mt-1 italic">
+                        Si pegas el texto, podrás usar la **IA de Gemini** para autocompletar el checklist en el siguiente paso.
+                    </p>
                 </div>
 
                 <button

@@ -11,6 +11,7 @@ interface Item {
     price: number;
     category?: string;
     stock?: number;
+    minStock?: number;
     code?: string;
 }
 
@@ -219,8 +220,8 @@ export default function ItemsGrid({ items, onAddItem }: ItemsGridProps) {
                                             </span>
 
                                             {item.type === 'PRODUCT' && (
-                                                <div className={`text-[0.65rem] font-bold px-1.5 py-0.5 rounded ml-2 shrink-0 ${!item.stock || item.stock <= 0 ? 'bg-red-100 text-red-600' : item.stock < 5 ? 'bg-amber-100 text-amber-700' : 'text-slate-400'}`}>
-                                                    {!item.stock || item.stock <= 0 ? 'Sin Stock' : `Stock: ${item.stock}`}
+                                                <div className={`text-[0.65rem] font-bold px-1.5 py-0.5 rounded ml-2 shrink-0 ${!item.stock || item.stock <= 0 ? 'bg-red-100 text-red-600' : item.stock <= (item.minStock || 0) ? 'bg-amber-100 text-amber-700' : 'text-slate-400'}`}>
+                                                    {!item.stock || item.stock <= 0 ? 'Sin Stock' : item.stock <= (item.minStock || 0) ? `Bajo: ${item.stock}` : `Stock: ${item.stock}`}
                                                 </div>
                                             )}
                                         </div>

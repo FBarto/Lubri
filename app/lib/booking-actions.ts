@@ -223,15 +223,64 @@ export async function createAppointment(data: CreateAppointmentInput) {
                 status: 'REQUESTED',
                 notes: notes,
                 leadCaseId: leadCaseId,
+            },
+            include: {
+                client: true,
+                vehicle: true,
+                service: true
             }
         });
 
-        // 5. Update LeadCase if applicable
+        // 5. Update LeadCase or Create New one
+        let finalCaseId = leadCaseId;
         if (leadCaseId) {
             await prisma.leadCase.update({
                 where: { id: leadCaseId },
-                data: { status: 'SCHEDULED' }
+                data: { status: 'SCHEDULED', clientId: Number(clientId), vehicleId: Number(vehicleId) }
             });
+        } else {
+            // AUTO-CREATE CASE for direct bookings (so they appear in Romi's Inbox)
+            try {
+                const mapToServiceCategory = (cat: string): any => {
+                    const c = (cat || '').toUpperCase();
+                    if (c.includes('ACEITE') || c.includes('LUBRI') || c.includes('OIL')) return 'OIL_SERVICE';
+                    if (c.includes('BATER') || c.includes('BATTERY')) return 'BATTERY';
+                    if (c.includes('NEUMA') || c.includes('CUBIER') || c.includes('TYRE')) return 'TYRES';
+                    return 'OTHER';
+                };
+
+                const serviceName = appointment.service.name;
+                const clientName = appointment.client?.name || 'Cliente';
+                const dayStr = startTime.toLocaleDateString('es-AR');
+                const timeStr = startTime.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+
+                const newCase = await prisma.leadCase.create({
+                    data: {
+                        summary: `Turno: ${serviceName} - ${clientName}`,
+                        type: 'APPOINTMENT',
+                        serviceCategory: mapToServiceCategory(appointment.service.category),
+                        status: 'SCHEDULED',
+                        clientId: Number(clientId),
+                        vehicleId: Number(vehicleId),
+                        intakeRawText: `Turno agendado vía web para el ${dayStr} a las ${timeStr}`,
+                        slaDueAt: new Date(Date.now() + 1 * 60 * 60 * 1000), // 1h SLA for auto-confirmations
+                    }
+                });
+                finalCaseId = newCase.id;
+
+                // Create initial log
+                await prisma.caseLog.create({
+                    data: {
+                        leadCaseId: newCase.id,
+                        authorUserId: 1, // System
+                        channel: 'INTERNAL_NOTE',
+                        message: `Turno agendado automáticamente para el ${dayStr} ${timeStr}.`
+                    }
+                });
+            } catch (caseError: any) {
+                console.error('CRITICAL: Failed to auto-create LeadCase:', caseError.message, caseError.code);
+                // Non-blocking, we still have the appointment
+            }
         }
 
         // Schedule WhatsApp Notifications (Async, don't block)
@@ -240,7 +289,7 @@ export async function createAppointment(data: CreateAppointmentInput) {
         );
 
         safeRevalidate('/admin/calendar');
-        return { success: true, appointment };
+        return { success: true, appointment, caseId: finalCaseId };
 
     } catch (error: any) {
         console.error('Error creating appointment:', error);

@@ -80,7 +80,7 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: result.error }, { status });
         }
 
-        return NextResponse.json(result.appointment, { status: 201 });
+        return NextResponse.json(result, { status: 201 });
     } catch (error: any) {
         return NextResponse.json({ error: error.message }, { status: 500 });
     }

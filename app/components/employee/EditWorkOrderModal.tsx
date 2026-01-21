@@ -2,7 +2,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Search, Plus, Trash2, Save, X } from 'lucide-react';
+import { Search, Plus, Trash2, Save, X, AlertTriangle, Sparkles } from 'lucide-react';
+import { getVehicleMaintenanceHistory } from '../../lib/maintenance-actions';
+import { MaintenanceStatus } from '../../lib/maintenance-data';
 
 interface Product {
     id: number;
@@ -10,6 +12,7 @@ interface Product {
     price: number;
     code: string;
     stock: number;
+    minStock: number;
 }
 
 interface OrderItem {
@@ -31,6 +34,8 @@ export default function EditWorkOrderModal({ isOpen, onClose, workOrder, onUpdat
     const [search, setSearch] = useState('');
     const [searchResults, setSearchResults] = useState<Product[]>([]);
     const [loading, setLoading] = useState(false);
+    const [recommendations, setRecommendations] = useState<MaintenanceStatus[]>([]);
+    const [recoLoading, setRecoLoading] = useState(false);
 
     useEffect(() => {
         if (workOrder?.serviceDetails && typeof workOrder.serviceDetails === 'object') {
@@ -43,7 +48,26 @@ export default function EditWorkOrderModal({ isOpen, onClose, workOrder, onUpdat
         } else {
             setItems([]);
         }
-    }, [workOrder]);
+
+        if (isOpen && workOrder?.vehicleId) {
+            loadRecommendations();
+        }
+    }, [workOrder, isOpen]);
+
+    const loadRecommendations = async () => {
+        setRecoLoading(true);
+        const res = await getVehicleMaintenanceHistory(workOrder.vehicleId);
+        if (res.success && res.data) {
+            // Flatten all items that are Warning, Danger or Unknown (never done)
+            const allItems = [
+                ...res.data.filters,
+                ...res.data.fluids,
+                ...res.data.services
+            ].filter(i => i.status !== 'OK');
+            setRecommendations(allItems);
+        }
+        setRecoLoading(false);
+    };
 
     const handleSearch = async (term: string) => {
         setSearch(term);
@@ -127,6 +151,34 @@ export default function EditWorkOrderModal({ isOpen, onClose, workOrder, onUpdat
                 </div>
 
                 <div className="p-6 overflow-y-auto flex-1">
+                    {/* Recommendations Section */}
+                    {recommendations.length > 0 && (
+                        <div className="mb-6 animate-in slide-in-from-top-2 duration-300">
+                            <div className="flex items-center gap-2 mb-3">
+                                <Sparkles className="text-amber-500 w-4 h-4" />
+                                <h4 className="text-sm font-black text-slate-700 uppercase tracking-wider">Sugerencias de Mantenimiento</h4>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                                {recommendations.map((reco, idx) => (
+                                    <button
+                                        key={idx}
+                                        onClick={() => handleSearch(reco.label)}
+                                        className="flex items-center gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg text-amber-700 hover:bg-amber-100 transition-colors group text-sm"
+                                    >
+                                        <AlertTriangle size={14} className="text-amber-500" />
+                                        <div className="text-left">
+                                            <span className="font-bold block leading-none">{reco.label}</span>
+                                            <span className="text-[10px] opacity-70">
+                                                {reco.lastDate ? `Hace ${reco.daysAgo} días` : 'Nunca registrado'}
+                                            </span>
+                                        </div>
+                                        <Plus size={14} className="ml-1 opacity-50 group-hover:opacity-100" />
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
                     {/* Add Item Section */}
                     <div className="mb-8 relative">
                         <label className="block text-sm font-bold text-slate-700 mb-2">Agregar Producto / Insumo</label>
@@ -153,8 +205,15 @@ export default function EditWorkOrderModal({ isOpen, onClose, workOrder, onUpdat
                                         className="w-full text-left p-3 hover:bg-blue-50 border-b last:border-0 border-slate-100 flex justify-between items-center group"
                                     >
                                         <div>
-                                            <div className="font-bold text-slate-800 group-hover:text-blue-700">{p.name}</div>
-                                            <div className="text-xs text-slate-500">Stock: {p.stock} | ${p.price}</div>
+                                            <div className="font-bold text-slate-800 group-hover:text-blue-700 flex items-center gap-2">
+                                                {p.name}
+                                                {p.stock <= p.minStock && (
+                                                    <AlertTriangle size={12} className="text-amber-500" />
+                                                )}
+                                            </div>
+                                            <div className={`text-xs ${p.stock <= p.minStock ? 'text-amber-600 font-bold' : 'text-slate-500'}`}>
+                                                Stock: {p.stock} (mín: {p.minStock}) | ${p.price}
+                                            </div>
                                         </div>
                                         <Plus size={16} className="text-blue-500" />
                                     </button>

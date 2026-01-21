@@ -12,6 +12,7 @@ import {
     CaseStatus,
     LogChannel
 } from '@prisma/client';
+import { parseLeadIntake, StructuredLead } from './gemini';
 
 export type ActionResponse<T = any> = {
     success: boolean;
@@ -121,6 +122,67 @@ export async function createLeadCase(input: {
     } catch (error) {
         console.error('Error creating LeadCase:', error);
         return { success: false, error: 'Failed to create case' };
+    }
+}
+
+/**
+ * Uses Gemini to parse raw intake text and auto-populate case data
+ */
+export async function processLeadWithAI(caseId: string, rawText: string) {
+    try {
+        // 1. Call Gemini to parse
+        const aiRes = await parseLeadIntake(rawText);
+        if (!aiRes.success || !aiRes.data) return { success: false, error: aiRes.error || 'Parsing failed' };
+
+        const data = aiRes.data;
+
+        // 2. Update the LeadCase with AI findings
+        await prisma.leadCase.update({
+            where: { id: caseId },
+            data: {
+                summary: data.summary || undefined,
+                priority: data.urgency === 'alta' ? 'HIGH' : data.urgency === 'media' ? 'MEDIUM' : 'LOW',
+            }
+        });
+
+        // 3. Populate Checklist Items if they match
+        const checklistItems = await prisma.caseChecklistItem.findMany({
+            where: { leadCaseId: caseId }
+        });
+
+        for (const item of checklistItems) {
+            let newValue = null;
+
+            // Basic matching logic
+            if (item.key === 'vehicle_model' && data.vehicle_model) newValue = data.vehicle_model;
+            if (item.key === 'vehicle_plate' && data.plate) newValue = data.plate;
+            if (item.key === 'service_type' && data.service_type) newValue = data.service_type;
+            if (item.key === 'need_summary' && data.summary) newValue = data.summary;
+
+            if (newValue) {
+                await prisma.caseChecklistItem.update({
+                    where: { id: item.id },
+                    data: { value: String(newValue), isDone: true }
+                });
+            }
+        }
+
+        // 4. Log AI Action
+        await prisma.caseLog.create({
+            data: {
+                leadCaseId: caseId,
+                authorUserId: 1, // System/AI
+                channel: 'INTERNAL_NOTE',
+                message: 'Información extraída automáticamente usando Gemini AI.',
+            }
+        });
+
+        revalidatePath(`/admin/inbox/${caseId}`);
+        return { success: true, data };
+
+    } catch (error) {
+        console.error('Error in processLeadWithAI:', error);
+        return { success: false, error: 'AI processing failed' };
     }
 }
 
@@ -296,8 +358,18 @@ export async function generateWhatsAppLink(caseId: string) {
         if (!leadCase.client?.phone) return { success: false, error: 'Client needs a phone number' };
 
         // 1. Format Message
+        const appointment = leadCase.status === 'SCHEDULED' ?
+            await prisma.appointment.findFirst({ where: { leadCaseId: caseId }, orderBy: { createdAt: 'desc' } }) : null;
+
         let message = `*Hola ${leadCase.client.name.split(' ')[0]}!* 👋\n`;
-        message += `Te escribimos de Lubri por: _${leadCase.summary}_\n\n`;
+
+        if (appointment) {
+            const dateStr = new Date(appointment.date).toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' });
+            const timeStr = new Date(appointment.date).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+            message += `Vimos que agendaste un turno para el *${dateStr}* a las *${timeStr}* para: _${leadCase.summary}_\n\n`;
+        } else {
+            message += `Te escribimos de Lubri por: _${leadCase.summary}_\n\n`;
+        }
 
         if (leadCase.vehicle) {
             message += `🚗 *Vehículo:* ${leadCase.vehicle.model} (${leadCase.vehicle.plate})\n`;
@@ -423,7 +495,12 @@ export async function getQuote(caseId: string) {
     try {
         const quote = await prisma.quote.findUnique({
             where: { leadCaseId: caseId },
-            include: { items: true }
+            include: {
+                items: true,
+                leadCase: {
+                    include: { client: true, vehicle: true }
+                }
+            }
         });
         return { success: true, data: quote };
     } catch (e) {

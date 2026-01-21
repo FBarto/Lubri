@@ -200,10 +200,13 @@ export default function ClientsPage() {
                                             )}
                                         </td>
                                         <td className="px-6 py-5 text-right space-x-2">
-                                            <button onClick={() => handleEdit(c)} className="text-blue-500 hover:text-blue-700 p-2 rounded-lg hover:bg-blue-50 transition-colors">
+                                            <a href={`/admin/clients/${c.id}`} className="inline-block text-slate-500 hover:text-indigo-600 p-2 rounded-lg hover:bg-slate-100 transition-colors" title="Ver Perfil Completo">
+                                                👁️
+                                            </a>
+                                            <button onClick={() => handleEdit(c)} className="text-blue-500 hover:text-blue-700 p-2 rounded-lg hover:bg-blue-50 transition-colors" title="Editar">
                                                 ✏️
                                             </button>
-                                            <button onClick={() => handleDelete(c.id)} className="text-red-400 hover:text-red-600 p-2 rounded-lg hover:bg-red-50 transition-colors">
+                                            <button onClick={() => handleDelete(c.id)} className="text-red-400 hover:text-red-600 p-2 rounded-lg hover:bg-red-50 transition-colors" title="Eliminar">
                                                 🗑️
                                             </button>
                                         </td>

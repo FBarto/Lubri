@@ -54,8 +54,8 @@ export async function searchProducts(query: string, category?: string): Promise<
 }
 
 // 3. Get Insights (What filters/oils does this model usually use?)
-export async function getVehicleInsights(modelString: string) {
-    if (!modelString) return null;
+export async function getVehicleInsights(brand: string, model: string) {
+    if (!brand || !model) return null;
 
     // Use WorkOrders to find what was sold for this vehicle model
     // WorkOrder has relation 'vehicle'.
@@ -63,10 +63,8 @@ export async function getVehicleInsights(modelString: string) {
     const workOrders = await prisma.workOrder.findMany({
         where: {
             vehicle: {
-                OR: [
-                    { model: { contains: modelString, mode: 'insensitive' } },
-                    { brand: { contains: modelString, mode: 'insensitive' } }
-                ]
+                brand: { equals: brand, mode: 'insensitive' },
+                model: { equals: model, mode: 'insensitive' }
             },
             status: { not: 'PENDING' }
         },
@@ -102,4 +100,82 @@ export async function getVehicleInsights(modelString: string) {
     return {
         topProducts
     };
+}
+
+// 4. Smart Service Suggestion (The "Brain")
+export async function suggestServiceItems(vehicleId: number) {
+    try {
+        const vehicle = await prisma.vehicle.findUnique({ where: { id: vehicleId } });
+        if (!vehicle) return { success: false, error: 'Vehículo no encontrado' };
+
+        // STRATEGY 1: LEARNED SPECS (The "Memory")
+        // If we explicitly saved what filters/oil this car uses.
+        const specs = (vehicle.specifications as any)?.learned;
+        if (specs && Object.keys(specs).length > 0) {
+            // Convert stored specs to QuoteItems
+            // learned: { oil_filter: { productId: 1, name: 'Filter X', ... } }
+            const items = Object.values(specs).map((s: any) => ({
+                id: s.productId || Math.random(), // fallback id
+                name: s.name,
+                price: 0, // We need to fetch current price!
+                quantity: 1,
+                type: 'PRODUCT',
+                isLearned: true
+            }));
+
+            // Fetch current prices
+            for (const item of items) {
+                if ((item as any).id) {
+                    const p = await prisma.product.findUnique({ where: { id: Number((item as any).id) } });
+                    if (p) {
+                        item.price = p.price;
+                        item.name = p.name; // Refresh name
+                    }
+                }
+            }
+
+            return { success: true, method: 'LEARNED', items };
+        }
+
+        // STRATEGY 2: HISTORY (The "Habit")
+        // What did we put in this car last time?
+        // We import dynamically to avoid circular deps if any, though likely fine.
+        const { getLastServiceItems } = await import('./maintenance-actions');
+        const lastService = await getLastServiceItems(vehicleId);
+
+        if (lastService.success && lastService.data && lastService.data.items.length > 0) {
+            // Filter for Oil/Filters only to be safe? Or return whole service?
+            // Usually we want to replicate the maintenance.
+            return { success: true, method: 'HISTORY', items: lastService.data.items };
+        }
+
+        // STRATEGY 3: COLLECTIVE INTELLIGENCE (The "Crowd")
+        // What do other cars of this model use?
+        const insights = await getVehicleInsights(vehicle.brand || '', vehicle.model || '');
+
+        if (insights && insights.topProducts.length > 0) {
+            const items = await Promise.all(insights.topProducts.map(async (p) => {
+                // product: { name: 'Shell 10w40', count: 10, type: 'PRODUCT' }
+                // We need to find the real product to get price
+                const realProduct = await prisma.product.findFirst({
+                    where: { name: p.name, active: true }
+                });
+                return {
+                    id: realProduct?.id || Math.random(),
+                    name: p.name,
+                    price: realProduct?.price || 0,
+                    quantity: 1,
+                    type: p.type
+                };
+            }));
+
+            return { success: true, method: 'CROWD', items };
+        }
+
+        return { success: false, error: 'No se encontraron datos suficientes para sugerir.' };
+
+    } catch (error) {
+        console.error('Smart Suggest Error:', error);
+        return { success: false, error: 'Error interno de IA' };
+    }
 }

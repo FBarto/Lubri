@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { LeadCase, CaseChecklistItem, CaseLog, CaseStatus, LogChannel, ChecklistTemplate } from '@prisma/client';
 import { ArrowLeft, CheckCircle2, Circle, Copy, Send, Save, AlertCircle, Sparkles, CalendarClock, X, MessageCircle, UserPlus, Car, FileText } from 'lucide-react';
-import { updateChecklistItem, addCaseLog, updateCaseStatus, convertCaseToAppointment, getServicesList, generateWhatsAppLink, searchClients, assignClientToCase, createQuickClient, createQuickVehicle, getClientVehicles } from '../../lib/inbox-actions';
+import { updateChecklistItem, addCaseLog, updateCaseStatus, convertCaseToAppointment, getServicesList, generateWhatsAppLink, searchClients, assignClientToCase, createQuickClient, createQuickVehicle, getClientVehicles, processLeadWithAI } from '../../lib/inbox-actions';
 import { useRouter } from 'next/navigation';
 import SmartInput from './SmartInput';
 import QuoteBuilder from './QuoteBuilder';
@@ -51,6 +51,7 @@ export default function CaseDetailView({ leadCase, currentUserId }: CaseDetailPr
     const [logs, setLogs] = useState(leadCase.logs);
     const [newMessage, setNewMessage] = useState('');
     const [isSending, setIsSending] = useState(false);
+    const [isProcessingAI, setIsProcessingAI] = useState(false);
     const router = useRouter();
 
     // Conversion Modal State
@@ -205,6 +206,20 @@ export default function CaseDetailView({ leadCase, currentUserId }: CaseDetailPr
         // Could show toast here
     };
 
+    const handleAIProcess = async () => {
+        if (!leadCase.intakeRawText) return;
+        setIsProcessingAI(true);
+        const res = await processLeadWithAI(leadCase.id, leadCase.intakeRawText);
+        if (res.success) {
+            router.refresh();
+            // Optionally update local checklist state if revalidatePath isn't enough for immediate UI update
+            window.location.reload(); // Quick way to sync everything for now
+        } else {
+            alert('Error AI: ' + res.error);
+        }
+        setIsProcessingAI(false);
+    };
+
     // Calculate progress
     const requiredItems = checklist.filter(i => i.isRequired);
     const completedRequired = requiredItems.filter(i => i.isDone).length;
@@ -256,10 +271,23 @@ export default function CaseDetailView({ leadCase, currentUserId }: CaseDetailPr
 
                 {/* Checklist Form */}
                 <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex-1">
-                    <h3 className="font-bold text-slate-800 mb-6 flex items-center gap-2">
-                        <CheckCircle2 className="w-5 h-5 text-blue-500" />
-                        Checklist Requerido
-                    </h3>
+                    <div className="flex justify-between items-center mb-6">
+                        <h3 className="font-bold text-slate-800 flex items-center gap-2">
+                            <CheckCircle2 className="w-5 h-5 text-blue-500" />
+                            Checklist Requerido
+                        </h3>
+                        {leadCase.intakeRawText && (
+                            <button
+                                onClick={handleAIProcess}
+                                disabled={isProcessingAI}
+                                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${isProcessingAI ? 'bg-slate-100 text-slate-400' : 'bg-violet-100 text-violet-700 hover:bg-violet-200'
+                                    }`}
+                            >
+                                <Sparkles className={`w-3.5 h-3.5 ${isProcessingAI ? 'animate-pulse' : ''}`} />
+                                {isProcessingAI ? 'Extrayendo...' : 'Completar con IA'}
+                            </button>
+                        )}
+                    </div>
 
                     <div className="space-y-6">
                         {checklist.map(item => (

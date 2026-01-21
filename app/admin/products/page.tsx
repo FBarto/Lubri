@@ -12,6 +12,7 @@ interface Product {
     category: string;
     price: number;
     stock: number;
+    minStock: number;
     active: boolean;
 }
 
@@ -36,6 +37,7 @@ export default function AdminProductsPage() {
         category: '',
         price: '',
         stock: '0',
+        minStock: '0',
         barcode: ''
     });
 
@@ -122,7 +124,7 @@ export default function AdminProductsPage() {
             if (res.ok) {
                 setShowModal(false);
                 setEditingProduct(null);
-                setFormData({ name: '', code: '', category: '', price: '', stock: '0', barcode: '' });
+                setFormData({ name: '', code: '', category: '', price: '', stock: '0', minStock: '0', barcode: '' });
                 fetchProducts(currentPage, search);
                 fetchStats(); // Update stats in case stock changed
             }
@@ -139,6 +141,7 @@ export default function AdminProductsPage() {
             category: product.category,
             price: product.price.toString(),
             stock: product.stock.toString(),
+            minStock: product.minStock.toString(),
             barcode: product.barcode || ''
         });
         setShowModal(true);
@@ -160,7 +163,7 @@ export default function AdminProductsPage() {
                     <FileUp size={20} /> Importar CSV
                 </Link>
                 <button
-                    onClick={() => { setShowModal(true); setEditingProduct(null); setFormData({ name: '', code: '', category: '', price: '', stock: '0', barcode: '' }); }}
+                    onClick={() => { setShowModal(true); setEditingProduct(null); setFormData({ name: '', code: '', category: '', price: '', stock: '0', minStock: '0', barcode: '' }); }}
                     className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-2xl font-bold transition-all shadow-lg hover:shadow-blue-200 active:scale-95 flex items-center gap-2 shrink-0"
                 >
                     <Plus size={20} /> Nuevo Producto
@@ -232,13 +235,20 @@ export default function AdminProductsPage() {
                                         <td className="px-6 py-5 font-bold text-slate-800 text-right">${product.price.toLocaleString()}</td>
                                         <td className="px-6 py-5">
                                             <div className="flex flex-col items-center gap-1">
-                                                <span className={`font-bold ${product.stock <= 0 ? 'text-red-500' : 'text-slate-700'}`}>
-                                                    {product.stock}
-                                                </span>
+                                                <div className="flex items-center gap-2">
+                                                    <span className={`font-bold ${product.stock <= (product.minStock || 0) ? 'text-red-500' : 'text-slate-700'}`}>
+                                                        {product.stock}
+                                                    </span>
+                                                    <span className="text-[10px] text-slate-400 font-medium">/ mín: {product.minStock || 0}</span>
+                                                </div>
                                                 {product.stock <= 0 ? (
-                                                    <span className="text-[10px] font-black text-red-500 uppercase">Sin Stock</span>
-                                                ) : product.stock < 5 ? (
-                                                    <span className="text-[10px] font-black text-amber-500 uppercase">Bajo</span>
+                                                    <span className="text-[10px] font-black text-red-500 uppercase flex items-center gap-1">
+                                                        <AlertTriangle size={10} /> Sin Stock
+                                                    </span>
+                                                ) : product.stock <= (product.minStock || 0) ? (
+                                                    <span className="text-[10px] font-black text-amber-500 uppercase flex items-center gap-1">
+                                                        <AlertTriangle size={10} /> Bajo
+                                                    </span>
                                                 ) : null}
                                             </div>
                                         </td>
@@ -347,6 +357,17 @@ export default function AdminProductsPage() {
                                         type="number"
                                         value={formData.stock}
                                         onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
+                                        className="w-full bg-slate-50 border-0 rounded-2xl p-4 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                                        placeholder="0"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-semibold text-slate-600 mb-2 ml-1">Stock Mínimo</label>
+                                    <input
+                                        required
+                                        type="number"
+                                        value={formData.minStock}
+                                        onChange={(e) => setFormData({ ...formData, minStock: e.target.value })}
                                         className="w-full bg-slate-50 border-0 rounded-2xl p-4 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                                         placeholder="0"
                                     />

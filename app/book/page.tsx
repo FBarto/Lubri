@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { User, Car, ArrowRight, Check, AlertCircle } from 'lucide-react';
+import { User, Car, ArrowRight, Check, AlertCircle, MessageCircle } from 'lucide-react';
+import { generateWhatsAppLink } from '../lib/inbox-actions';
 
 // Types
 type Client = {
@@ -326,6 +327,8 @@ export default function BookAppointment() {
             });
 
             if (res.ok) {
+                const data = await res.json();
+                if (data.caseId) (window as any).lastCaseId = data.caseId;
                 setStep(6);
             } else {
                 const err = await res.json();
@@ -736,12 +739,33 @@ export default function BookAppointment() {
                         <h2 className="text-3xl font-black text-slate-900 mb-2 italic uppercase">¡Solicitud Enviada!</h2>
                         <p className="text-slate-500 text-lg mb-8 font-medium">Hemos recibido tu solicitud. Te confirmaremos por WhatsApp a la brevedad.</p>
 
-                        <button
-                            onClick={() => router.push('/')}
-                            className="w-full bg-slate-900 text-white p-4 rounded-xl font-bold text-lg hover:bg-black transition-all"
-                        >
-                            Volver al Inicio
-                        </button>
+                        <div className="space-y-3">
+                            <button
+                                onClick={async () => {
+                                    const caseId = (window as any).lastCaseId;
+                                    if (caseId) {
+                                        const res = await generateWhatsAppLink(caseId);
+                                        if (res.success && res.url) {
+                                            window.open(res.url, '_blank');
+                                        }
+                                        router.push(`/admin/inbox/${caseId}`);
+                                    } else {
+                                        router.push('/admin/inbox');
+                                    }
+                                }}
+                                className="w-full bg-green-600 text-white p-4 rounded-xl font-black text-lg shadow-xl shadow-green-600/20 hover:bg-green-700 active:scale-[0.98] transition-all uppercase tracking-wide flex items-center justify-center gap-2"
+                            >
+                                <MessageCircle size={20} />
+                                Confirmar por WhatsApp
+                            </button>
+
+                            <button
+                                onClick={() => router.push('/')}
+                                className="w-full bg-slate-100 text-slate-500 p-4 rounded-xl font-bold text-lg hover:bg-slate-200 transition-all font-medium"
+                            >
+                                Volver al Inicio
+                            </button>
+                        </div>
                     </div>
                 )}
             </main>

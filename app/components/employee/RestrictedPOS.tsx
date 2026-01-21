@@ -9,6 +9,7 @@ import CheckoutModal from '@/app/components/pos/CheckoutModal';
 import PriceReasonModal from './PriceReasonModal';
 import CancellationModal from './CancellationModal';
 import DailyCloseModal from '@/app/components/pos/DailyCloseModal';
+import StockAlertModal from './StockAlertModal';
 import { useSession } from 'next-auth/react';
 
 interface RestrictedPOSProps {
@@ -33,6 +34,14 @@ export default function RestrictedPOS({ cart, setCart }: RestrictedPOSProps) {
     const [isDailyCloseOpen, setIsDailyCloseOpen] = useState(false);
     const [priceEditTargetId, setPriceEditTargetId] = useState<string | null>(null);
     const [priceEditCurrentPrice, setPriceEditCurrentPrice] = useState(0);
+
+    const [isStockModalOpen, setIsStockModalOpen] = useState(false);
+    const [pendingStockAction, setPendingStockAction] = useState<{
+        type: 'ADD' | 'UPDATE',
+        item: any,
+        quantity?: number,
+        uniqueId?: string
+    } | null>(null);
 
     useEffect(() => {
         async function fetchData() {
@@ -69,58 +78,63 @@ export default function RestrictedPOS({ cart, setCart }: RestrictedPOSProps) {
         }
     };
 
-    const addToCart = (item: any, serviceData: any = {}) => {
+    const addToCart = (item: any, serviceData: any = {}, force: boolean = false) => {
+        const existing = cart.find(i => i.id === item.id && i.type === item.type && item.type === 'PRODUCT');
+
+        // Stock Check
+        if (!force && item.type === 'PRODUCT') {
+            const currentQty = existing ? existing.quantity : 0;
+            const newQty = currentQty + 1;
+            if (item.stock !== undefined && newQty > item.stock) {
+                setPendingStockAction({ type: 'ADD', item, quantity: newQty });
+                setIsStockModalOpen(true);
+                return;
+            }
+        }
+
         setCart(prev => {
-            const existing = prev.find(i => i.id === item.id && i.type === item.type && item.type === 'PRODUCT');
-
-            // Stock Check for Existing Item
-            if (existing && item.type === 'PRODUCT') {
-                const newQty = existing.quantity + 1;
-                if (existing.stock !== undefined && newQty > existing.stock) {
-                    if (!confirm(`⚠️ STOCK BAJO: Solo quedan ${existing.stock} unidades de "${existing.name}".\n\n¿Agregar igual y dejar stock negativo?`)) {
-                        return prev; // User cancelled
-                    }
-                }
-                return prev.map(i => i.uniqueId === existing.uniqueId ? { ...i, quantity: newQty, subtotal: newQty * i.price } : i);
+            const existingInPrev = prev.find(i => i.id === item.id && i.type === item.type && item.type === 'PRODUCT');
+            if (existingInPrev) {
+                return prev.map(i => i.uniqueId === existingInPrev.uniqueId ? { ...i, quantity: i.quantity + 1, subtotal: (i.quantity + 1) * i.price } : i);
             }
-
-            // Stock Check for New Item
-            if (item.type === 'PRODUCT' && item.stock !== undefined && 1 > item.stock) {
-                if (!confirm(`⚠️ STOCK BAJO: Solo quedan ${item.stock} unidades de "${item.name}".\n\n¿Agregar igual y dejar stock negativo?`)) {
-                    return prev;
-                }
-            }
-
             return [...prev, {
                 ...item,
                 uniqueId: Math.random().toString(36).substr(2, 9),
                 quantity: 1,
                 subtotal: item.price,
-                ...serviceData // Include client/vehicle info
+                ...serviceData
             }];
         });
     }
+
+    const handleConfirmStockAction = () => {
+        if (!pendingStockAction) return;
+
+        if (pendingStockAction.type === 'ADD') {
+            addToCart(pendingStockAction.item, {}, true);
+        } else if (pendingStockAction.type === 'UPDATE') {
+            handleUpdateQuantity(pendingStockAction.uniqueId!, pendingStockAction.quantity!, true);
+        }
+
+        setIsStockModalOpen(false);
+        setPendingStockAction(null);
+    };
 
     const handleServiceConfirm = (data: any) => {
         addToCart(selectedServiceForModal, data);
     };
 
-    const handleUpdateQuantity = (uniqueId: string, q: number) => {
-        setCart(prev => prev.map(item => {
-            if (item.uniqueId === uniqueId) {
-                // Stock Check
-                if (item.type === 'PRODUCT' && item.stock !== undefined && q > item.stock) {
-                    // Only warn if increasing (to avoid annoying loops when decreasing)
-                    if (q > item.quantity) {
-                        if (!confirm(`⚠️ STOCK BAJO: Solo quedan ${item.stock} unidades.\n\n¿Cambiar a ${q} y dejar stock negativo?`)) {
-                            return item; // Keep old quantity
-                        }
-                    }
-                }
-                return { ...item, quantity: q, subtotal: q * item.price };
-            }
-            return item;
-        }));
+    const handleUpdateQuantity = (uniqueId: string, q: number, force: boolean = false) => {
+        const item = cart.find(i => i.uniqueId === uniqueId);
+        if (!item) return;
+
+        if (!force && item.type === 'PRODUCT' && item.stock !== undefined && q > item.stock && q > item.quantity) {
+            setPendingStockAction({ type: 'UPDATE', item, quantity: q, uniqueId });
+            setIsStockModalOpen(true);
+            return;
+        }
+
+        setCart(prev => prev.map(i => i.uniqueId === uniqueId ? { ...i, quantity: q, subtotal: q * i.price } : i));
     };
 
     // Restricted Price Update Handler
@@ -315,6 +329,17 @@ export default function RestrictedPOS({ cart, setCart }: RestrictedPOSProps) {
             <DailyCloseModal
                 isOpen={isDailyCloseOpen}
                 onClose={() => setIsDailyCloseOpen(false)}
+            />
+
+            <StockAlertModal
+                isOpen={isStockModalOpen}
+                onClose={() => {
+                    setIsStockModalOpen(false);
+                    setPendingStockAction(null);
+                }}
+                onConfirm={handleConfirmStockAction}
+                itemName={pendingStockAction?.item?.name || ''}
+                availableStock={pendingStockAction?.item?.stock || 0}
             />
         </div>
     );

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Car, Calendar, History, FileText, Image as ImageIcon, Video } from 'lucide-react';
+import { Car, Calendar, History, FileText, Image as ImageIcon, Video, AlertTriangle } from 'lucide-react';
 
 interface PortalData {
     name: string;
@@ -25,9 +25,9 @@ export default function PortalClientView({ data }: { data: PortalData }) {
             <div className="flex p-4 gap-4 shrink-0">
                 <button
                     onClick={() => setActiveTab('VEHICLES')}
-                    className={`flex-1 py-3 px-4 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all ${activeTab === 'VEHICLES'
-                            ? 'bg-blue-600 text-white shadow-lg shadow-blue-200'
-                            : 'bg-white text-slate-500 hover:bg-slate-50'
+                    className={`flex-1 py-3 px-4 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all hover:scale-[1.02] active:scale-95 ${activeTab === 'VEHICLES'
+                        ? 'bg-blue-600 text-white shadow-lg shadow-blue-200'
+                        : 'bg-white text-slate-500 hover:bg-slate-50'
                         }`}
                 >
                     <Car size={20} />
@@ -35,9 +35,9 @@ export default function PortalClientView({ data }: { data: PortalData }) {
                 </button>
                 <button
                     onClick={() => setActiveTab('HISTORY')}
-                    className={`flex-1 py-3 px-4 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all ${activeTab === 'HISTORY'
-                            ? 'bg-blue-600 text-white shadow-lg shadow-blue-200'
-                            : 'bg-white text-slate-500 hover:bg-slate-50'
+                    className={`flex-1 py-3 px-4 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all hover:scale-[1.02] active:scale-95 ${activeTab === 'HISTORY'
+                        ? 'bg-blue-600 text-white shadow-lg shadow-blue-200'
+                        : 'bg-white text-slate-500 hover:bg-slate-50'
                         }`}
                 >
                     <History size={20} />
@@ -60,9 +60,17 @@ export default function PortalClientView({ data }: { data: PortalData }) {
                                         <Car size={24} />
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-2 text-sm text-slate-500 bg-slate-50 p-3 rounded-xl">
-                                    <Calendar size={16} />
-                                    <span>Último km registrado: <strong>{vehicle.mileage || 'No registrado'} km</strong></span>
+                                <div className="space-y-2">
+                                    <div className="flex items-center gap-2 text-sm text-slate-500 bg-slate-50 p-3 rounded-xl">
+                                        <Calendar size={16} />
+                                        <span>Último km: <strong>{vehicle.mileage || '---'} km</strong></span>
+                                    </div>
+                                    {vehicle.predictedNextService && (
+                                        <div className="flex items-center gap-2 text-sm text-blue-600 bg-blue-50 p-3 rounded-xl border border-blue-100 animate-pulse">
+                                            <AlertTriangle size={16} />
+                                            <span>Próximo Service estimado: <strong>{new Date(vehicle.predictedNextService).toLocaleDateString()}</strong></span>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         ))}
@@ -91,8 +99,8 @@ export default function PortalClientView({ data }: { data: PortalData }) {
                                         </div>
                                         <div className="text-right">
                                             <span className={`text-xs font-bold px-2 py-1 rounded uppercase ${wo.status === 'COMPLETED' || wo.status === 'DELIVERED'
-                                                    ? 'bg-emerald-100 text-emerald-700'
-                                                    : 'bg-amber-100 text-amber-700'
+                                                ? 'bg-emerald-100 text-emerald-700'
+                                                : 'bg-amber-100 text-amber-700'
                                                 }`}>
                                                 {wo.status === 'DELIVERED' ? 'Finalizado' : wo.status}
                                             </span>
@@ -101,8 +109,22 @@ export default function PortalClientView({ data }: { data: PortalData }) {
 
                                     {wo.mileage && (
                                         <div className="mt-3 pl-2 text-sm text-slate-600 flex items-center gap-2">
-                                            <div className="w-1 h-1 rounded-full bg-slate-300" />
-                                            Kilometraje: {wo.mileage} km
+                                            <div className="w-1.5 h-1.5 rounded-full bg-blue-400" />
+                                            Kilometraje: <strong>{wo.mileage.toLocaleString()} km</strong>
+                                        </div>
+                                    )}
+
+                                    {/* Itemized Breakdown for Client */}
+                                    {wo.serviceDetails?.items?.length > 0 && (
+                                        <div className="mt-3 pl-2 pr-2">
+                                            <div className="bg-slate-50 rounded-xl p-3 space-y-2">
+                                                {wo.serviceDetails.items.map((item: any, idx: number) => (
+                                                    <div key={idx} className="flex justify-between items-center text-[11px]">
+                                                        <span className="text-slate-500 font-medium">{item.name}</span>
+                                                        <span className="text-slate-400">x{item.quantity}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
                                         </div>
                                     )}
 
