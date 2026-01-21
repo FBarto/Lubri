@@ -46,7 +46,7 @@ async function main() {
         }
 
         console.log('📋 Suggested Items:');
-        result.items.forEach((item: any) => {
+        result.items?.forEach((item: any) => {
             console.log(`   - 🔧 ${item.name} ($${item.price})`);
         });
 

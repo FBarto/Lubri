@@ -29,7 +29,8 @@ export async function searchVehicleModels(query: string): Promise<SearchResult[]
         id: v.id,
         label: `${v.brand || ''} ${v.model || ''}`.trim(),
         value: `${v.brand || ''} ${v.model || ''}`.trim(),
-        subLabel: v.plate
+        subLabel: v.plate,
+        data: { brand: v.brand, model: v.model }
     }));
 }
 

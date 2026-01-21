@@ -89,7 +89,7 @@ export default function SmartInput({ value, onChange, type, placeholder, onInsig
 
         if (type === 'VEHICLE' && onInsightsFound) {
             // Trigger insights fetch
-            const insights = await getVehicleInsights(item.value);
+            const insights = await getVehicleInsights(item.data?.brand || '', item.data?.model || '');
             if (insights && insights.topProducts.length > 0) {
                 onInsightsFound(insights);
             }

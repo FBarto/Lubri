@@ -25,11 +25,11 @@ async function main() {
     if (result.success) {
         console.log(`✅ SUCCESS! Method Used: ${result.method}`);
         console.log('📋 Suggested Items:');
-        result.items.forEach((item: any) => {
+        result.items?.forEach((item: any) => {
             console.log(`   - 🔧 ${item.name} ($${item.price}) x${item.quantity}`);
         });
 
-        if (result.items.length > 0) {
+        if (result.items && result.items.length > 0) {
             console.log('\n🎉 Verification PASSED: The system correctly recalled the history.');
         } else {
             console.error('❌ Verification FAILED: No items returned.');
