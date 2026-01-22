@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import ItemsGrid from '@/app/components/pos/ItemsGrid';
 import Cart from '@/app/components/pos/Cart';
 import ServiceModal from '@/app/components/pos/ServiceModal';
@@ -9,7 +9,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import PendingSalesSlider from '@/app/components/pos/PendingSalesSlider';
 import { ShoppingBag } from 'lucide-react';
 
-export default function POSPage() {
+function POSContent() {
     const router = useRouter();
     const [products, setProducts] = useState<any[]>([]);
     const [services, setServices] = useState<any[]>([]);
@@ -201,5 +201,13 @@ export default function POSPage() {
                 }}
             />
         </div>
+    );
+}
+
+export default function POSPage() {
+    return (
+        <Suspense fallback={<div className="h-screen flex items-center justify-center font-bold text-slate-500">Iniciando Punto de Venta...</div>}>
+            <POSContent />
+        </Suspense>
     );
 }
