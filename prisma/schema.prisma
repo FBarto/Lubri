@@ -190,6 +190,8 @@ model Sale {
 
   userId        Int?
   user          User?    @relation(fields: [userId], references: [id])
+
+  status        String   @default("COMPLETED") // PENDING (Sent to Caja), COMPLETED (Paid), CANCELLED
 }
 
 model SaleItem {

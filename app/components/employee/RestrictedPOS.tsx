@@ -165,7 +165,7 @@ export default function RestrictedPOS({ cart, setCart }: RestrictedPOSProps) {
 
     const handleClearCart = () => setCart([]);
     const handleCheckoutClick = () => {
-        setIsCheckoutOpen(true);
+        handleFinalizeSale();
     };
 
     const handleRequestCancellation = () => {
@@ -206,40 +206,34 @@ export default function RestrictedPOS({ cart, setCart }: RestrictedPOSProps) {
         }
     };
 
-    const handleFinalizeSale = async (payments: any[]) => {
-        // Prepare base items from cart
-        const baseItems = cart.map(i => ({
+    const handleFinalizeSale = async () => {
+        if (cart.length === 0) return;
+
+        // Prepare items for the pending sale
+        const items = cart.map(i => ({
             type: i.type,
             id: i.id,
-            name: i.name,
+            description: i.name,
             price: i.price,
             quantity: i.quantity,
             clientId: i.clientId,
             vehicleId: i.vehicleId,
+            workOrderId: i.workOrderId,
             notes: i.notes ? `${i.notes} ${i.priceReason ? `(Cambio Precio: ${i.priceReason})` : ''}` : (i.priceReason ? `Cambio Precio: ${i.priceReason}` : undefined)
         }));
 
-        // Extract surcharges from payments and create virtual items for them
-        const surchargeItems = payments
-            .filter(p => p.surcharge)
-            .map(p => ({
-                type: 'SERVICE',
-                id: undefined,
-                name: `Recargo Financiación (${p.surcharge.plan})`,
-                price: p.surcharge.surchargeAmount,
-                quantity: 1,
-                notes: `Aplicado sobre base de $${p.baseAmount}`
-            }));
-
-        const finalItems = [...baseItems, ...surchargeItems];
-
         const payload = {
-            total: finalItems.reduce((sum, i) => sum + (i.price * i.quantity), 0),
-            paymentMethod: payments.map(p => {
-                const detail = p.surcharge ? ` (${p.surcharge.plan})` : '';
-                return `${p.method}${detail}: $${p.amount.toLocaleString()}`;
-            }).join(' | '),
-            items: finalItems
+            userId: session?.user?.id ? Number(session.user.id) : 1,
+            clientId: items[0]?.clientId, // Optional: take from first item if any
+            status: 'PENDING' as const,
+            items: items.map(i => ({
+                type: i.type as 'PRODUCT' | 'SERVICE',
+                id: i.id,
+                description: i.description,
+                quantity: i.quantity,
+                unitPrice: i.price,
+                workOrderId: i.workOrderId
+            }))
         };
 
         try {
@@ -251,10 +245,10 @@ export default function RestrictedPOS({ cart, setCart }: RestrictedPOSProps) {
 
             if (res.ok) {
                 setCart([]);
-                setIsCheckoutOpen(false);
-                alert('Venta Exitosa!');
+                alert('¡Enviado a Caja con éxito!');
             } else {
-                alert('Error al guardar venta');
+                const err = await res.json();
+                alert(`Error: ${err.error || 'No se pudo enviar to caja'}`);
             }
         } catch (e) {
             console.error(e);

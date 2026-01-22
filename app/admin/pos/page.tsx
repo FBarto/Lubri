@@ -5,7 +5,9 @@ import ItemsGrid from '@/app/components/pos/ItemsGrid';
 import Cart from '@/app/components/pos/Cart';
 import ServiceModal from '@/app/components/pos/ServiceModal';
 import CheckoutModal from '@/app/components/pos/CheckoutModal';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import PendingSalesSlider from '@/app/components/pos/PendingSalesSlider';
+import { ShoppingBag } from 'lucide-react';
 
 export default function POSPage() {
     const router = useRouter();
@@ -20,6 +22,16 @@ export default function POSPage() {
     const [selectedServiceForModal, setSelectedServiceForModal] = useState<any>(null);
 
     const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+
+    // Pending Sales Slider
+    const searchParams = useSearchParams();
+    const [isPendingSliderOpen, setIsPendingSliderOpen] = useState(false);
+
+    useEffect(() => {
+        if (searchParams.get('view') === 'pending') {
+            setIsPendingSliderOpen(true);
+        }
+    }, [searchParams]);
 
     useEffect(() => {
         async function fetchData() {
@@ -179,6 +191,14 @@ export default function POSPage() {
                 onClose={() => setIsCheckoutOpen(false)}
                 onConfirm={handleFinalizeSale}
                 total={total}
+            />
+
+            <PendingSalesSlider
+                isOpen={isPendingSliderOpen}
+                onClose={() => setIsPendingSliderOpen(false)}
+                onFinalized={() => {
+                    // Optional: refresh any local state if needed
+                }}
             />
         </div>
     );

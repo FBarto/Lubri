@@ -193,7 +193,7 @@ export default function Cart({ items, onUpdateQuantity, onUpdatePrice, onRemoveI
                     disabled={items.length === 0}
                     className="w-full bg-slate-900 hover:bg-black text-white py-4 rounded-xl font-bold text-lg shadow-xl shadow-slate-900/10 active:scale-[0.98] transition-all disabled:opacity-50 disabled:grayscale disabled:shadow-none flex items-center justify-center gap-2"
                 >
-                    <span>COBRAR</span>
+                    <span>{restrictedMode ? 'MANDAR A CAJA' : 'COBRAR'}</span>
                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M14 5l7 7m0 0l-7 7m7-7H3" />
                     </svg>

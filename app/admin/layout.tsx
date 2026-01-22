@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { Menu, X } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import NotificationsWidget from '../components/admin/NotificationsWidget';
+import PendingSalesUSD from '../components/pos/PendingSalesUSD';
 
 export default function AdminLayout({
     children,
@@ -24,6 +25,7 @@ export default function AdminLayout({
                     FB Lubricentro
                 </span>
                 <div className="flex items-center gap-2">
+                    <PendingSalesUSD />
                     {userId > 0 && <NotificationsWidget userId={userId} />}
                     <button
                         onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -168,7 +170,8 @@ export default function AdminLayout({
             {/* Main Content */}
             <main className="flex-1 p-4 md:p-8 max-w-7xl mx-auto w-full pt-20 md:pt-8 bg-slate-50 min-h-screen relative">
                 {/* Desktop Top Bar (Hidden on Mobile) */}
-                <div className="absolute top-4 right-8 hidden md:block z-20">
+                <div className="absolute top-4 right-8 hidden md:flex items-center gap-3 z-20">
+                    <PendingSalesUSD />
                     {userId > 0 && <NotificationsWidget userId={userId} />}
                 </div>
                 {children}

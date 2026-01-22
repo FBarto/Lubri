@@ -32,8 +32,9 @@ interface SaleItemInput {
 interface ProcessSaleInput {
     userId: number; // Who performed the sale
     clientId?: number;
-    paymentMethod: string;
+    paymentMethod?: string;
     items: SaleItemInput[];
+    status?: 'PENDING' | 'COMPLETED';
 }
 
 // --- Actions ---
@@ -107,10 +108,10 @@ export async function createWorkOrder(data: WorkOrderInput) {
 
 /**
  * Processes a Sale (POS Checkout).
- * Handles: Sale creation, SaleItem creation, Stock deduction, WorkOrder linking.
+ * Handles: Sale creation, SaleItem creation, Stock deduction (only if COMPLETED), WorkOrder linking.
  */
 export async function processSale(data: ProcessSaleInput) {
-    const { userId, clientId, paymentMethod, items } = data;
+    const { userId, clientId, paymentMethod, items, status = 'COMPLETED' } = data;
 
     // Calculate total
     const total = items.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
@@ -123,9 +124,10 @@ export async function processSale(data: ProcessSaleInput) {
                 data: {
                     userId,
                     clientId,
-                    paymentMethod,
+                    paymentMethod: paymentMethod || 'PENDING_PAYMENT',
                     total,
                     date: new Date(),
+                    status,
                 },
             });
 
@@ -145,8 +147,8 @@ export async function processSale(data: ProcessSaleInput) {
                     },
                 });
 
-                // Update Stock if Product
-                if (item.type === 'PRODUCT' && item.id) {
+                // Update Stock if Product AND Sale is COMPLETED
+                if (status === 'COMPLETED' && item.type === 'PRODUCT' && item.id) {
                     await tx.product.update({
                         where: { id: item.id },
                         data: {
@@ -163,7 +165,7 @@ export async function processSale(data: ProcessSaleInput) {
                         where: { id: item.workOrderId },
                         data: {
                             saleId: newSale.id,
-                            finishedAt: new Date(),
+                            ...(status === 'COMPLETED' ? { finishedAt: new Date() } : {}),
                         },
                     });
                 }
@@ -175,7 +177,7 @@ export async function processSale(data: ProcessSaleInput) {
         // 3. Log Activity
         await logActivity(
             userId,
-            'CHECKOUT',
+            status === 'PENDING' ? 'CREATE_PENDING' : 'CHECKOUT',
             'SALE',
             sale.id,
             { total, itemsCount: items.length, paymentMethod }
@@ -183,11 +185,91 @@ export async function processSale(data: ProcessSaleInput) {
 
         safeRevalidate('/employee');
         safeRevalidate('/admin/dashboard');
+        safeRevalidate('/admin/pos');
 
         return { success: true, sale };
     } catch (error) {
         console.error('Error processing sale:', error);
         return { success: false, error: 'Transaction failed' };
+    }
+}
+
+/**
+ * Finalizes a pending sale in Caja.
+ * Deducts stock and updates status.
+ */
+export async function finalizePendingSale(saleId: number, paymentMethod: string, userId: number) {
+    try {
+        const result = await prisma.$transaction(async (tx) => {
+            const sale = await tx.sale.findUnique({
+                where: { id: saleId },
+                include: { items: true }
+            });
+
+            if (!sale) throw new Error('Sale not found');
+            if (sale.status !== 'PENDING') throw new Error('Sale is already finalized');
+
+            // 1. Update Sale
+            const updatedSale = await tx.sale.update({
+                where: { id: saleId },
+                data: {
+                    status: 'COMPLETED',
+                    paymentMethod,
+                    userId, // Admin who finalized it
+                    date: new Date(), // Set final completion date
+                }
+            });
+
+            // 2. Adjust Stock for Products
+            for (const item of sale.items) {
+                if (item.type === 'PRODUCT' && item.productId) {
+                    await tx.product.update({
+                        where: { id: item.productId },
+                        data: {
+                            stock: { decrement: item.quantity }
+                        }
+                    });
+                }
+
+                // Close linked Work Orders
+                if (item.workOrderId) {
+                    await tx.workOrder.update({
+                        where: { id: item.workOrderId },
+                        data: { finishedAt: new Date() }
+                    });
+                }
+            }
+
+            return updatedSale;
+        });
+
+        await logActivity(userId, 'FINALIZE_PENDING', 'SALE', saleId, { paymentMethod });
+
+        safeRevalidate('/admin/pos');
+        safeRevalidate('/admin/dashboard');
+        safeRevalidate('/employee');
+
+        return { success: true, sale: result };
+    } catch (error: any) {
+        console.error('Finalize Sale Error:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+export async function getPendingSales() {
+    try {
+        const sales = await prisma.sale.findMany({
+            where: { status: 'PENDING' },
+            include: {
+                items: true,
+                client: true,
+                user: true // Who created it
+            },
+            orderBy: { date: 'desc' }
+        });
+        return { success: true, data: sales };
+    } catch (error) {
+        return { success: false, error: 'Failed to fetch pending sales' };
     }
 }
 
