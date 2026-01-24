@@ -109,9 +109,12 @@ export default function BookAppointment() {
                 const missingData = !data.brand || !data.model || data.brand === '' || data.model === '';
                 setNeedsDataUpdate(missingData);
                 if (missingData) {
+                    const specs = data.specifications || {};
                     setVehicleInfo({
                         brand: data.brand || '',
-                        model: data.model || ''
+                        model: data.model || '',
+                        fuelType: specs.fuelType || 'Nafta',
+                        engine: specs.engine || ''
                     });
                 }
 
