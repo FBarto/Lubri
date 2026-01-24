@@ -13,6 +13,7 @@ interface CreateVehicleModalProps {
 
 export default function CreateVehicleModal({ isOpen, onClose, onSuccess, clientId, clientName }: CreateVehicleModalProps) {
     const [loading, setLoading] = useState(false);
+    const [activeField, setActiveField] = useState<'brand' | 'model' | null>(null); // Autocomplete State
     const [formData, setFormData] = useState({
         plate: '',
         brand: '',
@@ -137,37 +138,77 @@ export default function CreateVehicleModal({ isOpen, onClose, onSuccess, clientI
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-1">
+                        <div className="space-y-1 relative group">
                             <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Marca</label>
                             <input
-                                list="brands"
                                 type="text"
                                 placeholder="Toyota"
                                 className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-medium transition-all"
                                 value={formData.brand}
-                                onChange={e => setFormData({ ...formData, brand: e.target.value })}
+                                onChange={e => {
+                                    setFormData({ ...formData, brand: e.target.value });
+                                    setActiveField('brand');
+                                }}
+                                onFocus={() => setActiveField('brand')}
+                                onBlur={() => setTimeout(() => setActiveField(null), 200)} // Delay to allow click
                             />
-                            <datalist id="brands">
-                                {Object.keys(VEHICLE_DATA).map(b => (
-                                    <option key={b} value={b} />
-                                ))}
-                            </datalist>
+                            {/* Brand Suggestions */}
+                            {activeField === 'brand' && formData.brand.length > 0 && (
+                                <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-100 shadow-xl rounded-xl max-h-48 overflow-y-auto z-50">
+                                    {Object.keys(VEHICLE_DATA)
+                                        .filter(b => b.toLowerCase().includes(formData.brand.toLowerCase()))
+                                        .map(b => (
+                                            <button
+                                                key={b}
+                                                type="button"
+                                                onClick={() => {
+                                                    setFormData({ ...formData, brand: b });
+                                                    setActiveField(null);
+                                                }}
+                                                className="w-full text-left px-4 py-2 hover:bg-slate-50 text-sm font-medium text-slate-700 block"
+                                            >
+                                                {b}
+                                            </button>
+                                        ))
+                                    }
+                                </div>
+                            )}
                         </div>
-                        <div className="space-y-1">
+                        <div className="space-y-1 relative group">
                             <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Modelo</label>
                             <input
-                                list="models"
                                 type="text"
                                 placeholder="Hilux"
                                 className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-medium transition-all"
                                 value={formData.model}
-                                onChange={e => setFormData({ ...formData, model: e.target.value })}
+                                onChange={e => {
+                                    setFormData({ ...formData, model: e.target.value });
+                                    setActiveField('model');
+                                }}
+                                onFocus={() => setActiveField('model')}
+                                onBlur={() => setTimeout(() => setActiveField(null), 200)}
                             />
-                            <datalist id="models">
-                                {availableModels.map(m => (
-                                    <option key={m} value={m} />
-                                ))}
-                            </datalist>
+                            {/* Model Suggestions */}
+                            {activeField === 'model' && availableModels.length > 0 && (
+                                <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-100 shadow-xl rounded-xl max-h-48 overflow-y-auto z-50">
+                                    {availableModels
+                                        .filter(m => m.toLowerCase().includes(formData.model.toLowerCase()))
+                                        .map(m => (
+                                            <button
+                                                key={m}
+                                                type="button"
+                                                onClick={() => {
+                                                    setFormData({ ...formData, model: m });
+                                                    setActiveField(null);
+                                                }}
+                                                className="w-full text-left px-4 py-2 hover:bg-slate-50 text-sm font-medium text-slate-700 block"
+                                            >
+                                                {m}
+                                            </button>
+                                        ))
+                                    }
+                                </div>
+                            )}
                         </div>
                     </div>
 
