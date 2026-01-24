@@ -184,34 +184,7 @@ export default function SmartQuote({ initialClient }: SmartQuoteProps) {
         }
     };
 
-    const loadLastService = async () => {
-        if (!vehicleInfo) return;
 
-        // Dynamic import to avoid server action issues if not set up right, or just ensure import is correct
-        // Using the imported action
-        const res = await suggestServiceEstimate(vehicleInfo.id, 'REPEAT' as any); // We need to update backend to handle 'REPEAT' OR just fetch history manually here.
-        // Actually, suggestServiceEstimate logic in step 224 doesn't support REPEAT cleanly yet (step 224 code showed only BASIC/FULL logic).
-        // BUT `getLastServiceItems` IS usable.
-
-        const historyRes = await getLastServiceItems(vehicleInfo.id);
-        if (historyRes.success && historyRes.data) {
-            const newItems = historyRes.data.items.map((item: any) => ({
-                id: item.id || Math.random(),
-                productId: item.id || null,
-                code: item.found ? (item.code || '---') : 'HIST',
-                name: item.name,
-                price: item.price,
-                stock: item.stock || 0,
-                minStock: 0,
-                quantity: item.quantity || 1,
-                type: item.type || 'PRODUCT',
-                category: item.category || 'OTHER'
-            }));
-            setQuoteItems(newItems);
-        } else {
-            alert('No se pudo cargar el último servicio.');
-        }
-    };
 
     const addItemFromHistory = (historyItem: any) => {
         // Use current product data if available (price, stock), otherwise fallback to history
