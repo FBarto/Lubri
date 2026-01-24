@@ -253,7 +253,6 @@ export async function getRecentWorkOrders(vehicleId: number, limit: number = 5) 
             where: { vehicleId, status: { in: ['COMPLETED', 'DELIVERED'] } },
             orderBy: { date: 'desc' },
             take: limit,
-            take: limit,
             include: {
                 saleItems: {
                     include: { product: true }
