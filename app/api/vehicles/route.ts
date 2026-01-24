@@ -13,10 +13,10 @@ export async function GET(request: Request) {
 
     if (search) {
         where.OR = [
-            { plate: { contains: search } },
-            { brand: { contains: search } },
-            { model: { contains: search } },
-            { client: { name: { contains: search } } }
+            { plate: { contains: search, mode: 'insensitive' } },
+            { brand: { contains: search, mode: 'insensitive' } },
+            { model: { contains: search, mode: 'insensitive' } },
+            { client: { name: { contains: search, mode: 'insensitive' } } }
         ];
     } else if (plate) {
         where.plate = { contains: plate };

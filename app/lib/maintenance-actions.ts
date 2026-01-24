@@ -253,7 +253,13 @@ export async function getRecentWorkOrders(vehicleId: number, limit: number = 5) 
             where: { vehicleId, status: { in: ['COMPLETED', 'DELIVERED'] } },
             orderBy: { date: 'desc' },
             take: limit,
-            include: { saleItems: true, appointment: true }
+            take: limit,
+            include: {
+                saleItems: {
+                    include: { product: true }
+                },
+                appointment: true
+            }
         });
         return { success: true, data: orders };
     } catch (error) {
@@ -335,6 +341,7 @@ export async function confirmQuoteAsWorkOrder(data: {
                 price: total,
                 userId: data.userId,
                 saleId: sale.id,
+                serviceDetails: { items: data.items } // Store items in JSON for EditModal consistency
             }
         });
 

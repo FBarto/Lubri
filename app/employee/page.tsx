@@ -19,6 +19,9 @@ export default function EmployeePage() {
     const [activeTab, setActiveTab] = useState<'DASHBOARD' | 'VENDER' | 'SERVICIOS' | 'STOCK' | 'INGRESAR' | 'TURNOS' | 'TALLER' | 'INBOX' | 'COTIZAR' | 'CLIENTES'>('DASHBOARD');
     const [cart, setCart] = useState<any[]>([]);
 
+    // Shared Client Context for Actions
+    const [selectedClientForAction, setSelectedClientForAction] = useState<any>(null);
+
     const handleAddFromWizard = (newItem: any) => {
         setCart(prev => [...prev, {
             ...newItem,
@@ -140,13 +143,24 @@ export default function EmployeePage() {
             {/* Tab Content */}
             <div className="flex-1 bg-slate-50 relative overflow-hidden flex flex-col">
                 {activeTab === 'DASHBOARD' && <EmployeeDashboard onNavigate={(tab) => setActiveTab(tab)} />}
-                {activeTab === 'VENDER' && <RestrictedPOS cart={cart} setCart={setCart} />}
+                {activeTab === 'VENDER' && (
+                    <RestrictedPOS
+                        cart={cart}
+                        setCart={setCart}
+                        initialClient={selectedClientForAction}
+                    />
+                )}
                 {activeTab === 'COTIZAR' && (
                     <div className="flex-1 overflow-y-auto p-6">
-                        <SmartQuote />
+                        <SmartQuote initialClient={selectedClientForAction} />
                     </div>
                 )}
-                {activeTab === 'SERVICIOS' && <ServicesWizard onAddService={handleAddFromWizard} />}
+                {activeTab === 'SERVICIOS' && (
+                    <ServicesWizard
+                        onAddService={handleAddFromWizard}
+                        initialClient={selectedClientForAction}
+                    />
+                )}
                 {activeTab === 'STOCK' && <StockViewer />}
                 {activeTab === 'INGRESAR' && <StockIngest />}
                 {activeTab === 'TURNOS' && (
@@ -195,7 +209,14 @@ export default function EmployeePage() {
                 )}
                 {activeTab === 'CLIENTES' && (
                     <div className="flex-1 overflow-hidden">
-                        <EmployeeClientList />
+                        <EmployeeClientList
+                            onClientAction={(client, action) => {
+                                setSelectedClientForAction(client);
+                                if (action === 'SERVICE') setActiveTab('SERVICIOS');
+                                if (action === 'POS') setActiveTab('VENDER');
+                                if (action === 'QUOTE') setActiveTab('COTIZAR');
+                            }}
+                        />
                     </div>
                 )}
             </div>

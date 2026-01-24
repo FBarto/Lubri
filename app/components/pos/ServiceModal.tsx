@@ -13,9 +13,10 @@ interface ServiceModalProps {
     onClose: () => void;
     onConfirm: (data: any) => void;
     service: any;
+    initialClient?: Client | null;
 }
 
-export default function ServiceModal({ isOpen, onClose, onConfirm, service }: ServiceModalProps) {
+export default function ServiceModal({ isOpen, onClose, onConfirm, service, initialClient }: ServiceModalProps) {
     // Removed early return to comply with Rules of Hooks
 
     const [phoneSearch, setPhoneSearch] = useState('');
@@ -34,16 +35,22 @@ export default function ServiceModal({ isOpen, onClose, onConfirm, service }: Se
 
     useEffect(() => {
         // Reset when opening new service
-        setSelectedClient(null);
+        if (initialClient) {
+            setSelectedClient(initialClient);
+            setPhoneSearch(`${initialClient.name} (${initialClient.phone})`);
+        } else {
+            setSelectedClient(null);
+            setPhoneSearch('');
+        }
+
         setSelectedVehicle(null);
-        setPhoneSearch('');
         setPlateSearch('');
         setMileage('');
         setNotes('');
         setAttachments([]);
         setClientResults([]);
         setVehicleResults([]);
-    }, [service, isOpen]);
+    }, [service, isOpen, initialClient]);
 
     // Search Functions
     const searchClient = async (val: string) => {

@@ -85,6 +85,13 @@ export async function PUT(request: Request, context: { params: Promise<{ id: str
                 where: { id: workOrder.saleId },
                 data: { total: newTotal, status: 'PENDING' } // Ensure it's PENDING so it shows in POS
             });
+
+            // 4. Update WorkOrder Price to match new Total
+            // This ensures logic relying on WO.price (like EditModal total) remains accurate
+            await prisma.workOrder.update({
+                where: { id: workOrder.id },
+                data: { price: newTotal }
+            });
         }
 
         // Sync to Firestore (non-blocking)

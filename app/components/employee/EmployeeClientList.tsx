@@ -1,7 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Search, User, Phone, Car, ChevronRight, History } from 'lucide-react';
+import { Search, User, Phone, Car, ChevronRight, History, Plus, FilePlus } from 'lucide-react';
+import CreateClientModal from './CreateClientModal';
+import PostClientActionModal from './PostClientActionModal';
+import CreateVehicleModal from './CreateVehicleModal';
+import ClientHistoryModal from './ClientHistoryModal';
 
 interface Client {
     id: number;
@@ -15,11 +19,24 @@ interface Client {
     }[];
 }
 
-export default function EmployeeClientList() {
+interface EmployeeClientListProps {
+    onClientAction?: (client: any, action: 'SERVICE' | 'POS' | 'QUOTE') => void;
+}
+
+export default function EmployeeClientList({ onClientAction }: EmployeeClientListProps) {
     const [searchTerm, setSearchTerm] = useState('');
     const [clients, setClients] = useState<Client[]>([]);
     const [loading, setLoading] = useState(false);
-    const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+
+    // Flow State
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
+    const [isVehicleModalOpen, setIsVehicleModalOpen] = useState(false);
+    const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false); // New
+    const [isManageModalOpen, setIsManageModalOpen] = useState(false); // New
+
+    const [createdClient, setCreatedClient] = useState<Client | null>(null);
+    const [selectedClient, setSelectedClient] = useState<Client | null>(null); // New
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -46,25 +63,76 @@ export default function EmployeeClientList() {
         }
     };
 
+    const handleClientCreated = (client: any) => {
+        setIsCreateModalOpen(false);
+        setCreatedClient(client);
+        setIsSuccessModalOpen(true);
+        // Add to list and maybe select it
+        setClients(prev => [client, ...prev]);
+    };
+
+    const handlePostAction = (action: 'SERVICE' | 'SALE' | 'VEHICLE', targetClient: Client | null = null) => {
+        setIsSuccessModalOpen(false);
+        setIsManageModalOpen(false);
+
+        // If targetClient is passed, ensure it is set as 'createdClient' for vehicle modal context if needed, 
+        // OR update vehicle logic to take targetClient.
+        // For simplicity, let's update `createdClient` to `targetClient` effectively "selecting" it for downstream actions like Vehicle Modal.
+        if (targetClient) setCreatedClient(targetClient);
+
+        const clientToUse = targetClient || createdClient;
+
+        if (action === 'VEHICLE') {
+            setIsVehicleModalOpen(true);
+        } else if (action === 'SERVICE') {
+            onClientAction?.(clientToUse, 'SERVICE');
+        } else if (action === 'SALE') {
+            onClientAction?.(clientToUse, 'POS');
+        }
+    };
+
+    const handleVehicleCreated = (vehicle: any) => {
+        setIsVehicleModalOpen(false);
+        alert('Vehículo agregado correctamente');
+        // Update the client in the list locally to show the new vehicle
+        setClients(prev => prev.map(c => {
+            if (c.id === vehicle.clientId) {
+                return {
+                    ...c,
+                    vehicles: [...(c.vehicles || []), vehicle]
+                };
+            }
+            return c;
+        }));
+    };
+
     return (
-        <div className="h-full flex flex-col bg-slate-50">
+        <div className="h-full flex flex-col bg-slate-50 relative">
             {/* Search Header */}
-            <div className="p-6 bg-white border-b border-slate-200 shadow-sm">
-                <div className="max-w-2xl mx-auto">
-                    <h2 className="text-xl font-black text-slate-800 mb-4">Buscador de Clientes</h2>
-                    <div className="relative">
-                        <Search className="absolute left-4 top-3.5 text-slate-400 w-5 h-5" />
-                        <input
-                            type="text"
-                            placeholder="Buscar por nombre, teléfono o patente..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full pl-12 pr-4 py-3 bg-slate-100 border-0 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-slate-800 font-medium"
-                        />
-                        {loading && (
-                            <div className="absolute right-4 top-3.5 animate-spin rounded-full h-5 w-5 border-b-2 border-indigo-600" />
-                        )}
-                    </div>
+            <div className="p-6 bg-white border-b border-slate-200 shadow-sm flex flex-col gap-4">
+                <div className="max-w-2xl mx-auto w-full flex justify-between items-center">
+                    <h2 className="text-xl font-black text-slate-800">Buscador de Clientes</h2>
+                    <button
+                        onClick={() => setIsCreateModalOpen(true)}
+                        className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl font-bold text-sm flex items-center gap-2 shadow-lg shadow-indigo-200 active:scale-95 transition-all"
+                    >
+                        <Plus size={18} strokeWidth={3} />
+                        Nuevo Cliente
+                    </button>
+                </div>
+
+                <div className="max-w-2xl mx-auto w-full relative">
+                    <Search className="absolute left-4 top-3.5 text-slate-400 w-5 h-5" />
+                    <input
+                        type="text"
+                        placeholder="Buscar por nombre, teléfono o patente..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full pl-12 pr-4 py-3 bg-slate-100 border-0 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-slate-800 font-medium"
+                    />
+                    {loading && (
+                        <div className="absolute right-4 top-3.5 animate-spin rounded-full h-5 w-5 border-b-2 border-indigo-600" />
+                    )}
                 </div>
             </div>
 
@@ -73,15 +141,23 @@ export default function EmployeeClientList() {
                 <div className="max-w-2xl mx-auto space-y-4">
                     {clients.length === 0 && !loading && searchTerm.length > 2 && (
                         <div className="text-center py-12 bg-white rounded-3xl border border-dashed border-slate-200 text-slate-400">
-                            No se encontraron clientes para "{searchTerm}"
+                            No se encontraron clientes para "{searchTerm}".
+                            <button
+                                onClick={() => setIsCreateModalOpen(true)}
+                                className="block mx-auto mt-4 text-indigo-600 font-bold hover:underline"
+                            >
+                                ¿Crear nuevo?
+                            </button>
                         </div>
                     )}
 
-                    {searchTerm.length <= 2 && (
+                    {searchTerm.length <= 2 && clients.length === 0 && (
                         <div className="text-center py-12 text-slate-400 italic">
                             Ingresa al menos 3 caracteres para buscar...
                         </div>
                     )}
+
+                    {/* Show created client at top if recent */}
 
                     {clients.map((client) => (
                         <div key={client.id} className="bg-white rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-md transition-all overflow-hidden group">
@@ -111,14 +187,14 @@ export default function EmployeeClientList() {
                                 <div className="space-y-2">
                                     <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Vehículos Registrados</div>
                                     <div className="flex flex-wrap gap-2">
-                                        {client.vehicles.map((v) => (
+                                        {client.vehicles?.map((v) => (
                                             <div key={v.id} className="bg-slate-50 border border-slate-100 px-3 py-2 rounded-xl flex items-center gap-2">
                                                 <Car size={14} className="text-slate-400" />
                                                 <span className="font-mono font-black text-slate-700 text-xs tracking-wider uppercase">{v.plate}</span>
                                                 <span className="text-[10px] text-slate-400 font-bold">{v.brand} {v.model}</span>
                                             </div>
                                         ))}
-                                        {client.vehicles.length === 0 && (
+                                        {(!client.vehicles || client.vehicles.length === 0) && (
                                             <div className="text-xs text-slate-400 italic pl-1">Sin vehículos registrados</div>
                                         )}
                                     </div>
@@ -126,7 +202,17 @@ export default function EmployeeClientList() {
 
                                 <div className="mt-6 flex gap-2">
                                     <button
-                                        onClick={() => {/* TODO: Show history modal */ }}
+                                        onClick={() => onClientAction?.(client, 'QUOTE')}
+                                        className="bg-orange-100 text-orange-700 p-3 rounded-xl hover:bg-orange-200 transition-colors"
+                                        title="Generar Presupuesto"
+                                    >
+                                        <FilePlus size={16} />
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            setSelectedClient(client);
+                                            setIsHistoryModalOpen(true);
+                                        }}
                                         className="flex-1 bg-slate-900 text-white py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 hover:bg-black transition-colors"
                                     >
                                         <History size={16} />
@@ -134,7 +220,8 @@ export default function EmployeeClientList() {
                                     </button>
                                     <button
                                         onClick={() => {
-                                            // TODO: Start Quick Quote or Job for this client
+                                            setSelectedClient(client);
+                                            setIsManageModalOpen(true);
                                         }}
                                         className="flex-1 bg-indigo-600 text-white py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 hover:bg-indigo-700 transition-colors"
                                     >
@@ -147,6 +234,46 @@ export default function EmployeeClientList() {
                     ))}
                 </div>
             </div>
+
+            {/* Modals */}
+            <CreateClientModal
+                isOpen={isCreateModalOpen}
+                onClose={() => setIsCreateModalOpen(false)}
+                onSuccess={handleClientCreated}
+            />
+
+            {/* Modal for Newly Created Client (Success Mode) */}
+            <PostClientActionModal
+                isOpen={isSuccessModalOpen}
+                clientName={createdClient?.name || ''}
+                onClose={() => setIsSuccessModalOpen(false)}
+                onAction={(action) => handlePostAction(action, createdClient)}
+                mode="CREATED"
+            />
+
+            {/* Modal for Existing Client (Manage Mode) */}
+            <PostClientActionModal
+                isOpen={isManageModalOpen}
+                clientName={selectedClient?.name || ''}
+                onClose={() => setIsManageModalOpen(false)}
+                onAction={(action) => handlePostAction(action, selectedClient)}
+                mode="MANAGE"
+            />
+
+            <ClientHistoryModal
+                isOpen={isHistoryModalOpen}
+                client={selectedClient}
+                onClose={() => setIsHistoryModalOpen(false)}
+            />
+
+            <CreateVehicleModal
+                isOpen={isVehicleModalOpen}
+                clientId={createdClient?.id || null}
+                clientName={createdClient?.name}
+                onClose={() => setIsVehicleModalOpen(false)}
+                onSuccess={handleVehicleCreated}
+            />
+
         </div>
     );
 }

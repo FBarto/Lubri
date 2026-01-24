@@ -13,9 +13,9 @@ export async function GET(request: Request) {
 
     if (search) {
         where.OR = [
-            { name: { contains: search } },
+            { name: { contains: search, mode: 'insensitive' } },
             { phone: { contains: search } },
-            { vehicles: { some: { plate: { contains: search } } } }
+            { vehicles: { some: { plate: { contains: search, mode: 'insensitive' } } } }
         ];
     } else if (phone) {
         where.phone = { contains: phone };

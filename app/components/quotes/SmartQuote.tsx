@@ -1,12 +1,16 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Search, History, ArrowRight, Save, Send, AlertTriangle, CheckCircle, Package, Wrench, Droplet, FilePlus, Sparkles } from 'lucide-react';
-import { suggestServiceEstimate, getRecentWorkOrders, saveVehicleLearnedSpecs, confirmQuoteAsWorkOrder, getVehicleAIInsight } from '../../lib/maintenance-actions';
+import { Search, History, ArrowRight, Save, Send, AlertTriangle, CheckCircle, Package, Wrench, Droplet, FilePlus, Sparkles, Plus } from 'lucide-react';
+import { suggestServiceEstimate, getRecentWorkOrders, saveVehicleLearnedSpecs, confirmQuoteAsWorkOrder, getVehicleAIInsight, getLastServiceItems } from '../../lib/maintenance-actions';
 import { searchProductsForQuote } from '../../lib/inbox-actions';
 
 // Component for "Presupuesto Service Fácil"
-export default function SmartQuote() {
+interface SmartQuoteProps {
+    initialClient?: any;
+}
+
+export default function SmartQuote({ initialClient }: SmartQuoteProps) {
     // Search State
     const [plate, setPlate] = useState('');
     const [vehicleInfo, setVehicleInfo] = useState<any>(null);
@@ -35,6 +39,32 @@ export default function SmartQuote() {
 
     // Analysis
     const [totalOilLiters, setTotalOilLiters] = useState(0);
+
+    // Handle Initial Client Context
+    useEffect(() => {
+        if (initialClient) {
+            // If client has vehicles, try to select one
+            if (initialClient.vehicles && initialClient.vehicles.length > 0) {
+                if (initialClient.vehicles.length === 1) {
+                    // Fetch full vehicle details to be consistent with handleSelectVehicle
+                    // But we might only have basic info. Let's trigger search or select directly if we trust the data.
+                    // Ideally we need the 'id' to fetch history.
+                    handleSelectVehicle(initialClient.vehicles[0]);
+                } else {
+                    // Multiple vehicles, show them as search results
+                    setSearchResultsVehicles(initialClient.vehicles.map((v: any) => ({
+                        ...v,
+                        client: initialClient // Ensure client info is attached for display
+                    })));
+                    setPlate(''); // Clear plate input to show we are in "selection" mode? Or set to first?
+                }
+            } else {
+                // Client has no vehicles. 
+                // Maybe set user info but we can't do much without a vehicle in this flow yet.
+                // Could alert or just focus plate input.
+            }
+        }
+    }, [initialClient]);
 
     // --- 1. SEARCH VEHICLE ---
     const handleSearch = async () => {
@@ -129,6 +159,84 @@ export default function SmartQuote() {
         } else {
             alert('No se pudo generar proyección automática. Historia insuficiente.');
         }
+    };
+
+    const loadLastService = async () => {
+        if (!vehicleInfo) return;
+
+        const historyRes = await getLastServiceItems(vehicleInfo.id);
+        if (historyRes.success && historyRes.data) {
+            const newItems = historyRes.data.items.map((item: any) => ({
+                id: item.id || Math.random(),
+                productId: item.id || null,
+                code: item.found ? (item.code || '---') : 'HIST',
+                name: item.name,
+                price: item.price,
+                stock: item.stock || 0,
+                minStock: 0,
+                quantity: item.quantity || 1,
+                type: item.type || 'PRODUCT',
+                category: item.category || 'OTHER'
+            }));
+            setQuoteItems(newItems);
+        } else {
+            alert('No se pudo cargar el último servicio.');
+        }
+    };
+
+    const loadLastService = async () => {
+        if (!vehicleInfo) return;
+
+        // Dynamic import to avoid server action issues if not set up right, or just ensure import is correct
+        // Using the imported action
+        const res = await suggestServiceEstimate(vehicleInfo.id, 'REPEAT' as any); // We need to update backend to handle 'REPEAT' OR just fetch history manually here.
+        // Actually, suggestServiceEstimate logic in step 224 doesn't support REPEAT cleanly yet (step 224 code showed only BASIC/FULL logic).
+        // BUT `getLastServiceItems` IS usable.
+
+        const historyRes = await getLastServiceItems(vehicleInfo.id);
+        if (historyRes.success && historyRes.data) {
+            const newItems = historyRes.data.items.map((item: any) => ({
+                id: item.id || Math.random(),
+                productId: item.id || null,
+                code: item.found ? (item.code || '---') : 'HIST',
+                name: item.name,
+                price: item.price,
+                stock: item.stock || 0,
+                minStock: 0,
+                quantity: item.quantity || 1,
+                type: item.type || 'PRODUCT',
+                category: item.category || 'OTHER'
+            }));
+            setQuoteItems(newItems);
+        } else {
+            alert('No se pudo cargar el último servicio.');
+        }
+    };
+
+    const addItemFromHistory = (historyItem: any) => {
+        // Use current product data if available (price, stock), otherwise fallback to history
+        const productData = historyItem.product ? {
+            id: historyItem.product.id,
+            productId: historyItem.product.id,
+            code: historyItem.product.code,
+            name: historyItem.product.name,
+            price: historyItem.product.price, // Current price
+            stock: historyItem.product.stock,
+            type: 'PRODUCT'
+        } : {
+            id: Math.random(),
+            productId: null,
+            code: 'MANUAL',
+            name: historyItem.description,
+            price: historyItem.unitPrice, // Historic price (fallback)
+            stock: null,
+            type: 'PRODUCT'
+        };
+
+        setQuoteItems(prev => [...prev, {
+            ...productData,
+            quantity: historyItem.quantity || 1
+        }]);
     };
 
     // --- 3. ITEM MANAGEMENT ---
@@ -396,9 +504,29 @@ export default function SmartQuote() {
                                     </div>
                                     <div className="space-y-1">
                                         {wo.saleItems.filter((i: any) => i.type === 'PRODUCT').map((item: any, idx: number) => (
-                                            <div key={idx} className="text-xs flex justify-between border-t border-slate-50 pt-1">
-                                                <span className="text-slate-600 truncate max-w-[180px]">{item.description}</span>
-                                                <span className="text-slate-400 font-mono">x{item.quantity}</span>
+                                            <div key={idx} className="text-xs flex justify-between items-center border-t border-slate-50 pt-1 group/item">
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-slate-600 truncate font-medium">{item.description}</span>
+                                                        {item.product?.code && (
+                                                            <span className="text-[10px] font-mono text-slate-400 bg-slate-100 px-1 rounded">{item.product.code}</span>
+                                                        )}
+                                                    </div>
+                                                    <div className="flex gap-2 text-[10px] text-slate-400">
+                                                        <span className="font-mono">x{item.quantity}</span>
+                                                        {item.product && <span className="text-slate-300">• Stock: {item.product.stock}</span>}
+                                                    </div>
+                                                </div>
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation(); // Prevent card expansion if we add that later
+                                                        addItemFromHistory(item);
+                                                    }}
+                                                    className="p-1.5 bg-slate-50 text-blue-600 rounded-lg hover:bg-blue-600 hover:text-white transition-colors opacity-0 group-hover/item:opacity-100 focus:opacity-100 shadow-sm"
+                                                    title="Agregar al Presupuesto"
+                                                >
+                                                    <Plus size={14} strokeWidth={3} />
+                                                </button>
                                             </div>
                                         ))}
                                     </div>
@@ -413,12 +541,7 @@ export default function SmartQuote() {
                         {/* TOOLBAR */}
                         <div className="p-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
                             <div className="flex gap-2">
-                                <button onClick={() => loadPreset('BASIC')} className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg hover:border-blue-400 hover:text-blue-600 transition-all text-sm font-bold text-slate-600">
-                                    <Droplet size={16} /> Service Básico
-                                </button>
-                                <button onClick={() => loadPreset('FULL')} className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg hover:border-purple-400 hover:text-purple-600 transition-all text-sm font-bold text-slate-600">
-                                    <Wrench size={16} /> Service Completo
-                                </button>
+                                {/* Presets moved to empty state cards */}
                             </div>
                             <div className="relative w-64">
                                 <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
@@ -462,8 +585,59 @@ export default function SmartQuote() {
                                 <tbody className="divide-y divide-slate-100">
                                     {quoteItems.length === 0 && (
                                         <tr>
-                                            <td colSpan={6} className="text-center py-10 text-slate-400">
-                                                Selecciona un preset o agrega ítems manualmente
+                                            <td colSpan={6} className="p-0">
+                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-8 bg-slate-50/50">
+                                                    <button
+                                                        onClick={() => loadPreset('BASIC')}
+                                                        className="group flex flex-col items-center justify-center p-8 bg-white border-2 border-blue-50 hover:border-blue-500 rounded-3xl shadow-sm hover:shadow-xl transition-all duration-200 text-center space-y-4"
+                                                    >
+                                                        <div className="w-20 h-20 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
+                                                            <Droplet size={40} strokeWidth={2} />
+                                                        </div>
+                                                        <div>
+                                                            <h3 className="font-black text-xl text-slate-800 group-hover:text-blue-600">Service Básico</h3>
+                                                            <p className="text-slate-400 text-sm font-medium mt-1">Aceite + Filtro de Aceite</p>
+                                                        </div>
+                                                    </button>
+
+                                                    <button
+                                                        onClick={() => loadPreset('FULL')}
+                                                        className="group flex flex-col items-center justify-center p-8 bg-white border-2 border-purple-50 hover:border-purple-500 rounded-3xl shadow-sm hover:shadow-xl transition-all duration-200 text-center space-y-4"
+                                                    >
+                                                        <div className="w-20 h-20 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
+                                                            <Wrench size={40} strokeWidth={2} />
+                                                        </div>
+                                                        <div>
+                                                            <h3 className="font-black text-xl text-slate-800 group-hover:text-purple-600">Service Completo</h3>
+                                                            <p className="text-slate-400 text-sm font-medium mt-1">Aceite + Todos los Filtros</p>
+                                                        </div>
+                                                    </button>
+
+                                                    {history.length > 0 ? (
+                                                        <button
+                                                            onClick={loadLastService}
+                                                            className="group flex flex-col items-center justify-center p-8 bg-white border-2 border-emerald-50 hover:border-emerald-500 rounded-3xl shadow-sm hover:shadow-xl transition-all duration-200 text-center space-y-4"
+                                                        >
+                                                            <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
+                                                                <History size={40} strokeWidth={2} />
+                                                            </div>
+                                                            <div>
+                                                                <h3 className="font-black text-xl text-slate-800 group-hover:text-emerald-600">Repetir Último</h3>
+                                                                <p className="text-slate-400 text-sm font-medium mt-1">Cargar ítems del historial</p>
+                                                            </div>
+                                                        </button>
+                                                    ) : (
+                                                        <div className="flex flex-col items-center justify-center p-8 border-2 border-slate-100 border-dashed rounded-3xl text-center space-y-4 opacity-70">
+                                                            <div className="w-20 h-20 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center">
+                                                                <History size={40} strokeWidth={2} />
+                                                            </div>
+                                                            <div>
+                                                                <h3 className="font-black text-xl text-slate-400">Sin Historial</h3>
+                                                                <p className="text-slate-400 text-sm font-medium mt-1">No hay servicios previos</p>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </td>
                                         </tr>
                                     )}

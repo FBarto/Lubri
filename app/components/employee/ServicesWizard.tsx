@@ -8,9 +8,10 @@ import { createWorkOrder } from '../../lib/business-actions';
 
 interface ServicesWizardProps {
     onAddService: (item: any) => void;
+    initialClient?: any;
 }
 
-export default function ServicesWizard({ onAddService }: ServicesWizardProps) {
+export default function ServicesWizard({ onAddService, initialClient }: ServicesWizardProps) {
     const { data: session } = useSession();
     const [services, setServices] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -187,6 +188,7 @@ export default function ServicesWizard({ onAddService }: ServicesWizardProps) {
                 onClose={() => setIsModalOpen(false)}
                 onConfirm={handleConfirm}
                 service={selectedService}
+                initialClient={initialClient}
             />
         </div>
     );

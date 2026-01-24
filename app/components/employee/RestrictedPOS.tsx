@@ -15,9 +15,10 @@ import { useSession } from 'next-auth/react';
 interface RestrictedPOSProps {
     cart: any[];
     setCart: React.Dispatch<React.SetStateAction<any[]>>;
+    initialClient?: any;
 }
 
-export default function RestrictedPOS({ cart, setCart }: RestrictedPOSProps) {
+export default function RestrictedPOS({ cart, setCart, initialClient }: RestrictedPOSProps) {
     const { data: session } = useSession();
     const [products, setProducts] = useState<any[]>([]);
     const [services, setServices] = useState<any[]>([]);
@@ -102,6 +103,7 @@ export default function RestrictedPOS({ cart, setCart }: RestrictedPOSProps) {
                 uniqueId: Math.random().toString(36).substr(2, 9),
                 quantity: 1,
                 subtotal: item.price,
+                clientId: item.clientId || initialClient?.id, // Auto-link client
                 ...serviceData
             }];
         });
@@ -224,7 +226,7 @@ export default function RestrictedPOS({ cart, setCart }: RestrictedPOSProps) {
 
         const payload = {
             userId: session?.user?.id ? Number(session.user.id) : 1,
-            clientId: items[0]?.clientId, // Optional: take from first item if any
+            clientId: items[0]?.clientId || initialClient?.id, // Optional: take from first item if any, or context
             status: 'PENDING' as const,
             items: items.map(i => ({
                 type: i.type as 'PRODUCT' | 'SERVICE',

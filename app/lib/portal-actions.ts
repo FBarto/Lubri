@@ -18,7 +18,8 @@ export async function getClientDataByToken(token: string) {
                                     include: {
                                         service: true,
                                         vehicle: true,
-                                        attachments: true
+                                        attachments: true,
+                                        saleItems: true
                                     }
                                 }
                             }
@@ -53,6 +54,7 @@ export async function getClientDataByToken(token: string) {
                     status: wo.status,
                     price: wo.price,
                     serviceDetails: wo.serviceDetails,
+                    serviceItems: wo.saleItems, // Map saleItems to serviceItems for UI
                     attachments: wo.attachments
                 })),
                 vehicles: await Promise.all(client.vehicles.map(async v => {
