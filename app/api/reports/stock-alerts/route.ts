@@ -6,25 +6,8 @@ export const dynamic = 'force-dynamic';
 
 export async function GET() {
     try {
-        const lowStockProducts = await prisma.product.findMany({
-            where: {
-                active: true,
-                stock: {
-                    lte: prisma.product.fields.minStock
-                }
-            },
-            orderBy: {
-                stock: 'asc'
-            }
-        });
-
-        // Prisma limitation: comparing columns in `where` (stock <= minStock) isn't directly supported in standard simple querying in some versions/dbs without raw query or extensions, 
-        // BUT let's see if this works. 
-        // Actually, `lte: prisma.product.fields.minStock` is NOT valid Prisma syntax for "less than or equal to another column".
-        // We have to filter in JS or use raw query.
-        // Given SQLite and possible complexity, JS filter is safer for now unless dataset is huge.
-
-        // Wait, let's fetch all active products and filter. It's safer.
+        // Fetch all active products and filter in memory to find low stock.
+        // This is safer for SQLite/Prisma compatibility regarding column comparisons.
         const allProducts = await prisma.product.findMany({
             where: { active: true },
             select: { id: true, name: true, stock: true, minStock: true, code: true }

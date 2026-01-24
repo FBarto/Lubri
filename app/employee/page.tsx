@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { ShoppingCart, Wrench, Package, ArrowDownToLine, Calendar, Inbox } from 'lucide-react';
+import { ShoppingCart, Wrench, Package, ArrowDownToLine, Calendar, Inbox, FilePlus, TrendingUp, Users } from 'lucide-react';
 import EmployeeLayout from '../components/employee/EmployeeLayout';
 
 import RestrictedPOS from '../components/employee/RestrictedPOS';
@@ -11,9 +11,12 @@ import StockIngest from '../components/employee/StockIngest';
 import KanbanBoard from '../components/dashboard/KanbanBoard';
 import OperationalKanban from '../components/employee/OperationalKanban';
 import EmployeeInbox from '../components/employee/EmployeeInbox';
+import SmartQuote from '../components/quotes/SmartQuote';
+import EmployeeDashboard from '../components/employee/EmployeeDashboard';
+import EmployeeClientList from '../components/employee/EmployeeClientList';
 
 export default function EmployeePage() {
-    const [activeTab, setActiveTab] = useState<'VENDER' | 'SERVICIOS' | 'STOCK' | 'INGRESAR' | 'TURNOS' | 'TALLER' | 'INBOX'>('TALLER');
+    const [activeTab, setActiveTab] = useState<'DASHBOARD' | 'VENDER' | 'SERVICIOS' | 'STOCK' | 'INGRESAR' | 'TURNOS' | 'TALLER' | 'INBOX' | 'COTIZAR' | 'CLIENTES'>('DASHBOARD');
     const [cart, setCart] = useState<any[]>([]);
 
     const handleAddFromWizard = (newItem: any) => {
@@ -30,6 +33,16 @@ export default function EmployeePage() {
             {/* Tabs Navigation */}
             <div className="bg-white border-b border-slate-200 px-4 pt-4 flex gap-2 overflow-x-auto">
                 <button
+                    onClick={() => setActiveTab('DASHBOARD')}
+                    className={`flex items-center gap-2 px-6 py-3 rounded-t-lg font-bold text-sm transition-all ${activeTab === 'DASHBOARD'
+                        ? 'bg-slate-900 text-white shadow-sm'
+                        : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                        }`}
+                >
+                    <TrendingUp className="w-4 h-4" />
+                    INICIO
+                </button>
+                <button
                     onClick={() => setActiveTab('VENDER')}
                     className={`flex items-center gap-2 px-6 py-3 rounded-t-lg font-bold text-sm transition-all ${activeTab === 'VENDER'
                         ? 'bg-emerald-600 text-white shadow-sm'
@@ -41,6 +54,16 @@ export default function EmployeePage() {
                         VENDER
                         {cart.length > 0 && <span className="bg-white/20 text-white px-1.5 py-0.5 rounded textxs">{cart.length}</span>}
                     </span>
+                </button>
+                <button
+                    onClick={() => setActiveTab('COTIZAR')}
+                    className={`flex items-center gap-2 px-6 py-3 rounded-t-lg font-bold text-sm transition-all ${activeTab === 'COTIZAR'
+                        ? 'bg-orange-600 text-white shadow-sm'
+                        : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                        }`}
+                >
+                    <FilePlus className="w-4 h-4" />
+                    COTIZAR
                 </button>
                 <button
                     onClick={() => setActiveTab('SERVICIOS')}
@@ -102,11 +125,27 @@ export default function EmployeePage() {
                     <Wrench className="w-4 h-4" />
                     TALLER
                 </button>
+                <button
+                    onClick={() => setActiveTab('CLIENTES')}
+                    className={`flex items-center gap-2 px-6 py-3 rounded-t-lg font-bold text-sm transition-all ${activeTab === 'CLIENTES'
+                        ? 'bg-zinc-800 text-white shadow-sm'
+                        : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                        }`}
+                >
+                    <Users className="w-4 h-4" />
+                    CLIENTES
+                </button>
             </div>
 
             {/* Tab Content */}
             <div className="flex-1 bg-slate-50 relative overflow-hidden flex flex-col">
+                {activeTab === 'DASHBOARD' && <EmployeeDashboard onNavigate={(tab) => setActiveTab(tab)} />}
                 {activeTab === 'VENDER' && <RestrictedPOS cart={cart} setCart={setCart} />}
+                {activeTab === 'COTIZAR' && (
+                    <div className="flex-1 overflow-y-auto p-6">
+                        <SmartQuote />
+                    </div>
+                )}
                 {activeTab === 'SERVICIOS' && <ServicesWizard onAddService={handleAddFromWizard} />}
                 {activeTab === 'STOCK' && <StockViewer />}
                 {activeTab === 'INGRESAR' && <StockIngest />}
@@ -128,13 +167,7 @@ export default function EmployeePage() {
                                 type: 'SERVICE',
                                 id: wo.service.id,
                                 name: wo.service.name + ' - ' + wo.vehicle.plate,
-                                price: wo.service.price, // Use Service Price or WO Price?? WO Price might include extras?
-                                // Usually WO Price is the final price.
-                                // But if we have extra items, we should separate them?
-                                // Let's use wo.price as the base if it exists, or service.price.
-                                // Actually, if we added items, we want to list them separately for stock deduction.
-                                // So Base Item Price should be the Service Price.
-                                // And Extra Items should be added separately.
+                                price: wo.service.price,
                                 quantity: 1,
                                 vehicleId: wo.vehicleId,
                                 clientId: wo.clientId,
@@ -145,7 +178,7 @@ export default function EmployeePage() {
 
                             // 2. Convert Extra Items (from serviceDetails)
                             const extraItems = (wo.serviceDetails as any)?.items?.map((item: any) => ({
-                                type: 'PRODUCT', // Assume products for now
+                                type: 'PRODUCT',
                                 id: item.productId,
                                 name: item.name,
                                 price: item.unitPrice,
@@ -158,6 +191,11 @@ export default function EmployeePage() {
                             setCart([baseItem, ...extraItems]);
                             setActiveTab('VENDER');
                         }} />
+                    </div>
+                )}
+                {activeTab === 'CLIENTES' && (
+                    <div className="flex-1 overflow-hidden">
+                        <EmployeeClientList />
                     </div>
                 )}
             </div>

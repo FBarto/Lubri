@@ -105,11 +105,36 @@ export async function getBudgetDetails(token: string) {
 
         if (!wo) return { success: false, error: 'Budget not found' };
 
-        // Calculate true total and items
-        const serviceDetailsItems = (wo.serviceDetails as any)?.items || [];
-        const items = [...wo.saleItems, ...serviceDetailsItems];
-        const itemsTotal = items.reduce((sum: number, item: any) => sum + (item.quantity * (item.unitPrice || item.price || 0)), 0);
-        const totalPrice = wo.price + itemsTotal;
+        let items: any[] = [];
+        let finalPrice = 0;
+
+        // Strategy: If linked to a Sale, the Sale is the source of truth for items and total.
+        // If not (Manual WO), we use wo.price + serviceDetails items.
+
+        if (wo.saleId) {
+            // Fetch Sale Items (Sync fix ensures they are up to date)
+            const saleItems = await prisma.saleItem.findMany({
+                where: { saleId: wo.saleId }
+            });
+            const sale = await prisma.sale.findUnique({
+                where: { id: wo.saleId }
+            });
+
+            items = saleItems;
+            finalPrice = sale?.total || wo.price;
+            // Note: if sale.total is 0 for some reason, fallback to wo.price could still be double counting if wo.price is total. 
+            // But usually sale.total is correct.
+        } else {
+            // No Sale linked (Manual creation)
+            const serviceDetailsItems = (wo.serviceDetails as any)?.items || [];
+            items = [...wo.saleItems, ...serviceDetailsItems];
+
+            // Avoid duplicates if saleItems already contains serviceDetails items (unlikely if no saleId)
+            // But technically wo.saleItems are linked to Sale. If no Sale, wo.saleItems should be empty.
+
+            const itemsTotal = items.reduce((sum: number, item: any) => sum + (item.quantity * (item.unitPrice || item.price || 0)), 0);
+            finalPrice = wo.price + itemsTotal;
+        }
 
         return {
             success: true,
@@ -118,7 +143,7 @@ export async function getBudgetDetails(token: string) {
                 clientName: wo.client.name,
                 vehicle: `${wo.vehicle.brand} ${wo.vehicle.model} (${wo.vehicle.plate})`,
                 serviceName: wo.service.name,
-                price: totalPrice,
+                price: finalPrice,
                 items: items.map(i => ({
                     description: i.description || i.name,
                     quantity: i.quantity,

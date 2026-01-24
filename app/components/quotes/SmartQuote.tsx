@@ -11,6 +11,7 @@ export default function SmartQuote() {
     const [plate, setPlate] = useState('');
     const [vehicleInfo, setVehicleInfo] = useState<any>(null);
     const [searchLoading, setSearchLoading] = useState(false);
+    const [searchResultsVehicles, setSearchResultsVehicles] = useState<any[]>([]);
 
     // Context Data
     const [history, setHistory] = useState<any[]>([]);
@@ -39,7 +40,8 @@ export default function SmartQuote() {
     const handleSearch = async () => {
         if (plate.length < 3) return;
         setSearchLoading(true);
-        setVehicleInfo(null);
+        setSearchResultsVehicles([]);
+        // setVehicleInfo(null); // Don't clear immediately to keep current view while searching
         setHistory([]);
         setQuoteItems([]);
         setAiInsight(null);
@@ -47,24 +49,17 @@ export default function SmartQuote() {
         try {
             const res = await fetch(`/api/vehicles?search=${plate}`);
             const data = await res.json();
-            const results = data.vehicles || data.data || data;
-            const found = results.find((v: any) => v.plate.toLowerCase() === plate.toLowerCase());
+            const results = data.data || data.vehicles || data;
 
-            if (found) {
-                setVehicleInfo(found);
-                if (found.mileage) setCurrentMileage(found.mileage.toString());
-
-                // Load History (Recent 3)
-                const histRes = await getRecentWorkOrders(found.id, 3);
-                if (histRes.success) setHistory(histRes.data || []);
-
-                // Load AI Insight
-                setAiLoading(true);
-                const aiRes = await getVehicleAIInsight(found.id);
-                if (aiRes.success) setAiInsight(aiRes.insight || null);
-                setAiLoading(false);
+            if (results && results.length > 0) {
+                if (results.length === 1) {
+                    handleSelectVehicle(results[0]);
+                } else {
+                    setSearchResultsVehicles(results);
+                }
             } else {
                 alert('Vehículo no encontrado');
+                setVehicleInfo(null);
             }
         } catch (e) {
             console.error(e);
@@ -72,6 +67,23 @@ export default function SmartQuote() {
         } finally {
             setSearchLoading(false);
         }
+    };
+
+    const handleSelectVehicle = async (vehicle: any) => {
+        setVehicleInfo(vehicle);
+        setPlate(vehicle.plate);
+        setSearchResultsVehicles([]);
+        if (vehicle.mileage) setCurrentMileage(vehicle.mileage.toString());
+
+        // Load History (Recent 3)
+        const histRes = await getRecentWorkOrders(vehicle.id, 3);
+        if (histRes.success) setHistory(histRes.data || []);
+
+        // Load AI Insight
+        setAiLoading(true);
+        const aiRes = await getVehicleAIInsight(vehicle.id);
+        if (aiRes.success) setAiInsight(aiRes.insight || null);
+        setAiLoading(false);
     };
 
     // --- 2. GENERATE PRESET ---
@@ -247,9 +259,34 @@ export default function SmartQuote() {
                             onChange={(e) => setPlate(e.target.value.toUpperCase())}
                             onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                             className="w-full text-3xl font-black font-mono tracking-widest p-3 border-2 border-slate-200 rounded-xl uppercase outline-none focus:border-blue-500 transition-colors"
-                            placeholder="ABC 123"
+                            placeholder="ABC 123 / CLIENTE"
                         />
                         {searchLoading && <div className="absolute right-4 top-4 animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500" />}
+
+                        {/* Multiple Search Results Dropdown */}
+                        {searchResultsVehicles.length > 0 && (
+                            <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-200 shadow-2xl rounded-xl z-[110] max-h-60 overflow-y-auto">
+                                <div className="p-2 bg-slate-50 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">
+                                    Resultados Encontrados ({searchResultsVehicles.length})
+                                </div>
+                                {searchResultsVehicles.map((v) => (
+                                    <button
+                                        key={v.id}
+                                        onClick={() => handleSelectVehicle(v)}
+                                        className="w-full text-left p-4 hover:bg-blue-50 border-b last:border-0 border-slate-100 flex justify-between items-center transition-colors"
+                                    >
+                                        <div>
+                                            <div className="font-black font-mono text-slate-800 tracking-wider uppercase">{v.plate}</div>
+                                            <div className="text-sm text-slate-500">{v.brand} {v.model}</div>
+                                        </div>
+                                        <div className="text-right">
+                                            <div className="font-bold text-blue-600">{v.client?.name}</div>
+                                            <div className="text-xs text-slate-400">{v.client?.phone}</div>
+                                        </div>
+                                    </button>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 </div>
                 {vehicleInfo && (

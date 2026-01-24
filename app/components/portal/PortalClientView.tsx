@@ -61,9 +61,12 @@ export default function PortalClientView({ data }: { data: PortalData }) {
                                     </div>
                                 </div>
                                 <div className="space-y-2">
-                                    <div className="flex items-center gap-2 text-sm text-slate-500 bg-slate-50 p-3 rounded-xl">
-                                        <Calendar size={16} />
-                                        <span>Último km: <strong>{vehicle.mileage || '---'} km</strong></span>
+                                    <div className="flex items-center justify-between gap-2 text-sm text-slate-500 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                                        <div className="flex items-center gap-2">
+                                            <Calendar size={18} className="text-blue-500" />
+                                            <span className="font-medium text-slate-500">Último KM</span>
+                                        </div>
+                                        <span className="text-xl font-black text-slate-800 font-mono tracking-tight">{vehicle.mileage?.toLocaleString() || '---'}</span>
                                     </div>
                                     {vehicle.predictedNextService && (
                                         <div className="flex items-center gap-2 text-sm text-blue-600 bg-blue-50 p-3 rounded-xl border border-blue-100 animate-pulse">
@@ -96,6 +99,13 @@ export default function PortalClientView({ data }: { data: PortalData }) {
                                             </p>
                                             <h3 className="font-bold text-slate-800 text-lg">{wo.serviceName}</h3>
                                             <p className="text-sm text-slate-500">{wo.vehicleModel} ({wo.vehiclePlate})</p>
+
+                                            {/* Extract Oil info if possible */}
+                                            {wo.serviceItems?.find((i: any) => i.description.toLowerCase().includes('aceite')) && (
+                                                <div className="mt-2 text-xs font-black text-blue-600 uppercase flex items-center gap-1 bg-blue-50 w-fit px-2 py-0.5 rounded">
+                                                    🛢️ {wo.serviceItems?.find((i: any) => i.description.toLowerCase().includes('aceite'))?.description}
+                                                </div>
+                                            )}
                                         </div>
                                         <div className="text-right">
                                             <span className={`text-xs font-bold px-2 py-1 rounded uppercase ${wo.status === 'COMPLETED' || wo.status === 'DELIVERED'
