@@ -18,8 +18,9 @@ export interface CreateVehicleInput {
     notes?: string;
     mileage?: number;
     clientId: number;
+    fuelType?: string; // New
+    engine?: string;   // New
 }
-
 export interface CreateAppointmentInput {
     clientId?: number;
     vehicleId?: number;
@@ -57,7 +58,6 @@ export async function createClient(data: CreateClientInput) {
         return { success: false, error: error.message };
     }
 }
-
 export async function createVehicle(data: CreateVehicleInput) {
     try {
         if (!data.plate || !data.clientId) {
@@ -73,6 +73,10 @@ export async function createVehicle(data: CreateVehicleInput) {
                 notes: data.notes || '',
                 mileage: data.mileage || null,
                 clientId: data.clientId,
+                specifications: {
+                    fuelType: data.fuelType,
+                    engine: data.engine
+                }
             },
         });
 

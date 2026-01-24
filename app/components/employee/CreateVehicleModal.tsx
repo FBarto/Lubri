@@ -17,8 +17,35 @@ export default function CreateVehicleModal({ isOpen, onClose, onSuccess, clientI
         plate: '',
         brand: '',
         model: '',
-        mileage: ''
+        mileage: '',
+        fuelType: 'Nafta', // Default
+        engine: ''
     });
+
+    const VEHICLE_DATA: Record<string, string[]> = {
+        'Toyota': ['Hilux', 'Corolla', 'Etios', 'Yaris', 'SW4', 'Rav4', 'Corolla Cross'],
+        'Volkswagen': ['Amarok', 'Gol Trend', 'Polo', 'Virtus', 'Vento', 'T-Cross', 'Taos', 'Nivus', 'Suran', 'Saveiro'],
+        'Ford': ['Ranger', 'EcoSport', 'Fiesta', 'Focus', 'Ka', 'Territory', 'Bronco', 'Maverick'],
+        'Renault': ['Kangoo', 'Sandero', 'Logan', 'Duster', 'Oroch', 'Alaskan', 'Clio', 'Captur', 'Kwid'],
+        'Chevrolet': ['Cruze', 'Onix', 'Tracker', 'S10', 'Spin', 'Prisma', 'Aveo'],
+        'Fiat': ['Cronos', 'Toro', 'Strada', 'Pulse', 'Argo', 'Mobi', 'Fiorino', 'Siena', 'Palio'],
+        'Peugeot': ['208', '2008', '3008', 'Partner', '408', '206', '207'],
+        'Citroen': ['C3', 'C4 Cactus', 'Berlingo', 'C4'],
+        'Honda': ['HR-V', 'CR-V', 'Civic', 'Fit', 'City'],
+        'Nissan': ['Frontier', 'Kicks', 'Versa', 'Sentra', 'Note', 'March'],
+        'Jeep': ['Renegade', 'Compass', 'Commander'],
+        'Mercedes-Benz': ['Sprinter', 'Clase A', 'Clase C', 'Vito'],
+        'BMW': ['Serie 1', 'Serie 3', 'X1', 'X3'],
+        'Audi': ['A1', 'A3', 'A4', 'Q3', 'Q5'],
+    };
+
+    const normalizeBrand = (input: string) => {
+        // Simple helper to find matching key case-insensitive
+        const key = Object.keys(VEHICLE_DATA).find(k => k.toLowerCase() === input.toLowerCase());
+        return key || input;
+    };
+
+    const availableModels = VEHICLE_DATA[normalizeBrand(formData.brand)] || [];
 
     if (!isOpen || !clientId) return null;
 
@@ -29,7 +56,8 @@ export default function CreateVehicleModal({ isOpen, onClose, onSuccess, clientI
         const payload = {
             ...formData,
             clientId: clientId,
-            type: 'Auto/Camioneta' // Default
+            type: 'Auto/Camioneta', // Default
+            mileage: formData.mileage ? parseInt(formData.mileage) : undefined
         };
 
         try {
@@ -43,7 +71,7 @@ export default function CreateVehicleModal({ isOpen, onClose, onSuccess, clientI
 
             if (res.ok) {
                 onSuccess(data);
-                setFormData({ plate: '', brand: '', model: '', mileage: '' });
+                setFormData({ plate: '', brand: '', model: '', mileage: '', fuelType: 'Nafta', engine: '' });
             } else {
                 alert(data.error || 'Error al guardar vehículo');
             }
@@ -78,9 +106,9 @@ export default function CreateVehicleModal({ isOpen, onClose, onSuccess, clientI
                     </button>
                 </div>
 
-                <form onSubmit={handleSubmit} className="p-8 space-y-6">
+                <form onSubmit={handleSubmit} className="p-8 space-y-5">
 
-                    <div className="grid grid-cols-2 gap-6">
+                    <div className="grid grid-cols-2 gap-4">
                         <div className="col-span-2 sm:col-span-1 space-y-1">
                             <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Patente</label>
                             <input
@@ -108,25 +136,64 @@ export default function CreateVehicleModal({ isOpen, onClose, onSuccess, clientI
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-6">
+                    <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-1">
                             <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Marca</label>
                             <input
+                                list="brands"
                                 type="text"
                                 placeholder="Toyota"
                                 className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-medium transition-all"
                                 value={formData.brand}
                                 onChange={e => setFormData({ ...formData, brand: e.target.value })}
                             />
+                            <datalist id="brands">
+                                {Object.keys(VEHICLE_DATA).map(b => (
+                                    <option key={b} value={b} />
+                                ))}
+                            </datalist>
                         </div>
                         <div className="space-y-1">
                             <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Modelo</label>
                             <input
+                                list="models"
                                 type="text"
                                 placeholder="Hilux"
                                 className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-medium transition-all"
                                 value={formData.model}
                                 onChange={e => setFormData({ ...formData, model: e.target.value })}
+                            />
+                            <datalist id="models">
+                                {availableModels.map(m => (
+                                    <option key={m} value={m} />
+                                ))}
+                            </datalist>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-1">
+                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Combustible</label>
+                            <select
+                                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-medium transition-all appearance-none"
+                                value={formData.fuelType}
+                                onChange={e => setFormData({ ...formData, fuelType: e.target.value })}
+                            >
+                                <option value="Nafta">Nafta</option>
+                                <option value="Diesel">Diesel</option>
+                                <option value="GNC">GNC</option>
+                                <option value="Híbrido">Híbrido</option>
+                                <option value="Eléctrico">Eléctrico</option>
+                            </select>
+                        </div>
+                        <div className="space-y-1">
+                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Motor / Detalle</label>
+                            <input
+                                type="text"
+                                placeholder="Ej: 1.6 16V"
+                                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-medium transition-all"
+                                value={formData.engine}
+                                onChange={e => setFormData({ ...formData, engine: e.target.value })}
                             />
                         </div>
                     </div>
