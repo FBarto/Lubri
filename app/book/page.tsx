@@ -48,7 +48,32 @@ export default function BookAppointment() {
 
     const [plate, setPlate] = useState('');
     const [vehicle, setVehicle] = useState<Vehicle | null>(null);
-    const [vehicleInfo, setVehicleInfo] = useState({ brand: '', model: '' });
+    const [vehicleInfo, setVehicleInfo] = useState({ brand: '', model: '', fuelType: 'Nafta', engine: '' });
+    const [activeField, setActiveField] = useState<'brand' | 'model' | null>(null);
+
+    const VEHICLE_DATA: Record<string, string[]> = {
+        'Toyota': ['Hilux', 'Corolla', 'Etios', 'Yaris', 'SW4', 'Rav4', 'Corolla Cross'],
+        'Volkswagen': ['Amarok', 'Gol Trend', 'Polo', 'Virtus', 'Vento', 'T-Cross', 'Taos', 'Nivus', 'Suran', 'Saveiro'],
+        'Ford': ['Ranger', 'EcoSport', 'Fiesta', 'Focus', 'Ka', 'Territory', 'Bronco', 'Maverick'],
+        'Renault': ['Kangoo', 'Sandero', 'Logan', 'Duster', 'Oroch', 'Alaskan', 'Clio', 'Captur', 'Kwid'],
+        'Chevrolet': ['Cruze', 'Onix', 'Tracker', 'S10', 'Spin', 'Prisma', 'Aveo'],
+        'Fiat': ['Cronos', 'Toro', 'Strada', 'Pulse', 'Argo', 'Mobi', 'Fiorino', 'Siena', 'Palio'],
+        'Peugeot': ['208', '2008', '3008', 'Partner', '408', '206', '207'],
+        'Citroen': ['C3', 'C4 Cactus', 'Berlingo', 'C4'],
+        'Honda': ['HR-V', 'CR-V', 'Civic', 'Fit', 'City'],
+        'Nissan': ['Frontier', 'Kicks', 'Versa', 'Sentra', 'Note', 'March'],
+        'Jeep': ['Renegade', 'Compass', 'Commander'],
+        'Mercedes-Benz': ['Sprinter', 'Clase A', 'Clase C', 'Vito'],
+        'BMW': ['Serie 1', 'Serie 3', 'X1', 'X3'],
+        'Audi': ['A1', 'A3', 'A4', 'Q3', 'Q5'],
+    };
+
+    const normalizeBrand = (input: string) => {
+        const key = Object.keys(VEHICLE_DATA).find(k => k.toLowerCase() === input.toLowerCase());
+        return key || input;
+    };
+
+    const availableModels = VEHICLE_DATA[normalizeBrand(vehicleInfo.brand)] || [];
 
     // Pending state for confirmation flow
     const [pendingVehicle, setPendingVehicle] = useState<Vehicle | null>(null);
@@ -228,7 +253,9 @@ export default function BookAppointment() {
                     plate,
                     brand: vehicleInfo.brand,
                     model: vehicleInfo.model,
-                    clientId: client.id
+                    clientId: client.id,
+                    fuelType: vehicleInfo.fuelType,
+                    engine: vehicleInfo.engine
                 })
             });
             const data = await res.json();
@@ -261,7 +288,13 @@ export default function BookAppointment() {
                     const data = await res.json();
                     if (data && data.id) {
                         setVehicle(data);
-                        setVehicleInfo({ brand: data.brand || '', model: data.model || '' });
+                        const specs = data.specifications || {};
+                        setVehicleInfo({
+                            brand: data.brand || '',
+                            model: data.model || '',
+                            fuelType: specs.fuelType || 'Nafta',
+                            engine: specs.engine || ''
+                        });
                         if (data.client && !client) {
                             setClient(data.client);
                             setPhone(data.client.phone);
@@ -566,21 +599,104 @@ export default function BookAppointment() {
                             {vehicle === null && plate.length > 5 && !loading && (
                                 <div className="fade-in bg-indigo-50 p-4 rounded-xl border border-indigo-100">
                                     <p className="text-sm text-indigo-800 mb-3 font-bold">Vehículo nuevo. Completa los datos:</p>
-                                    <div className="space-y-3">
-                                        <input
-                                            type="text"
-                                            value={vehicleInfo.brand}
-                                            onChange={(e) => setVehicleInfo({ ...vehicleInfo, brand: e.target.value })}
-                                            placeholder="Marca (Ej: Toyota)"
-                                            className="w-full p-3 rounded-lg border border-indigo-200 font-medium"
-                                        />
-                                        <input
-                                            type="text"
-                                            value={vehicleInfo.model}
-                                            onChange={(e) => setVehicleInfo({ ...vehicleInfo, model: e.target.value })}
-                                            placeholder="Modelo (Ej: Corolla)"
-                                            className="w-full p-3 rounded-lg border border-indigo-200 font-medium"
-                                        />
+                                    <div className="space-y-4">
+
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <div className="space-y-1 relative group">
+                                                <input
+                                                    type="text"
+                                                    value={vehicleInfo.brand}
+                                                    onChange={(e) => {
+                                                        setVehicleInfo({ ...vehicleInfo, brand: e.target.value });
+                                                        setActiveField('brand');
+                                                    }}
+                                                    onFocus={() => setActiveField('brand')}
+                                                    onBlur={() => setTimeout(() => setActiveField(null), 200)}
+                                                    placeholder="Marca (Ej: Toyota)"
+                                                    className="w-full p-3 rounded-lg border border-indigo-200 font-medium bg-white"
+                                                />
+                                                {activeField === 'brand' && vehicleInfo.brand.length > 0 && (
+                                                    <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-100 shadow-xl rounded-xl max-h-48 overflow-y-auto z-50">
+                                                        {Object.keys(VEHICLE_DATA)
+                                                            .filter(b => b.toLowerCase().includes(vehicleInfo.brand.toLowerCase()))
+                                                            .map(b => (
+                                                                <button
+                                                                    key={b}
+                                                                    type="button"
+                                                                    onClick={() => {
+                                                                        setVehicleInfo({ ...vehicleInfo, brand: b });
+                                                                        setActiveField(null);
+                                                                    }}
+                                                                    className="w-full text-left px-4 py-2 hover:bg-slate-50 text-sm font-medium text-slate-700 block"
+                                                                >
+                                                                    {b}
+                                                                </button>
+                                                            ))
+                                                        }
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            <div className="space-y-1 relative group">
+                                                <input
+                                                    type="text"
+                                                    value={vehicleInfo.model}
+                                                    onChange={(e) => {
+                                                        setVehicleInfo({ ...vehicleInfo, model: e.target.value });
+                                                        setActiveField('model');
+                                                    }}
+                                                    onFocus={() => setActiveField('model')}
+                                                    onBlur={() => setTimeout(() => setActiveField(null), 200)}
+                                                    placeholder="Modelo (Ej: Corolla)"
+                                                    className="w-full p-3 rounded-lg border border-indigo-200 font-medium bg-white"
+                                                />
+                                                {activeField === 'model' && availableModels.length > 0 && (
+                                                    <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-100 shadow-xl rounded-xl max-h-48 overflow-y-auto z-50">
+                                                        {availableModels
+                                                            .filter(m => m.toLowerCase().includes(vehicleInfo.model.toLowerCase()))
+                                                            .map(m => (
+                                                                <button
+                                                                    key={m}
+                                                                    type="button"
+                                                                    onClick={() => {
+                                                                        setVehicleInfo({ ...vehicleInfo, model: m });
+                                                                        setActiveField(null);
+                                                                    }}
+                                                                    className="w-full text-left px-4 py-2 hover:bg-slate-50 text-sm font-medium text-slate-700 block"
+                                                                >
+                                                                    {m}
+                                                                </button>
+                                                            ))
+                                                        }
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <div className="space-y-1">
+                                                <select
+                                                    className="w-full p-3 rounded-lg border border-indigo-200 font-medium bg-white"
+                                                    value={vehicleInfo.fuelType}
+                                                    onChange={(e) => setVehicleInfo({ ...vehicleInfo, fuelType: e.target.value })}
+                                                >
+                                                    <option value="Nafta">Nafta</option>
+                                                    <option value="Diesel">Diesel</option>
+                                                    <option value="GNC">GNC</option>
+                                                    <option value="Híbrido">Híbrido</option>
+                                                    <option value="Eléctrico">Eléctrico</option>
+                                                </select>
+                                            </div>
+                                            <div className="space-y-1">
+                                                <input
+                                                    type="text"
+                                                    value={vehicleInfo.engine}
+                                                    onChange={(e) => setVehicleInfo({ ...vehicleInfo, engine: e.target.value })}
+                                                    placeholder="Motor (Ej: 1.6)"
+                                                    className="w-full p-3 rounded-lg border border-indigo-200 font-medium bg-white"
+                                                />
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             )}
