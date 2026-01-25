@@ -59,6 +59,7 @@ export default function BookAppointment() {
         const digits = phone.replace(/\D/g, '');
         if (!phone) return null;
         if (digits.length < 10) return "Mínimo 10 dígitos (Ej: 351xxxxxx)";
+        if (digits.length > 13) return "Número demasiado largo";
         return null;
     };
 
@@ -577,19 +578,25 @@ export default function BookAppointment() {
                         <div className="space-y-4">
                             <div>
                                 <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Celular</label>
-                                <input
-                                    type="tel"
-                                    value={phone}
-                                    onChange={(e) => {
-                                        const val = e.target.value;
-                                        setPhone(val);
-                                        if (phoneError) setPhoneError(validatePhone(val));
-                                    }}
-                                    onBlur={() => setPhoneError(validatePhone(phone))}
-                                    placeholder="Ej: 3541123456"
-                                    className={`w-full p-4 rounded-xl border ${phoneError ? 'border-red-500 focus:ring-red-200' : 'border-slate-200 focus:ring-blue-500'} text-lg font-medium focus:outline-none focus:ring-2 transition-all`}
-                                    autoFocus
-                                />
+                                <div className={`relative flex items-center w-full rounded-xl border ${phoneError ? 'border-red-500 ring-4 ring-red-500/10' : 'border-slate-200 focus-within:ring-4 focus-within:ring-blue-500/10 focus-within:border-blue-500'} transition-all bg-white`}>
+                                    <div className="pl-4 flex items-center gap-2 border-r border-slate-100 pr-3 py-4 select-none">
+                                        <span className="text-xl">🇦🇷</span>
+                                        <span className="font-bold text-slate-500">+54 9</span>
+                                    </div>
+                                    <input
+                                        type="tel"
+                                        value={phone}
+                                        onChange={(e) => {
+                                            const val = e.target.value.replace(/[^0-9]/g, ''); // Allow only numbers
+                                            setPhone(val);
+                                            if (phoneError) setPhoneError(validatePhone(val));
+                                        }}
+                                        onBlur={() => setPhoneError(validatePhone(phone))}
+                                        placeholder="351 123 4567"
+                                        className="w-full p-4 bg-transparent outline-none text-lg font-bold tracking-widest pl-3 text-slate-800 placeholder:text-slate-300"
+                                        autoFocus
+                                    />
+                                </div>
                                 {phoneError && (
                                     <p className="text-xs font-bold text-red-500 mt-2 animate-in slide-in-from-top-1">
                                         {phoneError}
