@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { User, Car, ArrowRight, Check, AlertCircle, MessageCircle } from 'lucide-react';
 import { generateWhatsAppLink } from '../lib/inbox-actions';
+import { suggestServiceItems } from '../lib/smart-actions';
 
 // Types
 type Client = {
@@ -387,12 +388,33 @@ export default function BookAppointment() {
         return () => clearTimeout(timer);
     }, [plate, step]); // Add step dependency
 
+    // Smart Quote State
+    const [smartQuote, setSmartQuote] = useState<any>(null);
+    const [loadingQuote, setLoadingQuote] = useState(false);
+
     // --- STEP 3: SERVICE ---
     const fetchServices = async () => {
         const res = await fetch('/api/services');
         const data = await res.json();
         setServices(data.filter((s: any) => s.active));
     };
+
+    // Smart Quote Effect
+    useEffect(() => {
+        if (step === 3 && vehicle?.id) {
+            setLoadingQuote(true);
+            suggestServiceItems(vehicle.id)
+                .then(res => {
+                    if (res.success) {
+                        setSmartQuote(res);
+                    } else {
+                        setSmartQuote(null);
+                    }
+                })
+                .catch(err => console.error(err))
+                .finally(() => setLoadingQuote(false));
+        }
+    }, [step, vehicle]);
 
     const selectService = (s: Service) => {
         setSelectedService(s);
@@ -418,9 +440,15 @@ export default function BookAppointment() {
         }
     };
 
-    // --- STEP 5: CONFIRM ---
     const confirmAppointment = async () => {
         if (!client || !vehicle || !selectedService || !selectedSlot) return;
+
+        // Handle Smart Quote Selection
+        const isSmart = selectedService.id === -1;
+        const noteContent = isSmart
+            ? `Reserva Smart Quote: ${smartQuote?.items?.map((i: any) => i.name).join(', ')}`
+            : 'Reserva web';
+
         setLoading(true);
         try {
             const res = await fetch('/api/appointments', {
@@ -429,9 +457,9 @@ export default function BookAppointment() {
                 body: JSON.stringify({
                     clientId: client.id,
                     vehicleId: vehicle.id,
-                    serviceId: selectedService.id,
+                    serviceId: isSmart ? 1 : selectedService.id, // Fallback to ID 1
                     date: selectedSlot,
-                    notes: 'Reserva web'
+                    notes: noteContent
                 })
             });
 
@@ -449,6 +477,8 @@ export default function BookAppointment() {
             setLoading(false);
         }
     };
+
+
 
     // --- RENDER ---
     return (
@@ -849,10 +879,50 @@ export default function BookAppointment() {
                 {step === 3 && (
                     <div className="fade-in">
                         <button onClick={() => setStep(isReturning ? 1.5 : 2)} className="text-sm text-slate-400 mb-4 hover:text-red-600 flex items-center gap-1 font-bold uppercase tracking-wide">← Volver</button>
-                        <h2 className="text-2xl font-black italic uppercase mb-2">Servicio 🛠️</h2>
+                        <h2 className="text-2xl font-black italic uppercase mb-2">Servicio 🔧</h2>
                         <p className="text-slate-500 mb-6 font-medium">Seleccioná qué necesitás realizar.</p>
 
-                        <div className="space-y-3">
+                        <div className="space-y-4">
+                            {/* SMART QUOTE CARD */}
+                            {loadingQuote && (
+                                <div className="bg-slate-50 border-2 border-slate-100 rounded-2xl p-6 animate-pulse">
+                                    <div className="h-6 bg-slate-200 rounded w-1/3 mb-4"></div>
+                                    <div className="h-4 bg-slate-200 rounded w-2/3 mb-2"></div>
+                                    <div className="h-4 bg-slate-200 rounded w-1/2"></div>
+                                </div>
+                            )}
+
+                            {!loadingQuote && smartQuote?.success && smartQuote.items?.length > 0 && (
+                                <button
+                                    onClick={() => selectService({ id: -1, name: 'Smart Quote', category: 'SMART', price: smartQuote.items.reduce((sum: number, i: any) => sum + (i.price * i.quantity), 0), duration: 45, active: true })}
+                                    className="w-full relative overflow-hidden bg-gradient-to-br from-indigo-600 to-blue-700 text-white p-6 rounded-2xl shadow-lg border-2 border-transparent hover:scale-[1.02] transition-all text-left group"
+                                >
+                                    <div className="absolute top-0 right-0 p-4 opacity-10">
+                                        <div className="bg-white p-2 rounded-full">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" /></svg>
+                                        </div>
+                                    </div>
+
+                                    <span className="inline-block bg-white/20 backdrop-blur-sm text-white text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded mb-3">
+                                        Recomendado para vos
+                                    </span>
+
+                                    <h3 className="text-xl font-black mb-1">Presupuesto Inteligente</h3>
+                                    <p className="text-indigo-100 text-sm mb-4 font-medium opacity-90 line-clamp-2">
+                                        {smartQuote.items.map((i: any) => i.name).join(' + ')}
+                                    </p>
+
+                                    <div className="flex items-end justify-between mt-2">
+                                        <div className="text-3xl font-black">
+                                            $ {smartQuote.items.reduce((sum: number, i: any) => sum + (i.price * i.quantity), 0).toLocaleString()}
+                                        </div>
+                                        <span className="bg-white text-blue-700 px-4 py-2 rounded-xl font-bold text-sm shadow-sm group-hover:bg-blue-50 transition-colors">
+                                            Seleccionar
+                                        </span>
+                                    </div>
+                                </button>
+                            )}
+
                             {services
                                 .filter(s => {
                                     if (!vehicle?.type) return true;
@@ -870,13 +940,15 @@ export default function BookAppointment() {
                                     <button
                                         key={s.id}
                                         onClick={() => selectService(s)}
-                                        className="w-full p-4 rounded-xl border border-slate-200 flex justify-between items-center hover:border-blue-500 hover:bg-blue-50 transition-all text-left group"
+                                        className="w-full bg-white p-6 rounded-2xl shadow-sm border-2 border-slate-100 hover:border-red-600 hover:shadow-md transition-all text-left flex justify-between items-center group"
                                     >
                                         <div>
-                                            <span className="block font-bold text-slate-800 text-lg group-hover:text-blue-700">{s.name}</span>
-                                            <span className="text-sm text-slate-400 group-hover:text-blue-500">{s.duration} min</span>
+                                            <h3 className="text-lg font-black text-slate-900 mb-1 group-hover:text-red-700 transition-colors">{s.name}</h3>
+                                            <p className="text-slate-400 text-sm font-bold">{s.duration} min</p>
                                         </div>
-                                        <span className="font-black text-red-600 text-lg">${s.price}</span>
+                                        <span className="text-xl font-black text-red-600 group-hover:scale-110 transition-transform">
+                                            ${s.price.toLocaleString()}
+                                        </span>
                                     </button>
                                 ))}
                         </div>
