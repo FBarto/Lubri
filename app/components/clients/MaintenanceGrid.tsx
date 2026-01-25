@@ -9,7 +9,8 @@ export default function MaintenanceGrid({ vehicleId }: { vehicleId: number }) {
     const [data, setData] = useState<{
         filters: (MaintenanceStatus & { key: string })[],
         fluids: (MaintenanceStatus & { key: string })[],
-        services: (MaintenanceStatus & { key: string })[]
+        services: (MaintenanceStatus & { key: string })[],
+        oilCapacity: string | null
     } | null>(null);
     const [loading, setLoading] = useState(true);
 
@@ -77,24 +78,34 @@ export default function MaintenanceGrid({ vehicleId }: { vehicleId: number }) {
     };
 
     return (
-        <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div>
-                <h4 className="text-xs font-black text-slate-400 uppercase mb-3 flex items-center gap-2 pb-1 border-b border-slate-100">
-                    <Wind size={14} /> Filtros
-                </h4>
-                {data.filters.map(item => <StatusCard key={item.key} item={item} />)}
-            </div>
-            <div>
-                <h4 className="text-xs font-black text-slate-400 uppercase mb-3 flex items-center gap-2 pb-1 border-b border-slate-100">
-                    <Droplet size={14} /> Fluidos
-                </h4>
-                {data.fluids.map(item => <StatusCard key={item.key} item={item} />)}
-            </div>
-            <div>
-                <h4 className="text-xs font-black text-slate-400 uppercase mb-3 flex items-center gap-2 pb-1 border-b border-slate-100">
-                    <Wrench size={14} /> Servicios
-                </h4>
-                {data.services.map(item => <StatusCard key={item.key} item={item} />)}
+        <div className="mt-4">
+            {data.oilCapacity && (
+                <div className="mb-4 inline-flex items-center gap-2 px-3 py-1.5 bg-slate-900 text-white rounded-lg shadow-sm border border-slate-700 animate-in fade-in slide-in-from-top-2 duration-500">
+                    <Droplet size={14} className="text-blue-400" />
+                    <span className="text-[10px] uppercase font-black tracking-widest text-slate-400">Capacidad Aceite</span>
+                    <span className="text-sm font-black text-white ml-1">{data.oilCapacity} L</span>
+                </div>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                    <h4 className="text-xs font-black text-slate-400 uppercase mb-3 flex items-center gap-2 pb-1 border-b border-slate-100">
+                        <Wind size={14} /> Filtros
+                    </h4>
+                    {data.filters.map(item => <StatusCard key={item.key} item={item} />)}
+                </div>
+                <div>
+                    <h4 className="text-xs font-black text-slate-400 uppercase mb-3 flex items-center gap-2 pb-1 border-b border-slate-100">
+                        <Droplet size={14} /> Fluidos
+                    </h4>
+                    {data.fluids.map(item => <StatusCard key={item.key} item={item} />)}
+                </div>
+                <div>
+                    <h4 className="text-xs font-black text-slate-400 uppercase mb-3 flex items-center gap-2 pb-1 border-b border-slate-100">
+                        <Wrench size={14} /> Servicios
+                    </h4>
+                    {data.services.map(item => <StatusCard key={item.key} item={item} />)}
+                </div>
             </div>
         </div>
     );

@@ -42,7 +42,12 @@ export async function getVehicleMaintenanceHistory(vehicleId: number) {
             orderBy: { date: 'desc' }
         });
 
-        const findLast = (keywords: string[]) => {
+        const extractCapacity = (str: string) => {
+            const match = str.match(/^(\d+([.,]\d+)?)\s*(L|LTS|LTS\.)?/i);
+            return match ? match[1].replace(',', '.') : null;
+        };
+
+        const findLast = (keywords: string[], key?: string) => {
             for (const wo of workOrders) {
                 const foundItem = wo.saleItems.find(item =>
                     keywords.some(k => item.description.toLowerCase().includes(k))
@@ -59,30 +64,51 @@ export async function getVehicleMaintenanceHistory(vehicleId: number) {
 
                     // Extra specific logic for details from serviceDetails (Historical)
                     let detail = foundItem?.description || null;
+                    let extractedLiters = null;
+
                     if (wo.serviceDetails) {
                         const sd = wo.serviceDetails as any;
-                        // Map key to property in serviceDetails
-                        if (keywords.includes('"oil":') && sd.oil?.type) detail = sd.oil.type;
-                        if (keywords.includes('"air":') && sd.filters?.air) detail = sd.filters.air;
-                        if (keywords.includes('"fuel":') && sd.filters?.fuel) detail = sd.filters.fuel;
-                        if (keywords.includes('"cabin":') && sd.filters?.cabin) detail = sd.filters.cabin;
-                        if (keywords.includes('"gearbox":') && sd.fluids?.gearbox) detail = sd.fluids.gearbox;
+                        // Precision mapping using the category key
+                        if (key === 'engine_oil' && sd.oil?.type) {
+                            detail = sd.oil.type;
+                            extractedLiters = sd.oil.liters || extractCapacity(sd.oil.type);
+                        }
+                        if (key === 'oil_filter' && sd.filters?.oil) detail = sd.filters.oil;
+                        if (key === 'air_filter' && sd.filters?.air) detail = sd.filters.air;
+                        if (key === 'fuel_filter' && sd.filters?.fuel) detail = sd.filters.fuel;
+                        if (key === 'cabin_filter' && sd.filters?.cabin) detail = sd.filters.cabin;
+                        if (key === 'gearbox_oil' && sd.fluids?.gearbox) detail = sd.fluids.gearbox;
                     }
 
                     return {
                         date: wo.date,
                         mileage: wo.mileage,
                         daysAgo,
-                        detail
+                        detail,
+                        liters: extractedLiters
                     };
                 }
             }
             return null;
         };
 
+        let detectedLiters: string | null = null;
+
+        // Find latest valid capacity across ALL history as fallback
+        for (const wo of workOrders) {
+            if (wo.serviceDetails) {
+                const sd = wo.serviceDetails as any;
+                const cap = sd.oil?.liters || (sd.oil?.type ? extractCapacity(sd.oil.type) : null);
+                if (cap) {
+                    detectedLiters = cap;
+                    break;
+                }
+            }
+        }
+
         const processCategory = (items: typeof MAINTENANCE_ITEMS['filters']) => {
             return items.map(item => {
-                const last = findLast(item.keywords);
+                const last = findLast(item.keywords, item.key);
                 let status: MaintenanceStatus['status'] = 'UNKNOWN';
 
                 if (last) {
@@ -102,13 +128,16 @@ export async function getVehicleMaintenanceHistory(vehicleId: number) {
             });
         };
 
+        const resData = {
+            filters: processCategory(MAINTENANCE_ITEMS.filters),
+            fluids: processCategory(MAINTENANCE_ITEMS.fluids),
+            services: processCategory(MAINTENANCE_ITEMS.services),
+            oilCapacity: detectedLiters
+        };
+
         return {
             success: true,
-            data: {
-                filters: processCategory(MAINTENANCE_ITEMS.filters),
-                fluids: processCategory(MAINTENANCE_ITEMS.fluids),
-                services: processCategory(MAINTENANCE_ITEMS.services),
-            }
+            data: resData
         };
 
     } catch (error) {

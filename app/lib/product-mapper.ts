@@ -5,7 +5,15 @@
 export function mapLegacyProductCode(legacyDescription: string, category?: string): string | null {
     if (!legacyDescription) return null;
 
-    const clean = legacyDescription.trim().toUpperCase();
+    // 0. Strip leading/trailing liter/quantity patterns (e.g. "3.5L ", "4 ", "F50  3")
+    let clean = legacyDescription.trim().toUpperCase();
+
+    // Remove leading quantity: "3.5 ", "4L ", "3,5 LTS "
+    clean = clean.replace(/^(\d+([.,]\d+)?)\s*(L|LTS|LTS\.)?\s+/i, '');
+
+    // Remove trailing quantity if it's a small number typically representing liters: " F50 4"
+    // Usually anything < 10 at the end of a string after a space is a liter count
+    clean = clean.replace(/\s+([1-9]([.,]\d+)?)\s*(L|LTS|LTS\.)?$/i, '');
 
     // 1. Direct Hardcoded Mappings for shortcuts
     if (clean === 'S2' || clean === 'S2000') return 'S2'; // Mobil Super 2000
