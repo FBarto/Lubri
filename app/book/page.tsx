@@ -317,19 +317,22 @@ export default function BookAppointment() {
                 })
             });
             const data = await res.json();
+
+            // Allow debugging in prod for this specific user issue
+            if (data.error) throw new Error(data.error);
+
             if (data.id) {
                 setVehicle(data);
-                fetchServices();
+                await fetchServices(); // Wait for services
                 setStep(3);
             } else {
-                if (data.error === 'A vehicle with this plate already exists') {
-                    await checkVehicle();
-                    return;
-                }
-                setError(data.error);
+                console.error('Strange API Response:', data);
+                alert('Error desconocido al crear vehículo. ID no retornado.');
             }
         } catch (e: any) {
+            console.error(e);
             setError(e.message);
+            alert(`Error: ${e.message}`);
         } finally {
             setLoading(false);
         }
