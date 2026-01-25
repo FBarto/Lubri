@@ -103,6 +103,19 @@ export async function getVehicleInsights(brand: string, model: string) {
     };
 }
 
+// Helper to adjust quantity for loose oils (default to 4L)
+function applySmartQuantity(item: any) {
+    let qty = item.quantity || 1;
+    const nameUpper = (item.name || '').toUpperCase();
+    const isOil = nameUpper.includes('ACEITE') || nameUpper.includes('HELIX') || nameUpper.includes('ELAION') || nameUpper.includes('TOTAL') || nameUpper.includes('CASTROL');
+    const isLarge = nameUpper.includes('4L') || nameUpper.includes('4 L') || nameUpper.includes('20L') || nameUpper.includes('BIDON') || nameUpper.includes('BALDE');
+
+    if (isOil && !isLarge) {
+        qty = 4;
+    }
+    return { ...item, quantity: qty };
+}
+
 // 4. Smart Service Suggestion (The "Brain")
 export async function suggestServiceItems(vehicleId: number) {
     try {
@@ -115,7 +128,7 @@ export async function suggestServiceItems(vehicleId: number) {
         if (specs && Object.keys(specs).length > 0) {
             // Convert stored specs to QuoteItems
             // learned: { oil_filter: { productId: 1, name: 'Filter X', ... } }
-            const items = Object.values(specs).map((s: any) => ({
+            let items: any[] = Object.values(specs).map((s: any) => ({
                 id: s.productId || Math.random(), // fallback id
                 name: s.name,
                 price: 0, // We need to fetch current price!
@@ -125,14 +138,24 @@ export async function suggestServiceItems(vehicleId: number) {
             }));
 
             // Fetch current prices
-            for (const item of items) {
-                if ((item as any).id) {
-                    const p = await prisma.product.findUnique({ where: { id: Number((item as any).id) } });
+            for (let i = 0; i < items.length; i++) {
+                const item = items[i];
+                if (item.id && typeof item.id !== 'string') {
+                    // It's a number (real ID) presumably
+                }
+
+                // If the spec had a real productId, try to fetch it to get price/name
+                const specKey = Object.keys(specs)[i];
+                const s = (specs as any)[specKey];
+
+                if (s.productId) {
+                    const p = await prisma.product.findUnique({ where: { id: Number(s.productId) } });
                     if (p) {
                         item.price = p.price;
-                        item.name = p.name; // Refresh name
+                        item.name = p.name;
                     }
                 }
+                items[i] = applySmartQuantity(item);
             }
 
             return { success: true, method: 'LEARNED', items };
@@ -145,9 +168,11 @@ export async function suggestServiceItems(vehicleId: number) {
         const lastService = await getLastServiceItems(vehicleId);
 
         if (lastService.success && lastService.data && lastService.data.items.length > 0) {
-            // Filter for Oil/Filters only to be safe? Or return whole service?
+            // Apply Smart Quantity to history items too (incase they were saved as 1 unit loose)
+            const items = lastService.data.items.map((item: any) => applySmartQuantity(item));
+            // Filter for Oil/Filters only? Or return whole service?
             // Usually we want to replicate the maintenance.
-            return { success: true, method: 'HISTORY', items: lastService.data.items };
+            return { success: true, method: 'HISTORY', items };
         }
 
         // STRATEGY 3: COLLECTIVE INTELLIGENCE (The "Crowd")
@@ -162,26 +187,15 @@ export async function suggestServiceItems(vehicleId: number) {
                     where: { name: p.name, active: true }
                 });
 
-                let qty = 1;
-                // Smart Quantity Logic
-                // If it's an OIL and seems to be 1 Liter (or not explicitly 4L/20L), default to 4.
-                // Assuming type 'ACEITE' or similar if we had it, but loosely relying on product name or category if possible.
-                // For now, if p.type is likely 'PRODUCT' (generic), we check name.
-                const nameUpper = p.name.toUpperCase();
-                const isOil = nameUpper.includes('ACEITE') || nameUpper.includes('HELIX') || nameUpper.includes('ELAION') || nameUpper.includes('TOTAL') || nameUpper.includes('CASTROL');
-                const isLarge = nameUpper.includes('4L') || nameUpper.includes('4 L') || nameUpper.includes('20L') || nameUpper.includes('BIDON') || nameUpper.includes('BALDE');
-
-                if (isOil && !isLarge) {
-                    qty = 4; // Default to 4 liters for loose oil / 1L bottles
-                }
-
-                return {
+                const rawItem = {
                     id: realProduct?.id || Math.random(),
                     name: p.name,
                     price: realProduct?.price || 0,
-                    quantity: qty,
+                    quantity: 1,
                     type: p.type
                 };
+
+                return applySmartQuantity(rawItem);
             }));
 
             return { success: true, method: 'CROWD', items };
