@@ -43,6 +43,11 @@ async function testFix() {
             process.exit(1);
         }
 
+        if (!step2.client) {
+            console.error('❌ FAILED: Success reported but no client link returned');
+            process.exit(1);
+        }
+
         // 4. Create Vehicle using the ID from Step 2
         console.log('\n--- Step 3: Create Vehicle for Retrieved ID ---');
         // This was the broken part: client.id being passed correctly
@@ -54,10 +59,11 @@ async function testFix() {
             type: "AUTO"
         });
 
-        if (step3.success) {
+        if (step3.success && step3.vehicle) {
             console.log('✅ SUCCESS: Vehicle created successfully for existing client!');
             console.log('   Vehicle ID:', step3.vehicle.id);
         } else {
+            // TS Guard
             console.error('❌ FAILED: Could not link vehicle to existing client:', step3.error);
             process.exit(1);
         }
