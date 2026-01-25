@@ -578,10 +578,9 @@ export default function BookAppointment() {
                         <div className="space-y-4">
                             <div>
                                 <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Celular</label>
-                                <div className={`relative flex items-center w-full rounded-xl border ${phoneError ? 'border-red-500 ring-4 ring-red-500/10' : 'border-slate-200 focus-within:ring-4 focus-within:ring-blue-500/10 focus-within:border-blue-500'} transition-all bg-white`}>
-                                    <div className="pl-4 flex items-center gap-2 border-r border-slate-100 pr-3 py-4 select-none">
-                                        <span className="text-xl">🇦🇷</span>
-                                        <span className="font-bold text-slate-500">+54 9</span>
+                                <div className={`relative flex items-center w-full rounded-xl border ${phoneError ? 'border-red-500 ring-4 ring-red-500/10' : 'border-slate-200 focus-within:ring-4 focus-within:ring-blue-500/10 focus-within:border-blue-500'} transition-all bg-white overflow-hidden`}>
+                                    <div className="pl-4 flex items-center gap-2 border-r border-slate-100 pr-3 py-4 select-none bg-slate-50 text-slate-600 flex-shrink-0 whitespace-nowrap">
+                                        <span className="font-black text-sm tracking-wider">🇦🇷 +54 9</span>
                                     </div>
                                     <input
                                         type="tel"
@@ -593,7 +592,7 @@ export default function BookAppointment() {
                                         }}
                                         onBlur={() => setPhoneError(validatePhone(phone))}
                                         placeholder="351 123 4567"
-                                        className="w-full p-4 bg-transparent outline-none text-lg font-bold tracking-widest pl-3 text-slate-800 placeholder:text-slate-300"
+                                        className="flex-1 w-full p-4 bg-transparent outline-none text-lg font-bold tracking-widest pl-3 text-slate-800 placeholder:text-slate-300"
                                         autoFocus
                                     />
                                 </div>
