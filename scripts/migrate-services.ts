@@ -27,64 +27,58 @@ function parseRow(rowStr: string): string[] {
 
 function parseValuesFromContent(content: string, tableName: string): string[][] {
     const values: string[][] = [];
+    const markers = [`INSERT INTO \`${tableName}\``, `INSERT INTO ${tableName}`];
 
-    // Find start of relevant insert
-    const insertStartMarker = `INSERT INTO \`${tableName}\``;
-    const insertStartMarker2 = `INSERT INTO ${tableName}`; // without quotes
-
-    let startIndex = content.indexOf(insertStartMarker);
-    if (startIndex === -1) startIndex = content.indexOf(insertStartMarker2);
-    if (startIndex === -1) return [];
-
-    // Find VALUES after table name (skipping columns definition if any)
-    const valuesIndex = content.indexOf('VALUES', startIndex);
-    if (valuesIndex === -1) return [];
-
-    let currentIndex = valuesIndex + 'VALUES'.length;
-
-    // Scan until we find the first '('
-    while (currentIndex < content.length && content[currentIndex] !== '(') {
-        currentIndex++;
-    }
-
-    let depth = 0;
-    let start = 0;
-    let inQuote = false;
-    let isEscaping = false;
-
-    // State machine parser
-    for (let i = currentIndex; i < content.length; i++) {
-        const char = content[i];
-
-        if (isEscaping) {
-            isEscaping = false;
-            continue;
-        }
-
-        if (char === '\\') {
-            isEscaping = true;
-            continue;
-        }
-
-        if (char === "'" && !isEscaping) {
-            inQuote = !inQuote;
-            continue;
-        }
-
-        if (!inQuote) {
-            if (char === '(') {
-                if (depth === 0) start = i + 1;
-                depth++;
-            } else if (char === ')') {
-                depth--;
-                if (depth === 0) {
-                    const rowStr = content.substring(start, i);
-                    values.push(parseRow(rowStr));
-                }
-            } else if (char === ';') {
-                // End of statement
-                break;
+    let lastIndex = 0;
+    while (true) {
+        let startIndex = -1;
+        for (const marker of markers) {
+            const idx = content.indexOf(marker, lastIndex);
+            if (idx !== -1 && (startIndex === -1 || idx < startIndex)) {
+                startIndex = idx;
             }
+        }
+
+        if (startIndex === -1) break;
+
+        const valuesIndex = content.indexOf('VALUES', startIndex);
+        if (valuesIndex === -1) {
+            lastIndex = startIndex + 1;
+            continue;
+        }
+
+        let currentIndex = valuesIndex + 'VALUES'.length;
+        while (currentIndex < content.length && content[currentIndex] !== '(') {
+            currentIndex++;
+        }
+
+        let depth = 0;
+        let start = 0;
+        let inQuote = false;
+        let isEscaping = false;
+
+        for (let i = currentIndex; i < content.length; i++) {
+            const char = content[i];
+            if (isEscaping) { isEscaping = false; continue; }
+            if (char === '\\') { isEscaping = true; continue; }
+            if (char === "'" && !isEscaping) { inQuote = !inQuote; continue; }
+
+            if (!inQuote) {
+                if (char === '(') {
+                    if (depth === 0) start = i + 1;
+                    depth++;
+                } else if (char === ')') {
+                    depth--;
+                    if (depth === 0) {
+                        const rowStr = content.substring(start, i);
+                        values.push(parseRow(rowStr));
+                    }
+                } else if (char === ';') {
+                    lastIndex = i + 1;
+                    break;
+                }
+            }
+            if (i === content.length - 1) lastIndex = content.length;
         }
     }
     return values;
@@ -93,8 +87,18 @@ function parseValuesFromContent(content: string, tableName: string): string[][] 
 async function migrateServices() {
     console.log('🚀 Starting Optimized Service Migration...');
 
+    // 0. Clean previous historical services to avoid duplicates
+    console.log('🧹 Cleaning previous historical services...');
+    await prisma.workOrder.deleteMany({
+        where: { service: { name: 'Servicio Histórico' } }
+    });
+
     // 1. Parse File
     console.log('📖 Reading srerice.sql...');
+    if (!fs.existsSync(path.join(LEGACY_DIR, 'srerice.sql'))) {
+        console.error(`❌ File not found: ${path.join(LEGACY_DIR, 'srerice.sql')}`);
+        process.exit(1);
+    }
     const content = fs.readFileSync(path.join(LEGACY_DIR, 'srerice.sql'), 'utf-8');
     const rows = parseValuesFromContent(content, 'servicios');
     console.log(`✅ Parsed ${rows.length} rows from SQL.`);
@@ -106,7 +110,11 @@ async function migrateServices() {
     });
     const vehicleMap = new Map<string, { id: number, clientId: number }>();
     for (const v of allVehicles) {
-        if (v.plate) vehicleMap.set(v.plate, v);
+        if (v.plate) {
+            vehicleMap.set(v.plate, v);
+            const clean = v.plate.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+            if (clean !== v.plate) vehicleMap.set(clean, v);
+        }
     }
     console.log(`✅ Cached ${allVehicles.length} vehicles.`);
 
@@ -130,18 +138,22 @@ async function migrateServices() {
     console.log('⚙️  Processing rows...');
     for (const row of rows) {
         if (row.length < 5) continue;
-        const patente = row[1];
-        if (!patente) continue;
+        const patenteRaw = row[1];
+        if (!patenteRaw) continue;
+
+        // Clean plate for lookup
+        const cleanPatente = patenteRaw.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
 
         // Fast Lookup
-        const vehicle = vehicleMap.get(patente);
-        if (!vehicle) continue; // Skip if vehicle not found
+        const vehicle = vehicleMap.get(patenteRaw) || vehicleMap.get(cleanPatente);
+        if (!vehicle) continue;
 
         const dateStr = row[2];
         const date = new Date(dateStr);
         if (isNaN(date.getTime())) continue;
 
-        const mileage = parseInt(row[3]) || 0;
+        const mileageStr = (row[3] || '0').replace(/[^0-9]/g, '');
+        const mileage = parseInt(mileageStr) || 0;
 
         // Parse Details
         const getVal = (idx: number) => (row[idx] && row[idx] !== 'NULL' && row[idx].trim() !== '') ? row[idx].trim() : null;
@@ -170,9 +182,9 @@ async function migrateServices() {
 
         // Specs Logic
         if (filters.oil || filters.air) {
-            const existing = vehicleSpecsMap.get(patente);
+            const existing = vehicleSpecsMap.get(cleanPatente);
             if (!existing || existing.date < date) {
-                vehicleSpecsMap.set(patente, {
+                vehicleSpecsMap.set(cleanPatente, {
                     date: date,
                     specs: { filters, oil: details.oil }
                 });
@@ -196,8 +208,7 @@ async function migrateServices() {
 
     // 4. Batch Insert WorkOrders
     console.log(`\n💾 Inserting ${workOrdersPayload.length} WorkOrders...`);
-    // Split into chunks of 1000
-    const CHUNK_SIZE = 1000;
+    const CHUNK_SIZE = 500;
     for (let i = 0; i < workOrdersPayload.length; i += CHUNK_SIZE) {
         const chunk = workOrdersPayload.slice(i, i + CHUNK_SIZE);
         try {

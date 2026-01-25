@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { MAINTENANCE_ITEMS, MaintenanceStatus } from "./maintenance-data";
 import { safeRevalidate } from './server-utils';
 import { generateVehicleInsight } from './gemini';
+import { mapLegacyProductCode } from './product-mapper';
 
 export async function getVehicleAIInsight(vehicleId: number) {
     try {
@@ -56,11 +57,16 @@ export async function getVehicleMaintenanceHistory(vehicleId: number) {
                 if (foundItem || foundNote) {
                     const daysAgo = Math.floor((Date.now() - new Date(wo.date).getTime()) / (1000 * 60 * 60 * 24));
 
-                    // Extra specific logic for oil type
+                    // Extra specific logic for details from serviceDetails (Historical)
                     let detail = foundItem?.description || null;
-                    if (keywords.includes('"oil":') && wo.serviceDetails) {
+                    if (wo.serviceDetails) {
                         const sd = wo.serviceDetails as any;
-                        if (sd.oil?.type) detail = sd.oil.type;
+                        // Map key to property in serviceDetails
+                        if (keywords.includes('"oil":') && sd.oil?.type) detail = sd.oil.type;
+                        if (keywords.includes('"air":') && sd.filters?.air) detail = sd.filters.air;
+                        if (keywords.includes('"fuel":') && sd.filters?.fuel) detail = sd.filters.fuel;
+                        if (keywords.includes('"cabin":') && sd.filters?.cabin) detail = sd.filters.cabin;
+                        if (keywords.includes('"gearbox":') && sd.fluids?.gearbox) detail = sd.fluids.gearbox;
                     }
 
                     return {
@@ -188,8 +194,42 @@ export async function getLastServiceItems(vehicleId: number) {
 
         if (!lastOrder) return { success: false, error: 'No service history found' };
 
-        // Match items with current Product table to get updated prices and stock
-        const currentItems = await Promise.all(lastOrder.saleItems.map(async (item) => {
+        // 2. Extract items (from saleItems or historical serviceDetails)
+        let rawItems = lastOrder.saleItems.map(i => ({
+            description: i.description,
+            quantity: i.quantity,
+            unitPrice: i.unitPrice,
+            productId: i.productId,
+            type: i.type,
+            category: (i as any).category // Some might have category if manually added
+        }));
+
+        if (rawItems.length === 0 && lastOrder.serviceDetails) {
+            const sd = lastOrder.serviceDetails as any;
+
+            // Extract Oil
+            if (sd.oil?.type) {
+                rawItems.push({
+                    description: sd.oil.type,
+                    quantity: Number(sd.oil.liters) || 1,
+                    unitPrice: 0,
+                    productId: null,
+                    type: 'PRODUCT',
+                    category: 'ENGINE_OIL'
+                });
+            }
+
+            // Extract Filters
+            if (sd.filters) {
+                if (sd.filters.oil) rawItems.push({ description: sd.filters.oil, quantity: 1, unitPrice: 0, productId: null, type: 'PRODUCT', category: 'OIL_FILTER' });
+                if (sd.filters.air) rawItems.push({ description: sd.filters.air, quantity: 1, unitPrice: 0, productId: null, type: 'PRODUCT', category: 'AIR_FILTER' });
+                if (sd.filters.fuel) rawItems.push({ description: sd.filters.fuel, quantity: 1, unitPrice: 0, productId: null, type: 'PRODUCT', category: 'FUEL_FILTER' });
+                if (sd.filters.cabin) rawItems.push({ description: sd.filters.cabin, quantity: 1, unitPrice: 0, productId: null, type: 'PRODUCT', category: 'CABIN_FILTER' });
+            }
+        }
+
+        // 3. Match items with current Product table to get updated prices and stock
+        const currentItems = await Promise.all(rawItems.map(async (item) => {
             // Try to find by Product ID first if stored
             let product = null;
 
@@ -209,6 +249,16 @@ export async function getLastServiceItems(vehicleId: number) {
                 if (candidates.length > 0) product = candidates[0];
             }
 
+            // Fallback 2: Try mapping legacy code to current Product Code
+            if (!product) {
+                const mappedCode = mapLegacyProductCode(item.description, item.category);
+                if (mappedCode) {
+                    product = await prisma.product.findUnique({
+                        where: { code: mappedCode, active: true }
+                    });
+                }
+            }
+
             if (product) {
                 return {
                     found: true,
@@ -218,7 +268,8 @@ export async function getLastServiceItems(vehicleId: number) {
                     quantity: item.quantity,
                     stock: product.stock,
                     category: product.category,
-                    type: item.type
+                    type: item.type,
+                    code: product.code
                 };
             } else {
                 // Item exists in history but not in current catalog
@@ -451,22 +502,23 @@ export async function suggestServiceEstimate(vehicleId: number, preset: 'BASIC' 
             return { ...item, determinedCategory: category };
         });
 
-        // 4. Filter based on Preset
-        let suggestionItems = [];
+        // 4. Filter based on Preset and enforce "one per category"
+        const finalItemsMap = new Map<string, any>();
 
-        if (preset === 'BASIC') {
-            // Oil + Oil Filter
-            suggestionItems = categorizedDetails.filter(i =>
-                i.determinedCategory === 'ENGINE_OIL' ||
-                i.determinedCategory === 'OIL_FILTER'
-            );
-        } else {
-            // FULL: Oil + All Filters
-            suggestionItems = categorizedDetails.filter(i =>
-                i.determinedCategory === 'ENGINE_OIL' ||
-                i.determinedCategory.includes('_FILTER')
-            );
+        const targetCategories = preset === 'BASIC'
+            ? ['ENGINE_OIL', 'OIL_FILTER']
+            : ['ENGINE_OIL', 'OIL_FILTER', 'AIR_FILTER', 'FUEL_FILTER', 'CABIN_FILTER'];
+
+        for (const item of categorizedDetails) {
+            if (targetCategories.includes(item.determinedCategory)) {
+                // If we don't have an item for this category yet, add it
+                if (!finalItemsMap.has(item.determinedCategory)) {
+                    finalItemsMap.set(item.determinedCategory, item);
+                }
+            }
         }
+
+        const suggestionItems = Array.from(finalItemsMap.values());
 
         return {
             success: true,
