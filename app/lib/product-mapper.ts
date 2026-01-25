@@ -51,6 +51,13 @@ export function mapLegacyProductCode(legacyDescription: string, category?: strin
     if (clean.includes('SELE') || clean.includes('SELENIA')) return 'SHELL-HX7-1L'; // Mapping Selenia to HX7 as fallback/alternative if common
     if (clean.includes('EVO')) return 'ELAION-AURO-1L'; // Mapping Evo to Auro (common in YPF)
 
+    // 4. Additives & Coolants Shortcuts
+    if (clean === 'A2' || clean.includes('A2 TURBO')) return 'MOLYKOTE-A2';
+    if (clean === 'A4' || clean.includes('A4 TURBO')) return 'MOLYKOTE-A4';
+    if (clean.includes('PATRIOT POWER') || clean.includes('PATRIOT')) return 'PATRIOT-POWER';
+    if (clean.includes('GLACELF')) return 'GLACELF';
+    if (clean.includes('RAYTEL')) return 'RAYTEL';
+
     // 2. Numerical Filter Rules
     // Check if it's just a number or a simple code
     const isPureNumber = /^\d+$/.test(clean.replace(/\s/g, ''));

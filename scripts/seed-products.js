@@ -109,10 +109,15 @@ async function main() {
 
 
         // ADITIVOS & VARIOS
+        { name: 'Molykote A2 Turbo Additive', category: 'ADDITIVE', price: 15000, stock: 12, code: 'MOLYKOTE-A2' },
+        { name: 'Molykote A4 Turbo Additive', category: 'ADDITIVE', price: 18000, stock: 10, code: 'MOLYKOTE-A4' },
+        { name: 'Aditivo Patriot Power', category: 'ADDITIVE', price: 22000, stock: 5, code: 'PATRIOT-POWER' },
         { name: 'Aditivo Liqui Moly Ceratec', category: 'ADDITIVE', price: 25000, stock: 8 },
         { name: 'Limpiainyectores Molykote', category: 'ADDITIVE', price: 8000, stock: 20 },
         { name: 'Agua Destilada 5L', category: 'OTHER', price: 3000, stock: 50 },
         { name: 'Líquido Refrigerante Tir 1L', category: 'COOLANT', price: 5500, stock: 40 },
+        { name: 'Refrigerante Glacelf Concentrado 1L', category: 'COOLANT', price: 8500, stock: 25, code: 'GLACELF' },
+        { name: 'Refrigerante Raytel Concentrado 1L', category: 'COOLANT', price: 7500, stock: 20, code: 'RAYTEL' },
         { name: 'Lámpara H7 Osram', category: 'LIGHTING', price: 4500, stock: 60 }
     ];
 
