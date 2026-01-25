@@ -20,8 +20,8 @@ export function getAvailableSlots(date: Date, serviceDuration: number, appointme
 
     // Detech Day of Week (0-6)
     // IMPORTANT: 'date' comes from client picker, usually local.
-    // We assume 'date' object represents the correct day.
-    const dayOfWeek = baseDate.getDay(); // 0 is Sunday
+    // We assume 'date' object represents the correct day at 00:00 UTC.
+    const dayOfWeek = baseDate.getUTCDay(); // 0 is Sunday
 
     let schedule = BUSINESS_HOURS.weekday;
     if (dayOfWeek === 0) schedule = BUSINESS_HOURS.sunday as any;
