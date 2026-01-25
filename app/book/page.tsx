@@ -37,6 +37,22 @@ export default function BookAppointment() {
     const [step, setStep] = useState(0);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [plateError, setPlateError] = useState<string | null>(null);
+
+    // Validation Logic
+    const validatePlate = (plate: string) => {
+        const mercosur = /^[A-Z]{2}\s*\d{3}\s*[A-Z]{2}$/; // AA 123 BB
+        const old = /^[A-Z]{3}\s*\d{3}$/;                // AAA 123
+        const moto = /^\d{3}\s*[A-Z]{3}$/;               // 123 AAA
+        const motoNew = /^[A-Z]{1}\s*\d{3}\s*[A-Z]{3}$/; // A 123 AAA
+
+        if (!plate) return null;
+
+        if (mercosur.test(plate) || old.test(plate) || moto.test(plate) || motoNew.test(plate)) {
+            return null;
+        }
+        return "Formato inválido (Ej: AA 123 BB)";
+    };
 
     // Mode
     const [isReturning, setIsReturning] = useState(false);
@@ -449,15 +465,25 @@ export default function BookAppointment() {
                                         <input
                                             type="text"
                                             value={plate}
-                                            onChange={(e) => setPlate(e.target.value.toUpperCase())}
+                                            onChange={(e) => {
+                                                const val = e.target.value.toUpperCase();
+                                                setPlate(val);
+                                                if (plateError) setPlateError(validatePlate(val));
+                                            }}
+                                            onBlur={() => setPlateError(validatePlate(plate))}
                                             placeholder="AA123BB"
-                                            className="w-full p-5 rounded-2xl border-2 border-slate-200 text-3xl font-black text-center uppercase tracking-[0.2em] focus:outline-none focus:border-red-600 focus:ring-4 focus:ring-red-600/10 placeholder:text-slate-200"
+                                            className={`w-full p-5 rounded-2xl border-2 ${plateError ? 'border-red-500 focus:border-red-600 focus:ring-red-600/10' : 'border-slate-200 focus:border-red-600 focus:ring-red-600/10'} text-3xl font-black text-center uppercase tracking-[0.2em] focus:outline-none focus:ring-4 placeholder:text-slate-200 transition-all`}
                                             autoFocus
                                         />
+                                        {plateError && (
+                                            <p className="text-center text-xs font-bold text-red-500 mt-2 animate-in slide-in-from-top-1">
+                                                {plateError}
+                                            </p>
+                                        )}
                                     </div>
                                     <button
                                         onClick={checkPlateIdentity}
-                                        disabled={loading || plate.length < 5}
+                                        disabled={loading || plate.length < 5 || !!plateError}
                                         className="w-full bg-red-600 text-white p-4 rounded-xl font-black text-lg shadow-xl shadow-red-600/20 disabled:opacity-50 disabled:shadow-none hover:bg-red-700 active:scale-[0.98] transition-all uppercase tracking-wide flex items-center justify-center gap-2"
                                     >
                                         {loading ? <span className="animate-spin">⏳</span> : <ArrowRight />}
@@ -591,11 +617,21 @@ export default function BookAppointment() {
                                 <input
                                     type="text"
                                     value={plate}
-                                    onChange={(e) => setPlate(e.target.value.toUpperCase())}
+                                    onChange={(e) => {
+                                        const val = e.target.value.toUpperCase();
+                                        setPlate(val);
+                                        if (plateError) setPlateError(validatePlate(val));
+                                    }}
+                                    onBlur={() => setPlateError(validatePlate(plate))}
                                     placeholder="Ej: AA123BB"
-                                    className="w-full p-4 rounded-xl border border-slate-200 text-lg font-black uppercase tracking-widest text-center focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-slate-200"
+                                    className={`w-full p-4 rounded-xl border ${plateError ? 'border-red-500 focus:ring-red-200' : 'border-slate-200 focus:ring-blue-500'} text-lg font-black uppercase tracking-widest text-center focus:outline-none focus:ring-2 placeholder:text-slate-200 transition-all`}
                                     autoFocus
                                 />
+                                {plateError && (
+                                    <p className="text-center text-xs font-bold text-red-500 mt-2 animate-in slide-in-from-top-1">
+                                        {plateError}
+                                    </p>
+                                )}
                             </div>
 
                             {/* New Vehicle Inputs */}
@@ -706,7 +742,7 @@ export default function BookAppointment() {
 
                             <button
                                 onClick={vehicle === null ? createVehicle : checkVehicle}
-                                disabled={loading || plate.length < 5}
+                                disabled={loading || plate.length < 5 || !!plateError}
                                 className="w-full bg-red-600 text-white p-4 rounded-xl font-black text-lg shadow-xl shadow-red-600/20 disabled:opacity-50 disabled:shadow-none hover:bg-red-700 active:scale-[0.98] transition-all uppercase tracking-wide"
                             >
                                 {loading ? '...' : vehicle === null ? 'Guardar y Seguir' : 'Siguiente'}
