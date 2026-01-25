@@ -54,7 +54,8 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: result.error }, { status: 400 });
         }
 
-        return NextResponse.json(result.client, { status: 201 });
+        // Return client data + existing flag if present
+        return NextResponse.json({ ...result.client, existing: result.existing }, { status: 201 });
     } catch (error: any) {
         return NextResponse.json({ error: error.message }, { status: 500 });
     }

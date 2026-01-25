@@ -298,7 +298,10 @@ export default function BookAppointment() {
     };
 
     const createVehicle = async () => {
-        if (!client) return;
+        if (!client) {
+            alert("Error: No se ha detectado el cliente. Por favor, refresca y vuelve a intentar.");
+            return;
+        }
         setLoading(true);
         try {
             const res = await fetch('/api/vehicles', {
@@ -308,7 +311,7 @@ export default function BookAppointment() {
                     plate,
                     brand: vehicleInfo.brand,
                     model: vehicleInfo.model,
-                    clientId: client.id,
+                    clientId: Number(client.id),
                     fuelType: vehicleInfo.fuelType,
                     engine: vehicleInfo.engine
                 })
