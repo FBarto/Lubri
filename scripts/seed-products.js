@@ -14,6 +14,7 @@ async function main() {
         { name: 'Aceite Castrol Magnatec 10W-40 Suelto (x Lts)', category: 'ENGINE_OIL', price: 11500, stock: 180, code: 'CASTROL-MAGNATEC-SUELTO' },
         { name: 'Aceite Total Quartz 7000 10W-40 Suelto (x Lts)', category: 'ENGINE_OIL', price: 10500, stock: 220, code: 'TOTAL-Q7000-SUELTO' },
         { name: 'Aceite Total Quartz 5000 15W-40 Suelto (x Lts)', category: 'ENGINE_OIL', price: 8500, stock: 150, code: 'TOTAL-Q5000-SUELTO' },
+        { name: 'Aceite Total Quartz 25W-60 Suelto (x Lts)', category: 'ENGINE_OIL', price: 9000, stock: 100, code: 'SUEL-25W60' },
         { name: 'Aceite ELF semi-sintetico Suelto (x Lts)', category: 'ENGINE_OIL', price: 8500, stock: 100, code: 'ELF-SEMI-SUELTO' },
         { name: 'Aceite Gulf Sintetico Suelto (x Lts)', category: 'ENGINE_OIL', price: 12000, stock: 80, code: 'GULF-SINT-SUELTO' },
 
@@ -43,6 +44,9 @@ async function main() {
         { name: 'Total Quartz 9000 5W-40 1L', category: 'ENGINE_OIL', price: 18500, stock: 35, code: 'TOTAL-Q9000-1L' },
         { name: 'Total Quartz 9000 5W-40 4L', category: 'ENGINE_OIL', price: 66000, stock: 12, code: 'TOTAL-Q9000-4L' },
 
+        // Gulf
+        { name: 'Aceite Gulf Ultra 0W-20 1L', category: 'ENGINE_OIL', price: 15000, stock: 30, code: 'GULF-0W20' },
+
         // Castrol
         { name: 'Castrol Magnatec 10W-40 1L', category: 'ENGINE_OIL', price: 13000, stock: 40, code: 'CASTROL-MAGNATEC-1L' },
         { name: 'Castrol Magnatec 10W-40 4L', category: 'ENGINE_OIL', price: 46000, stock: 15, code: 'CASTROL-MAGNATEC-4L' },
@@ -58,6 +62,12 @@ async function main() {
         { name: 'Filtro Aceite MAP 203', category: 'OIL_FILTER', price: 8900, stock: 20, code: 'MAP-203' },
         { name: 'Filtro Aceite MAP 3008', category: 'OIL_FILTER', price: 8700, stock: 10, code: 'MAP-3008' },
         { name: 'Filtro Aceite MAP 3070', category: 'OIL_FILTER', price: 8600, stock: 12, code: 'MAP-3070' },
+        { name: 'Filtro Aceite MAP 274', category: 'OIL_FILTER', price: 8800, stock: 8, code: 'MAP-274' },
+        { name: 'Filtro Aceite MAP 258', category: 'OIL_FILTER', price: 8600, stock: 10, code: 'MAP-258' },
+        { name: 'Filtro Aceite MAP 121', category: 'OIL_FILTER', price: 8300, stock: 12, code: 'MAP-121' },
+        { name: 'Filtro Aceite MAP 187', category: 'OIL_FILTER', price: 8400, stock: 15, code: 'MAP-187' },
+        { name: 'Filtro Aceite MAP 3042', category: 'OIL_FILTER', price: 9500, stock: 6, code: 'MAP-3042' },
+        { name: 'Filtro Aceite MAP 3052', category: 'OIL_FILTER', price: 9200, stock: 10, code: 'MAP-3052' },
 
         // Aire
         { name: 'Filtro Aire AMPI 1117', category: 'AIR_FILTER', price: 9100, stock: 15, code: 'AMPI-1117' },
@@ -71,25 +81,31 @@ async function main() {
         { name: 'Filtro Aire AMPI 1121', category: 'AIR_FILTER', price: 8900, stock: 10, code: 'AMPI-1121' },
         { name: 'Filtro Aire AMPI 1245', category: 'AIR_FILTER', price: 9400, stock: 10, code: 'AMPI-1245' },
         { name: 'Filtro Aire AMPI 150', category: 'AIR_FILTER', price: 9100, stock: 12, code: 'AMPI-150' },
+        { name: 'Filtro Aire AMPI 1101', category: 'AIR_FILTER', price: 9200, stock: 8, code: 'AMPI-1101' },
+        { name: 'Filtro Aire AMPI 1250', category: 'AIR_FILTER', price: 9600, stock: 10, code: 'AMPI-1250' },
+        { name: 'Filtro Aire AMPI 1144', category: 'AIR_FILTER', price: 9400, stock: 5, code: 'AMPI-1144' },
+        { name: 'Filtro Aire AMPI 1161', category: 'AIR_FILTER', price: 9300, stock: 6, code: 'AMPI-1161' },
+        { name: 'Filtro Aire AMPI 1109', category: 'AIR_FILTER', price: 9100, stock: 4, code: 'AMPI-1109' },
+        { name: 'Filtro Aire AMPI 1153', category: 'AIR_FILTER', price: 9500, stock: 7, code: 'AMPI-1153' },
+        { name: 'Filtro Aire AMPI 1123', category: 'AIR_FILTER', price: 9000, stock: 8, code: 'AMPI-1123' },
+        { name: 'Filtro Aire AMPI 1240', category: 'AIR_FILTER', price: 9700, stock: 5, code: 'AMPI-1240' },
+        { name: 'Filtro Aire Tubular AMP 163', category: 'AIR_FILTER', price: 12000, stock: 4, code: 'AMP-163' },
+        { name: 'Filtro Aire Tubular AMP 189', category: 'AIR_FILTER', price: 12500, stock: 3, code: 'AMP-189' },
 
         // Combustible
-        { name: 'Filtro Combustible Fram G5900', category: 'FUEL_FILTER', price: 6500, stock: 30 },
-        { name: 'Filtro Combustible Mann WK 512/1', category: 'FUEL_FILTER', price: 9500, stock: 15 },
         { name: 'Filtro Combustible G10230', category: 'FUEL_FILTER', price: 7200, stock: 10, code: 'G10230' },
-        { name: 'Filtro Combustible G3130', category: 'FUEL_FILTER', price: 7400, stock: 6, code: 'G3130' },
+        { name: 'Filtro Combustible G7729', category: 'FUEL_FILTER', price: 7800, stock: 12, code: 'G7729' },
 
         // Habitaculo
-        { name: 'Filtro Habitaculo Fram CF10285', category: 'CABIN_FILTER', price: 10500, stock: 12 },
-        { name: 'Filtro Habitaculo Wega AKX-35323', category: 'CABIN_FILTER', price: 9000, stock: 18 },
         { name: 'Filtro Habitaculo HM 2048', category: 'CABIN_FILTER', price: 9500, stock: 20, code: 'HM-2048' },
         { name: 'Filtro Habitáculo HM 2110', category: 'CABIN_FILTER', price: 9800, stock: 10, code: 'HM-2110' },
         { name: 'Filtro Habitáculo HM 2084', category: 'CABIN_FILTER', price: 9400, stock: 8, code: 'HM-2084' },
         { name: 'Filtro Habitáculo HM 2160', category: 'CABIN_FILTER', price: 9600, stock: 5, code: 'HM-2160' },
-
-        // Extra OIL FILTERS
-        { name: 'Filtro Aceite MAP 205', category: 'OIL_FILTER', price: 8400, stock: 15, code: 'MAP-205' },
-        { name: 'Filtro Aceite MAP 3040', category: 'OIL_FILTER', price: 8500, stock: 18, code: 'MAP-3040' },
-        { name: 'Filtro Aceite PH10600', category: 'OIL_FILTER', price: 8800, stock: 15, code: 'PH10600' },
+        { name: 'Filtro Habitaculo HM 2107', category: 'CABIN_FILTER', price: 9700, stock: 12, code: 'HM-2107' },
+        { name: 'Filtro Habitaculo HM 2019', category: 'CABIN_FILTER', price: 9300, stock: 10, code: 'HM-2019' },
+        { name: 'Filtro Habitaculo HM 2117', category: 'CABIN_FILTER', price: 9800, stock: 8, code: 'HM-2117' },
+        { name: 'Filtro Habitaculo HM 2020', category: 'CABIN_FILTER', price: 9400, stock: 6, code: 'HM-2020' },
+        { name: 'Filtro Habitaculo HM 2130', category: 'CABIN_FILTER', price: 9900, stock: 5, code: 'HM-2130' },
 
 
         // ADITIVOS & VARIOS
