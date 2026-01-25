@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Search, User, Phone, Car, ChevronRight, History, Plus, FilePlus } from 'lucide-react';
+import Plate from '../ui/Plate';
 import CreateClientModal from './CreateClientModal';
 import PostClientActionModal from './PostClientActionModal';
 import CreateVehicleModal from './CreateVehicleModal';
@@ -138,95 +139,104 @@ export default function EmployeeClientList({ onClientAction }: EmployeeClientLis
 
             {/* Results */}
             <div className="flex-1 overflow-y-auto p-6">
-                <div className="max-w-2xl mx-auto space-y-4">
-                    {clients.length === 0 && !loading && searchTerm.length > 2 && (
-                        <div className="text-center py-12 bg-white rounded-3xl border border-dashed border-slate-200 text-slate-400">
-                            No se encontraron clientes para "{searchTerm}".
-                            <button
-                                onClick={() => setIsCreateModalOpen(true)}
-                                className="block mx-auto mt-4 text-indigo-600 font-bold hover:underline"
-                            >
-                                ¿Crear nuevo?
-                            </button>
-                        </div>
-                    )}
-
-                    {searchTerm.length <= 2 && clients.length === 0 && (
-                        <div className="text-center py-12 text-slate-400 italic">
-                            Ingresa al menos 3 caracteres para buscar...
-                        </div>
-                    )}
-
-                    {/* Show created client at top if recent */}
-
+                {/* Results Grid */}
+                <div className="space-y-4">
                     {clients.map((client) => (
                         <div key={client.id} className="bg-white rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-md transition-all overflow-hidden group">
                             <div className="p-6">
-                                <div className="flex justify-between items-start mb-4">
+                                <div className="flex justify-between items-start mb-6">
                                     <div className="flex items-center gap-4">
-                                        <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center font-black text-lg">
+                                        <div className="w-14 h-14 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center font-black text-xl shadow-inner border border-indigo-100">
                                             {client.name[0].toUpperCase()}
                                         </div>
                                         <div>
-                                            <h3 className="font-black text-slate-800 text-lg leading-tight">{client.name}</h3>
-                                            <div className="flex items-center gap-2 text-slate-400 text-sm font-bold">
-                                                <Phone size={14} />
-                                                <span>{client.phone}</span>
+                                            <h3 className="font-black text-slate-800 text-lg leading-tight mb-1">{client.name}</h3>
+                                            <div className="flex items-center gap-3">
+                                                <div className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 rounded-lg text-slate-500 text-xs font-bold">
+                                                    <Phone size={12} strokeWidth={2.5} />
+                                                    <span>{client.phone}</span>
+                                                </div>
+                                                <a
+                                                    href={`https://wa.me/${client.phone.replace(/\D/g, '')}`}
+                                                    target="_blank"
+                                                    className="text-green-500 hover:text-green-600 transition-colors p-1"
+                                                    title="Abrir WhatsApp"
+                                                >
+                                                    <Phone size={16} strokeWidth={3} />
+                                                </a>
                                             </div>
                                         </div>
                                     </div>
-                                    <a
-                                        href={`https://wa.me/${client.phone.replace(/\D/g, '')}`}
-                                        target="_blank"
-                                        className="p-2 bg-green-50 text-green-600 rounded-xl hover:bg-green-100 transition-colors"
-                                    >
-                                        <Phone size={20} />
-                                    </a>
                                 </div>
 
-                                <div className="space-y-2">
-                                    <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Vehículos Registrados</div>
-                                    <div className="flex flex-wrap gap-2">
+                                <div className="space-y-3 mb-6">
+                                    <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Flota / Vehículos</div>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                         {client.vehicles?.map((v) => (
-                                            <div key={v.id} className="bg-slate-50 border border-slate-100 px-3 py-2 rounded-xl flex items-center gap-2">
-                                                <Car size={14} className="text-slate-400" />
-                                                <span className="font-mono font-black text-slate-700 text-xs tracking-wider uppercase">{v.plate}</span>
-                                                <span className="text-[10px] text-slate-400 font-bold">{v.brand} {v.model}</span>
+                                            <div key={v.id} className="bg-slate-50 border border-slate-100 p-3 rounded-2xl flex items-center gap-3 group/vehicle hover:border-indigo-200 transition-colors relative overflow-hidden">
+
+                                                {/* Plate Component */}
+                                                <Plate plate={v.plate} size="md" />
+
+                                                <div className="min-w-0 flex-1">
+                                                    <div className="font-bold text-slate-700 text-sm truncate">{v.brand} {v.model}</div>
+                                                    <div className="flex items-center gap-2 mt-1">
+                                                        {/* Status Indicator (Mocked for now) */}
+                                                        <span className="flex items-center gap-1 text-[10px] uppercase font-bold text-emerald-600 bg-emerald-100 px-2 py-0.5 rounded-full">
+                                                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                                                            Al día
+                                                        </span>
+                                                    </div>
+                                                </div>
                                             </div>
                                         ))}
                                         {(!client.vehicles || client.vehicles.length === 0) && (
-                                            <div className="text-xs text-slate-400 italic pl-1">Sin vehículos registrados</div>
+                                            <div className="col-span-full py-4 border-2 border-dashed border-slate-200 rounded-2xl text-center">
+                                                <p className="text-xs text-slate-400 font-bold mb-2">Sin vehículos registrados</p>
+                                                <button
+                                                    onClick={() => {
+                                                        setCreatedClient(client);
+                                                        setIsVehicleModalOpen(true);
+                                                    }}
+                                                    className="text-xs text-indigo-600 font-bold hover:underline"
+                                                >
+                                                    + Agregar Vehículo
+                                                </button>
+                                            </div>
                                         )}
                                     </div>
                                 </div>
 
-                                <div className="mt-6 flex gap-2">
-                                    <button
-                                        onClick={() => onClientAction?.(client, 'QUOTE')}
-                                        className="bg-orange-100 text-orange-700 p-3 rounded-xl hover:bg-orange-200 transition-colors"
-                                        title="Generar Presupuesto"
-                                    >
-                                        <FilePlus size={16} />
-                                    </button>
+                                <div className="flex gap-3 pt-4 border-t border-slate-50">
                                     <button
                                         onClick={() => {
                                             setSelectedClient(client);
                                             setIsHistoryModalOpen(true);
                                         }}
-                                        className="flex-1 bg-slate-900 text-white py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 hover:bg-black transition-colors"
+                                        className="flex-1 bg-slate-900 text-white py-3.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 hover:bg-black transition-all shadow-lg shadow-slate-200"
                                     >
-                                        <History size={16} />
+                                        <History size={16} strokeWidth={2.5} />
                                         Ver Historial
+                                    </button>
+
+                                    <div className="w-px bg-slate-200 my-1" />
+
+                                    <button
+                                        onClick={() => onClientAction?.(client, 'QUOTE')}
+                                        className="px-4 bg-orange-50 text-orange-600 rounded-xl hover:bg-orange-100 transition-colors"
+                                        title="Generar Presupuesto"
+                                    >
+                                        <FilePlus size={20} strokeWidth={2.5} />
                                     </button>
                                     <button
                                         onClick={() => {
                                             setSelectedClient(client);
                                             setIsManageModalOpen(true);
                                         }}
-                                        className="flex-1 bg-indigo-600 text-white py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 hover:bg-indigo-700 transition-colors"
+                                        className="px-4 bg-indigo-50 text-indigo-600 rounded-xl hover:bg-indigo-100 transition-colors"
+                                        title="Gestionar"
                                     >
-                                        <ChevronRight size={16} />
-                                        Gestionar
+                                        <ChevronRight size={20} strokeWidth={2.5} />
                                     </button>
                                 </div>
                             </div>

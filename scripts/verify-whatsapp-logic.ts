@@ -15,11 +15,19 @@ async function testWhatsAppFlow() {
 
     try {
         // 1. Find or Create a dummy client & appointment
-        const client = await prisma.client.upsert({
-            where: { email: 'test_wa@example.com' },
-            create: { name: 'Test WA User', email: 'test_wa@example.com', phone: '5491100000000' },
-            update: {}
+        // 1. Find or Create a dummy client
+        let client = await prisma.client.findFirst({
+            where: { phone: '5491100000000' }
         });
+
+        if (!client) {
+            client = await prisma.client.create({
+                data: {
+                    name: 'Test WA User',
+                    phone: '5491100000000'
+                }
+            });
+        }
 
         // Need a vehicle
         const vehicle = await prisma.vehicle.findFirst();
@@ -29,13 +37,20 @@ async function testWhatsAppFlow() {
             return;
         }
 
+        // Need a service
+        const service = await prisma.service.findFirst();
+        if (!service) {
+            console.log('No service found, skipping test.');
+            return;
+        }
+
         const appointment = await prisma.appointment.create({
             data: {
-                clientId: client.id,
-                vehicleId: vehicle.id,
+                client: { connect: { id: client.id } },
+                vehicle: { connect: { id: vehicle.id } },
+                service: { connect: { id: service.id } },
                 date: new Date(),
-                status: 'PENDING',
-                type: 'SERVICE'
+                status: 'REQUESTED'
             }
         });
         console.log(`1. Created Test Appointment ID: ${appointment.id}`);

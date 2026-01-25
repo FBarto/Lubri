@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { X, Car, CheckCircle2, Loader2, Gauge } from 'lucide-react';
+import { X, Car, CheckCircle2, Loader2, Gauge, AlertCircle } from 'lucide-react';
 
 interface CreateVehicleModalProps {
     isOpen: boolean;
@@ -14,6 +14,7 @@ interface CreateVehicleModalProps {
 export default function CreateVehicleModal({ isOpen, onClose, onSuccess, clientId, clientName }: CreateVehicleModalProps) {
     const [loading, setLoading] = useState(false);
     const [activeField, setActiveField] = useState<'brand' | 'model' | null>(null); // Autocomplete State
+    const [plateError, setPlateError] = useState<string | null>(null);
     const [formData, setFormData] = useState({
         plate: '',
         brand: '',
@@ -22,6 +23,21 @@ export default function CreateVehicleModal({ isOpen, onClose, onSuccess, clientI
         fuelType: 'Nafta', // Default
         engine: ''
     });
+
+    const validatePlate = (plate: string) => {
+        // Regex Patterns
+        const mercosur = /^[A-Z]{2}\s*\d{3}\s*[A-Z]{2}$/; // AA 123 BB
+        const old = /^[A-Z]{3}\s*\d{3}$/;                // AAA 123
+        const moto = /^\d{3}\s*[A-Z]{3}$/;               // 123 AAA
+        const motoNew = /^[A-Z]{1}\s*\d{3}\s*[A-Z]{3}$/; // A 123 AAA
+
+        if (!plate) return null;
+
+        if (mercosur.test(plate) || old.test(plate) || moto.test(plate) || motoNew.test(plate)) {
+            return null;
+        }
+        return "Formato inválido (Ej: AA 123 BB o AAA 123)";
+    };
 
     const VEHICLE_DATA: Record<string, string[]> = {
         'Toyota': ['Hilux', 'Corolla', 'Etios', 'Yaris', 'SW4', 'Rav4', 'Corolla Cross'],
@@ -119,8 +135,18 @@ export default function CreateVehicleModal({ isOpen, onClose, onSuccess, clientI
                                 placeholder="AA 123 BB"
                                 className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-mono font-bold text-lg uppercase transition-all"
                                 value={formData.plate}
-                                onChange={e => setFormData({ ...formData, plate: e.target.value.toUpperCase() })}
+                                onChange={e => {
+                                    const val = e.target.value.toUpperCase();
+                                    setFormData({ ...formData, plate: val });
+                                    if (plateError) setPlateError(validatePlate(val));
+                                }}
+                                onBlur={() => setPlateError(validatePlate(formData.plate))}
                             />
+                            {plateError && (
+                                <p className="text-[10px] font-bold text-red-500 mt-1 flex items-center gap-1 animate-in slide-in-from-top-1">
+                                    <AlertCircle size={10} /> {plateError}
+                                </p>
+                            )}
                         </div>
                         <div className="col-span-2 sm:col-span-1 space-y-1">
                             <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Kilometraje</label>
@@ -241,7 +267,7 @@ export default function CreateVehicleModal({ isOpen, onClose, onSuccess, clientI
 
                     <button
                         type="submit"
-                        disabled={loading || !formData.plate}
+                        disabled={loading || !formData.plate || !!plateError}
                         className="w-full bg-slate-900 text-white py-4 rounded-xl font-bold hover:bg-black disabled:opacity-50 disabled:cursor-not-allowed shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all flex items-center justify-center gap-2 group"
                     >
                         {loading ? (

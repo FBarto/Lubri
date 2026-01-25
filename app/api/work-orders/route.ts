@@ -28,7 +28,9 @@ export async function GET(request: Request) {
                 client: true,
                 vehicle: true,
                 service: true,
-                appointment: true
+                appointment: true,
+                saleItems: true,
+                attachments: true
             },
             orderBy: { date: 'desc' }
         });
