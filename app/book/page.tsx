@@ -63,6 +63,14 @@ export default function BookAppointment() {
         return null;
     };
 
+    const cleanPhone = (p: string) => {
+        let val = p.replace(/[^0-9]/g, '');
+        if (val.startsWith('549')) val = val.slice(3);
+        else if (val.startsWith('54')) val = val.slice(2);
+        if (val.startsWith('0')) val = val.slice(1);
+        return val;
+    };
+
     // Mode
     const [isReturning, setIsReturning] = useState(false);
 
@@ -334,8 +342,17 @@ export default function BookAppointment() {
                             engine: specs.engine || ''
                         });
                         if (data.client && !client) {
+                            // Smart helper to clean phone from +54/549
+                            const cleanPhone = (p: string) => {
+                                let val = p.replace(/[^0-9]/g, '');
+                                if (val.startsWith('549')) val = val.slice(3);
+                                else if (val.startsWith('54')) val = val.slice(2);
+                                if (val.startsWith('0')) val = val.slice(1);
+                                return val;
+                            };
+
                             setClient(data.client);
-                            setPhone(data.client.phone);
+                            setPhone(cleanPhone(data.client.phone));
                         }
                     } else {
                         if (vehicle?.id) setVehicle(null);
@@ -601,16 +618,7 @@ export default function BookAppointment() {
                                         type="tel"
                                         value={phone}
                                         onChange={(e) => {
-                                            // Smart clean: remove non-digits, and strip leading 549, 54, or 0
-                                            let val = e.target.value.replace(/[^0-9]/g, '');
-
-                                            // Handle copy-paste of full numbers (e.g. 549351...)
-                                            if (val.startsWith('549')) val = val.slice(3);
-                                            else if (val.startsWith('54')) val = val.slice(2);
-
-                                            // Handle leading 0 (e.g. 0351...)
-                                            if (val.startsWith('0')) val = val.slice(1);
-
+                                            const val = cleanPhone(e.target.value);
                                             setPhone(val);
                                             if (phoneError) setPhoneError(validatePhone(val));
                                         }}
