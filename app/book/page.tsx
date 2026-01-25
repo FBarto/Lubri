@@ -318,7 +318,14 @@ export default function BookAppointment() {
             });
             const data = await res.json();
 
-            // Allow debugging in prod for this specific user issue
+            // Check for specific "Exists" error to recover automatically
+            if (data.error === 'A vehicle with this plate already exists') {
+                console.log('Vehicle exists, switching to fetch mode...');
+                await checkVehicle();
+                return;
+            }
+
+            // Other errors: Debugging alert
             if (data.error) throw new Error(data.error);
 
             if (data.id) {
