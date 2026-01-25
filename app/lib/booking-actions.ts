@@ -53,7 +53,15 @@ export async function createClient(data: CreateClientInput) {
 
         safeRevalidate('/admin/clients');
         return { success: true, client };
+        return { success: true, client };
     } catch (error: any) {
+        if (error.code === 'P2002') {
+            // Client already exists! Return it.
+            const existing = await prisma.client.findFirst({ where: { phone: data.phone } });
+            if (existing) {
+                return { success: true, client: existing, existing: true };
+            }
+        }
         console.error('Error creating client:', error);
         return { success: false, error: error.message };
     }

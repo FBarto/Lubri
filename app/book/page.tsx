@@ -235,7 +235,17 @@ export default function BookAppointment() {
                 body: JSON.stringify({ name: clientName, phone })
             });
             const data = await res.json();
-            if (data.id) {
+
+            // API Route wrapper might return the client directly or { error }
+            // Ensure we handle both success formats if wrapper changes
+            if (data.error) {
+                setError(data.error);
+                return;
+            }
+            if (data.id || data.existing) {
+                if (data.existing) {
+                    alert('¡Ya te encontramos! Tu número ya estaba registrado, seguimos desde aquí.');
+                }
                 setClient(data);
                 setStep(2);
             } else {
