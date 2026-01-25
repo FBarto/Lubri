@@ -160,6 +160,20 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
                                     </div>
                                 </div>
 
+                                {v.predictedNextService && (
+                                    <div className="mb-4 bg-blue-50/50 px-4 py-3 rounded-lg flex items-center gap-3 text-sm text-blue-800 border border-blue-100/50">
+                                        <div className="bg-blue-100 p-1.5 rounded-full">
+                                            <Calendar size={14} className="text-blue-600" />
+                                        </div>
+                                        <div>
+                                            <span className="block text-xs font-bold text-blue-400 uppercase tracking-wider">Próximo Service Estimado</span>
+                                            <span className="font-black text-lg">
+                                                {new Date(v.predictedNextService).toLocaleDateString('es-AR', { day: 'numeric', month: 'long', year: 'numeric' })}
+                                            </span>
+                                        </div>
+                                    </div>
+                                )}
+
                                 <div className="border-t border-slate-100 pt-3">
                                     <MaintenanceGrid vehicleId={v.id} />
                                 </div>

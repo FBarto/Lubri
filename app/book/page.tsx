@@ -39,6 +39,7 @@ export default function BookAppointment() {
     const [error, setError] = useState('');
     const [plateError, setPlateError] = useState<string | null>(null);
     const [phoneError, setPhoneError] = useState<string | null>(null);
+    const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
     // Validation Logic
     const validatePlate = (plate: string) => {
@@ -261,10 +262,16 @@ export default function BookAppointment() {
             }
             if (data.id || data.existing) {
                 if (data.existing) {
-                    alert('¡Ya te encontramos! Tu número ya estaba registrado, seguimos desde aquí.');
+                    setSuccessMessage(`¡Hola ${data.name}! Ya tenías cuenta, te conectamos automáticamente.`);
+                    setTimeout(() => {
+                        setSuccessMessage(null);
+                        setClient(data);
+                        setStep(2);
+                    }, 2500);
+                } else {
+                    setClient(data);
+                    setStep(2);
                 }
-                setClient(data);
-                setStep(2);
             } else {
                 setError(data.error);
             }
@@ -299,7 +306,7 @@ export default function BookAppointment() {
 
     const createVehicle = async () => {
         if (!client) {
-            alert("Error: No se ha detectado el cliente. Por favor, refresca y vuelve a intentar.");
+            setError("Error: No se ha detectado el cliente. Por favor, refresca y vuelve a intentar.");
             return;
         }
         setLoading(true);
@@ -335,12 +342,11 @@ export default function BookAppointment() {
                 setStep(3);
             } else {
                 console.error('Strange API Response:', data);
-                alert('Error desconocido al crear vehículo. ID no retornado.');
+                setError('Error desconocido al crear vehículo. ID no retornado.');
             }
         } catch (e: any) {
             console.error(e);
             setError(e.message);
-            alert(`Error: ${e.message}`);
         } finally {
             setLoading(false);
         }
@@ -455,7 +461,24 @@ export default function BookAppointment() {
                 <p className="text-[0.65rem] text-neutral-400 font-bold tracking-[0.2em] uppercase">Reserva de Turnos</p>
             </header>
 
-            <main className="max-w-md mx-auto p-6">
+            <main className="max-w-md mx-auto p-6 relative">
+                {/* Success Overlay */}
+                {successMessage && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-white/90 backdrop-blur-sm animate-in fade-in duration-300">
+                        <div className="bg-white p-8 rounded-3xl shadow-2xl border border-slate-100 text-center max-w-sm w-full animate-in zoom-in-95 duration-300">
+                            <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6 text-3xl shadow-inner animate-bounce">
+                                👋
+                            </div>
+                            <h3 className="text-2xl font-black text-slate-900 mb-2">¡Bienvenido!</h3>
+                            <p className="text-slate-500 font-medium text-lg leading-relaxed">
+                                {successMessage.replace('¡Hola ', '').replace('! Ya tenías cuenta, te conectamos automáticamente.', '')}
+                            </p>
+                            <p className="text-green-600 font-bold mt-4 text-sm uppercase tracking-wide animate-pulse">
+                                Conectando tu cuenta...
+                            </p>
+                        </div>
+                    </div>
+                )}
                 {error && (
                     <div className="bg-red-50 text-red-600 p-4 rounded-xl mb-6 text-sm flex items-start gap-2 border border-red-100 animate-pulse">
                         <AlertCircle size={20} className="shrink-0" />

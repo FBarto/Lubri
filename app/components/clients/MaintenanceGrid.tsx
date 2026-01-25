@@ -1,9 +1,9 @@
-'use client';
-
 import { useEffect, useState } from 'react';
 import { getVehicleMaintenanceHistory } from '../../lib/maintenance-actions';
 import { MaintenanceStatus } from '../../lib/maintenance-data';
-import { CheckCircle, AlertTriangle, AlertOctagon, HelpCircle, Droplet, Wind, Wrench } from 'lucide-react';
+import { CheckCircle, AlertTriangle, AlertOctagon, HelpCircle, Droplet, Wind, Wrench, Info } from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
+import { es } from 'date-fns/locale';
 
 export default function MaintenanceGrid({ vehicleId }: { vehicleId: number }) {
     const [data, setData] = useState<{
@@ -25,43 +25,75 @@ export default function MaintenanceGrid({ vehicleId }: { vehicleId: number }) {
         load();
     }, [vehicleId]);
 
-    if (loading) return <div className="text-xs text-slate-400 p-4">Cargando mantenimiento...</div>;
+    if (loading) return <div className="text-xs text-slate-400 p-4 animate-pulse">Cargando historial de mantenimiento...</div>;
     if (!data) return null;
 
     const StatusIcon = ({ status }: { status: string }) => {
-        if (status === 'OK') return <CheckCircle size={14} className="text-emerald-500" />;
-        if (status === 'WARNING') return <AlertTriangle size={14} className="text-amber-500" />;
-        if (status === 'DANGER') return <AlertOctagon size={14} className="text-red-500" />;
-        return <HelpCircle size={14} className="text-slate-300" />;
+        if (status === 'OK') return <CheckCircle size={16} className="text-emerald-500" />;
+        if (status === 'WARNING') return <AlertTriangle size={16} className="text-amber-500" />;
+        if (status === 'DANGER') return <AlertOctagon size={16} className="text-red-500" />;
+        return <HelpCircle size={16} className="text-slate-300" />;
     };
 
-    const StatusCard = ({ item }: { item: any }) => (
-        <div className="flex items-center justify-between p-2 rounded bg-slate-50 border border-slate-100 mb-1">
-            <div className="flex items-center gap-2 overflow-hidden">
-                <StatusIcon status={item.status} />
-                <div className="truncate">
-                    <p className="text-xs font-bold text-slate-700 truncate">{item.label}</p>
-                    <p className="text-[10px] text-slate-400 truncate">
-                        {item.lastDate ? new Date(item.lastDate).toLocaleDateString() : 'Nunca registrado'}
-                    </p>
+    const StatusCard = ({ item }: { item: any }) => {
+        const timeAgo = item.lastDate
+            ? formatDistanceToNow(new Date(item.lastDate), { addSuffix: true, locale: es })
+            : 'Nunca registrado';
+
+        return (
+            <div className={`
+                flex flex-col p-3 rounded-lg border mb-2 transition-all hover:shadow-sm
+                ${item.status === 'DANGER' ? 'bg-red-50 border-red-100' :
+                    item.status === 'WARNING' ? 'bg-amber-50 border-amber-100' : 'bg-slate-50 border-slate-100'}
+            `}>
+                <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-2 overflow-hidden">
+                        <StatusIcon status={item.status} />
+                        <div className="truncate">
+                            <p className="text-sm font-bold text-slate-700 truncate">{item.label}</p>
+                            <p className="text-xs text-slate-500 truncate first-letter:uppercase">
+                                {timeAgo}
+                            </p>
+                        </div>
+                    </div>
+                    {item.lastMileage && (
+                        <span className="text-[10px] font-mono font-bold text-slate-500 bg-white px-1.5 py-0.5 rounded border border-slate-200">
+                            {item.lastMileage} km
+                        </span>
+                    )}
                 </div>
+
+                {/* Detail Section (Specific Item Name) */}
+                {item.detail && (
+                    <div className="mt-2 pt-2 border-t border-black/5 flex items-start gap-1.5">
+                        <Info size={12} className="text-slate-400 mt-0.5 flex-shrink-0" />
+                        <p className="text-xs text-slate-600 font-medium leading-tight line-clamp-2">
+                            {item.detail}
+                        </p>
+                    </div>
+                )}
             </div>
-            {item.lastMileage && <span className="text-[10px] font-mono text-slate-500 bg-white px-1 rounded border border-slate-100">{item.lastMileage}km</span>}
-        </div>
-    );
+        );
+    };
 
     return (
-        <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
-                <h4 className="text-xs font-black text-slate-400 uppercase mb-2 flex items-center gap-1"><Wind size={12} /> Filtros</h4>
+                <h4 className="text-xs font-black text-slate-400 uppercase mb-3 flex items-center gap-2 pb-1 border-b border-slate-100">
+                    <Wind size={14} /> Filtros
+                </h4>
                 {data.filters.map(item => <StatusCard key={item.key} item={item} />)}
             </div>
             <div>
-                <h4 className="text-xs font-black text-slate-400 uppercase mb-2 flex items-center gap-1"><Droplet size={12} /> Fluidos</h4>
+                <h4 className="text-xs font-black text-slate-400 uppercase mb-3 flex items-center gap-2 pb-1 border-b border-slate-100">
+                    <Droplet size={14} /> Fluidos
+                </h4>
                 {data.fluids.map(item => <StatusCard key={item.key} item={item} />)}
             </div>
             <div>
-                <h4 className="text-xs font-black text-slate-400 uppercase mb-2 flex items-center gap-1"><Wrench size={12} /> Servicios</h4>
+                <h4 className="text-xs font-black text-slate-400 uppercase mb-3 flex items-center gap-2 pb-1 border-b border-slate-100">
+                    <Wrench size={14} /> Servicios
+                </h4>
                 {data.services.map(item => <StatusCard key={item.key} item={item} />)}
             </div>
         </div>
