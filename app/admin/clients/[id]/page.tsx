@@ -17,7 +17,17 @@ export default function ClientProfilePage({ params }: { params: { id: string } }
     useEffect(() => {
         async function loadClient() {
             setLoading(true);
-            const res = await getClientProfile(Number(params.id));
+            console.log('DEBUG: params.id received:', params?.id); // Debugging
+            const id = Number(params?.id);
+            console.log('DEBUG: Parsed ID:', id);
+
+            if (!id || isNaN(id)) {
+                console.error('Invalid ID');
+                setLoading(false);
+                return;
+            }
+
+            const res = await getClientProfile(id);
             if (res.success) {
                 setClient(res.data);
             }
