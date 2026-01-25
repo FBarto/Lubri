@@ -161,11 +161,25 @@ export async function suggestServiceItems(vehicleId: number) {
                 const realProduct = await prisma.product.findFirst({
                     where: { name: p.name, active: true }
                 });
+
+                let qty = 1;
+                // Smart Quantity Logic
+                // If it's an OIL and seems to be 1 Liter (or not explicitly 4L/20L), default to 4.
+                // Assuming type 'ACEITE' or similar if we had it, but loosely relying on product name or category if possible.
+                // For now, if p.type is likely 'PRODUCT' (generic), we check name.
+                const nameUpper = p.name.toUpperCase();
+                const isOil = nameUpper.includes('ACEITE') || nameUpper.includes('HELIX') || nameUpper.includes('ELAION') || nameUpper.includes('TOTAL') || nameUpper.includes('CASTROL');
+                const isLarge = nameUpper.includes('4L') || nameUpper.includes('4 L') || nameUpper.includes('20L') || nameUpper.includes('BIDON') || nameUpper.includes('BALDE');
+
+                if (isOil && !isLarge) {
+                    qty = 4; // Default to 4 liters for loose oil / 1L bottles
+                }
+
                 return {
                     id: realProduct?.id || Math.random(),
                     name: p.name,
                     price: realProduct?.price || 0,
-                    quantity: 1,
+                    quantity: qty,
                     type: p.type
                 };
             }));
