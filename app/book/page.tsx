@@ -319,8 +319,9 @@ export default function BookAppointment() {
             const data = await res.json();
 
             // Check for specific "Exists" error to recover automatically
-            if (data.error === 'A vehicle with this plate already exists') {
-                console.log('Vehicle exists, switching to fetch mode...');
+            // Relaxed check: Use "includes" instead of strict equality to catch variations
+            if (data.error && (data.error.includes('already exists') || data.error.includes('ya existe'))) {
+                console.log('Vehicle exists (loose match), switching to fetch mode...');
                 await checkVehicle();
                 return;
             }
