@@ -58,7 +58,30 @@ export function mapLegacyProductCode(legacyDescription: string, category?: strin
     if (clean.includes('GLACELF')) return 'GLACELF';
     if (clean.includes('RAYTEL')) return 'RAYTEL';
 
+    // 5. Heavy Duty & Special Oils (Rimula, Motul, Mobil aliases)
+    if (clean.includes('TRAJO')) return 'TRAJO'; // Customer provided parts
+    if (clean.includes('RIMU') || clean.includes('RIMULA')) {
+        if (clean.includes('6') || clean.includes('R6')) return 'RIMULA-R6';
+        if (clean.includes('5') || clean.includes('R5')) return 'RIMULA-R5';
+        return 'RIMULA-R4';
+    }
+    if (clean.includes('SPECIFIC')) return 'MOTUL-SPECIFIC';
+    if (clean.includes('EDGE')) return 'CASTROL-EDGE';
+    if (clean.includes('MAGNATEC')) return 'CASTROL-MAGNATEC-1L';
+    if (clean.includes('S1')) return 'SHELL-HX5-1L'; // S1 usually means Mobil Super 1000 (15W40)
+    if (clean.includes('S2')) return 'SHELL-HX7-1L'; // S2 usually means Mobil Super 2000 (10W40)
+    if (clean.includes('SINT CAST') || clean.includes('SEMICASTROL')) return 'CASTROL-MAGNATEC-SUELTO';
+    if (clean.includes('COMP DISEL')) return 'SUEL-1540';
+
     // 2. Numerical Filter Rules
+    // Priority 1: Exact Fram matches mapped to MAP/AMPI equivalents from catalog results
+    if (clean.startsWith('F3614') || clean.startsWith('PH3614')) return 'MAP-172';
+    if (clean.startsWith('F4967') || clean.startsWith('PH4967')) return 'MAP-193';
+    if (clean.startsWith('F5796') || clean.startsWith('PH5796')) return 'MAP-144';
+    if (clean.startsWith('F7317') || clean.startsWith('PH7317')) return 'MAP-206';
+    if (clean.startsWith('F3727') || clean.includes('G 3727')) return 'G10230'; // Common fuel filter injection
+
+    // Priority 2: Standard MAP/AMPI/HM codes (already in clean format)
     // Check if it's just a number or a simple code
     const isPureNumber = /^\d+$/.test(clean.replace(/\s/g, ''));
     if (isPureNumber) {
