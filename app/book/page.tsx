@@ -38,6 +38,7 @@ export default function BookAppointment() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [plateError, setPlateError] = useState<string | null>(null);
+    const [phoneError, setPhoneError] = useState<string | null>(null);
 
     // Validation Logic
     const validatePlate = (plate: string) => {
@@ -52,6 +53,13 @@ export default function BookAppointment() {
             return null;
         }
         return "Formato inválido (Ej: AA 123 BB)";
+    };
+
+    const validatePhone = (phone: string) => {
+        const digits = phone.replace(/\D/g, '');
+        if (!phone) return null;
+        if (digits.length < 10) return "Mínimo 10 dígitos (Ej: 351xxxxxx)";
+        return null;
     };
 
     // Mode
@@ -572,11 +580,21 @@ export default function BookAppointment() {
                                 <input
                                     type="tel"
                                     value={phone}
-                                    onChange={(e) => setPhone(e.target.value)}
+                                    onChange={(e) => {
+                                        const val = e.target.value;
+                                        setPhone(val);
+                                        if (phoneError) setPhoneError(validatePhone(val));
+                                    }}
+                                    onBlur={() => setPhoneError(validatePhone(phone))}
                                     placeholder="Ej: 3541123456"
-                                    className="w-full p-4 rounded-xl border border-slate-200 text-lg font-medium focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    className={`w-full p-4 rounded-xl border ${phoneError ? 'border-red-500 focus:ring-red-200' : 'border-slate-200 focus:ring-blue-500'} text-lg font-medium focus:outline-none focus:ring-2 transition-all`}
                                     autoFocus
                                 />
+                                {phoneError && (
+                                    <p className="text-xs font-bold text-red-500 mt-2 animate-in slide-in-from-top-1">
+                                        {phoneError}
+                                    </p>
+                                )}
                             </div>
 
                             {/* New Client Name Input */}
@@ -595,7 +613,7 @@ export default function BookAppointment() {
 
                             <button
                                 onClick={client === null ? createClient : checkClient}
-                                disabled={loading || phone.length < 6}
+                                disabled={loading || phone.length < 6 || !!phoneError}
                                 className="w-full bg-red-600 text-white p-4 rounded-xl font-black text-lg shadow-xl shadow-red-600/20 disabled:opacity-50 disabled:shadow-none hover:bg-red-700 active:scale-[0.98] transition-all uppercase tracking-wide"
                             >
                                 {loading ? '...' : client === null ? 'Continuar' : 'Siguiente'}
