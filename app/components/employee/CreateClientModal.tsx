@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { X, User, Phone, Loader2 } from 'lucide-react';
+import { X, User, Phone, Loader2, AlertCircle } from 'lucide-react';
 
 interface CreateClientModalProps {
     isOpen: boolean;
@@ -11,10 +11,25 @@ interface CreateClientModalProps {
 
 export default function CreateClientModal({ isOpen, onClose, onSuccess }: CreateClientModalProps) {
     const [loading, setLoading] = useState(false);
+    const [phoneError, setPhoneError] = useState<string | null>(null);
     const [formData, setFormData] = useState({
         name: '',
         phone: ''
     });
+
+    const validatePhone = (phone: string) => {
+        // Validation for Argentina Mobile numbers
+        // Accepts: 3511234567, 1112345678, +549...
+        // Minimum length 10 digits (Standard minimal)
+        const digits = phone.replace(/\D/g, '');
+
+        if (!phone) return null;
+
+        if (digits.length < 10) {
+            return "Mínimo 10 dígitos (Ej: 351xxxxxx)";
+        }
+        return null;
+    };
 
     if (!isOpen) return null;
 
@@ -88,8 +103,18 @@ export default function CreateClientModal({ isOpen, onClose, onSuccess }: Create
                                 placeholder="Ej: 351..."
                                 className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-medium transition-all"
                                 value={formData.phone}
-                                onChange={e => setFormData({ ...formData, phone: e.target.value })}
+                                onChange={e => {
+                                    const val = e.target.value;
+                                    setFormData({ ...formData, phone: val });
+                                    if (phoneError) setPhoneError(validatePhone(val));
+                                }}
+                                onBlur={() => setPhoneError(validatePhone(formData.phone))}
                             />
+                            {phoneError && (
+                                <p className="text-[10px] font-bold text-red-500 mt-1 flex items-center gap-1 animate-in slide-in-from-top-1">
+                                    <AlertCircle size={10} /> {phoneError}
+                                </p>
+                            )}
                         </div>
                     </div>
 
@@ -103,7 +128,7 @@ export default function CreateClientModal({ isOpen, onClose, onSuccess }: Create
                         </button>
                         <button
                             type="submit"
-                            disabled={loading || !formData.name || !formData.phone}
+                            disabled={loading || !formData.name || !formData.phone || !!phoneError}
                             className="flex-1 bg-indigo-600 text-white py-3 rounded-xl font-bold hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-indigo-200 transition-all flex items-center justify-center gap-2"
                         >
                             {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Guardar Cliente'}
