@@ -214,6 +214,15 @@ export default function BookAppointment() {
 
 
     // --- STEP 1: PHONE (New) ---
+    // Force clean phone if it gets dirty from anywhere
+    useEffect(() => {
+        if (!phone) return;
+        const cleaned = cleanPhone(phone);
+        if (cleaned !== phone) {
+            setPhone(cleaned);
+        }
+    }, [phone]);
+
     const checkClient = async () => {
         setLoading(true);
         setError('');
@@ -342,16 +351,8 @@ export default function BookAppointment() {
                             engine: specs.engine || ''
                         });
                         if (data.client && !client) {
-                            // Smart helper to clean phone from +54/549
-                            const cleanPhone = (p: string) => {
-                                let val = p.replace(/[^0-9]/g, '');
-                                if (val.startsWith('549')) val = val.slice(3);
-                                else if (val.startsWith('54')) val = val.slice(2);
-                                if (val.startsWith('0')) val = val.slice(1);
-                                return val;
-                            };
-
                             setClient(data.client);
+                            // Use outer cleanPhone
                             setPhone(cleanPhone(data.client.phone));
                         }
                     } else {
