@@ -580,13 +580,27 @@ export default function BookAppointment() {
                                 <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Celular</label>
                                 <div className={`relative flex items-center w-full rounded-xl border ${phoneError ? 'border-red-500 ring-4 ring-red-500/10' : 'border-slate-200 focus-within:ring-4 focus-within:ring-blue-500/10 focus-within:border-blue-500'} transition-all bg-white overflow-hidden`}>
                                     <div className="pl-4 flex items-center gap-2 border-r border-slate-100 pr-3 py-4 select-none bg-slate-50 text-slate-600 flex-shrink-0 whitespace-nowrap">
-                                        <span className="font-black text-sm tracking-wider">🇦🇷 +54 9</span>
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 9 6" className="w-6 h-auto shadow-sm rounded-sm">
+                                            <rect width="9" height="6" fill="#75AADB" />
+                                            <rect y="2" width="9" height="2" fill="#fff" />
+                                            <circle cx="4.5" cy="3" r="0.6" fill="#F6B40E" />
+                                        </svg>
+                                        <span className="font-black text-sm tracking-wider">+54 9</span>
                                     </div>
                                     <input
                                         type="tel"
                                         value={phone}
                                         onChange={(e) => {
-                                            const val = e.target.value.replace(/[^0-9]/g, ''); // Allow only numbers
+                                            // Smart clean: remove non-digits, and strip leading 549, 54, or 0
+                                            let val = e.target.value.replace(/[^0-9]/g, '');
+
+                                            // Handle copy-paste of full numbers (e.g. 549351...)
+                                            if (val.startsWith('549')) val = val.slice(3);
+                                            else if (val.startsWith('54')) val = val.slice(2);
+
+                                            // Handle leading 0 (e.g. 0351...)
+                                            if (val.startsWith('0')) val = val.slice(1);
+
                                             setPhone(val);
                                             if (phoneError) setPhoneError(validatePhone(val));
                                         }}
