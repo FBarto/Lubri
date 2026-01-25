@@ -17,7 +17,7 @@ async function testProfile() {
     console.log(`Calling getClientProfile(${client.id})...`);
     const result = await getClientProfile(client.id);
 
-    if (result.success) {
+    if (result.success && result.data) {
         console.log('✅ Success!');
         console.log('Name:', result.data.name);
         console.log('Vehicles:', result.data.vehicles.length);
