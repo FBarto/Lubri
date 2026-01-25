@@ -128,9 +128,20 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
                                                 )}
                                             </div>
 
-                                            {/* Action / Detail Link hint */}
+                                            {/* Action / Detail Link */}
                                             <div className="mt-3 pt-3 border-t border-slate-100 flex justify-end">
-                                                <button className="text-xs font-bold text-blue-600 flex items-center gap-1 hover:underline">
+                                                <button
+                                                    onClick={() => {
+                                                        if (item.type === 'WORK_ORDER') {
+                                                            router.push(`/admin/work-orders?id=${item.id}`);
+                                                        } else if (item.type === 'SALE') {
+                                                            router.push(`/admin/sales?id=${item.id}`);
+                                                        } else if (item.type === 'APPOINTMENT') {
+                                                            router.push(`/admin/appointments?id=${item.id}`);
+                                                        }
+                                                    }}
+                                                    className="text-xs font-bold text-blue-600 flex items-center gap-1 hover:underline"
+                                                >
                                                     Ver Detalle <ChevronRight size={12} />
                                                 </button>
                                             </div>
