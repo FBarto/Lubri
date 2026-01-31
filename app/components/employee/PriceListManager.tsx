@@ -85,7 +85,7 @@ export default function PriceListManager() {
                 cost: Number(product.cost),
                 markup: Number(product.markup),
                 price: Number(product.price),
-                supplier: product.supplier || null
+                supplier: product.supplier || undefined
             });
             if (res.success) {
                 // Flash success visual?
