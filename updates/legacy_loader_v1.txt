@@ -1,0 +1,4 @@
+[PEGA AQUÍ EL CÓDIGO QUE TE GENERE CHATGPT]
+Esperamos:
+1. LegacyServiceModal.tsx
+2. Business Action (createLegacyWorkOrder)

@@ -497,7 +497,44 @@ export async function suggestServiceEstimate(vehicleId: number, preset: 'BASIC' 
         // 2. Fallback to History
         const historyRes = await getLastServiceItems(vehicleId);
         if (!historyRes.success || !historyRes.data) {
-            return { success: false, error: 'No history found for estimate' };
+            // FALLBACK TO GENERIC ITEMS IF NO HISTORY
+            const genericItems = [];
+
+            // Aceite Generico (Placeholder)
+            genericItems.push({
+                id: null,
+                name: 'Aceite 10W40 (Suelto)',
+                price: 0,
+                stock: null,
+                quantity: 4,
+                type: 'PRODUCT',
+                determinedCategory: 'ENGINE_OIL'
+            });
+
+            // Filtro Aceite Generico
+            genericItems.push({
+                id: null,
+                name: 'Filtro de Aceite (A definir)',
+                price: 0,
+                stock: null,
+                quantity: 1,
+                type: 'PRODUCT',
+                determinedCategory: 'OIL_FILTER'
+            });
+
+            if (preset === 'FULL') {
+                genericItems.push({ id: null, name: 'Filtro de Aire (A definir)', price: 0, stock: null, quantity: 1, type: 'PRODUCT', determinedCategory: 'AIR_FILTER' });
+                genericItems.push({ id: null, name: 'Filtro de Combustible (A definir)', price: 0, stock: null, quantity: 1, type: 'PRODUCT', determinedCategory: 'FUEL_FILTER' });
+            }
+
+            return {
+                success: true,
+                data: {
+                    items: genericItems,
+                    source: 'GENERIC_FALLBACK',
+                    lastServiceDate: null
+                }
+            };
         }
 
         const allItems = historyRes.data.items;

@@ -334,3 +334,65 @@ export async function getStockStats() {
         return { success: false, error: 'Failed' };
     }
 }
+
+/**
+ * Creates a Legacy Work Order for historical data.
+ * DOES NOT affect stock or generate a Sale.
+ * Stores details in JSON `serviceDetails`.
+ */
+export async function createLegacyWorkOrder(input: {
+    vehicleId: string | number;
+    clientId: string | number;
+    date: string; // ISO Date
+    mileage: number;
+    serviceDetails: any;
+}) {
+    try {
+        const vehicleId = Number(input.vehicleId);
+        const clientId = Number(input.clientId);
+
+        // Find a default service to satisfy FK (e.g., first active one)
+        const service = await prisma.service.findFirst({ where: { active: true } });
+        if (!service) throw new Error('No active service found in system to link legacy order.');
+
+        const performedDate = new Date(input.date);
+
+        const wo = await prisma.workOrder.create({
+            data: {
+                vehicleId,
+                clientId,
+                serviceId: service.id,
+                status: 'COMPLETED',
+                // Legacy data does not affect current cash flow
+                price: 0,
+                // We map the historical date to `date` (start) and `finishedAt` (end)
+                date: performedDate,
+                finishedAt: performedDate,
+                mileage: input.mileage,
+                serviceDetails: input.serviceDetails,
+                notes: 'Carga Histórica / Legacy Data'
+            }
+        });
+
+        // Update Vehicle metrics if this is the newest record
+        const vehicle = await prisma.vehicle.findUnique({ where: { id: vehicleId } });
+        if (vehicle) {
+            const isNewer = !vehicle.lastServiceDate || performedDate > vehicle.lastServiceDate;
+            if (isNewer) {
+                await prisma.vehicle.update({
+                    where: { id: vehicleId },
+                    data: {
+                        lastServiceDate: performedDate,
+                        lastServiceMileage: input.mileage
+                    }
+                });
+            }
+        }
+
+        safeRevalidate(`/admin/clients/${clientId}`);
+        return { success: true, workOrder: wo };
+    } catch (error) {
+        console.error('Error creating Legacy Work Order:', error);
+        return { success: false, error: 'Failed to create legacy record' };
+    }
+}

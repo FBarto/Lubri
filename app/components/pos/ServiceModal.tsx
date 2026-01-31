@@ -55,11 +55,17 @@ export default function ServiceModal({ isOpen, onClose, onConfirm, service, init
     // Search Functions
     const searchClient = async (val: string) => {
         setPhoneSearch(val);
+        // Clear selection if user edits text
+        if (selectedClient && val !== `${selectedClient.name} (${selectedClient.phone})`) {
+            setSelectedClient(null);
+        }
+
         if (val.length > 2) {
             try {
                 const res = await fetch(`/api/clients?search=${val}`);
                 const data = await res.json();
-                setClientResults(Array.isArray(data) ? data : []);
+                const results = Array.isArray(data.data) ? data.data : (Array.isArray(data) ? data : []);
+                setClientResults(results);
             } catch (e) {
                 console.error("Error searching client", e);
                 setClientResults([]);
@@ -71,11 +77,17 @@ export default function ServiceModal({ isOpen, onClose, onConfirm, service, init
 
     const searchVehicle = async (val: string) => {
         setPlateSearch(val);
+        // Clear selection if user edits text
+        if (selectedVehicle && val !== `${selectedVehicle.plate} - ${selectedVehicle.model || ''}`) {
+            setSelectedVehicle(null);
+        }
+
         if (val.length > 2) {
             try {
                 const res = await fetch(`/api/vehicles?search=${val}`);
                 const data = await res.json();
-                setVehicleResults(Array.isArray(data) ? data : []);
+                const results = Array.isArray(data.data) ? data.data : (Array.isArray(data) ? data : []);
+                setVehicleResults(results);
             } catch (e) {
                 console.error("Error searching vehicle", e);
                 setVehicleResults([]);

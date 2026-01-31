@@ -1,50 +1,50 @@
 
 import { PrismaClient } from '@prisma/client';
-import { suggestServiceItems } from '../app/lib/smart-actions';
+import { suggestServiceEstimate } from '../app/lib/maintenance-actions';
 
+// Mock server-only context if needed (usually fine in scripts if no headers/cookies used)
 const prisma = new PrismaClient();
 
 async function main() {
-    console.log('🧠 Verification: Running Smart Budget Logic...');
+    console.log('🧠 Testing Smart Quote Logic...');
 
-    // 1. Find our Test Vehicle
-    const vehicle = await prisma.vehicle.findUnique({ where: { plate: 'TEST-999' } });
+    // 1. Find a migrated vehicle with WorkOrders
+    const vehicle = await prisma.vehicle.findFirst({
+        where: {
+            workOrders: { some: {} }
+        },
+        include: {
+            workOrders: {
+                orderBy: { date: 'desc' },
+                take: 1
+            }
+        }
+    });
 
     if (!vehicle) {
-        console.error('❌ Test Vehicle not found. Run seed script first.');
+        console.error('❌ No vehicle with history found!');
         return;
     }
 
-    console.log(`🚗 Analyzing Vehicle: ${vehicle.brand} ${vehicle.model} (${vehicle.plate})`);
+    console.log(`🚗 Found Vehicle: ${vehicle.plate} (${vehicle.brand} ${vehicle.model})`);
+    console.log(`   Last Service Date: ${vehicle.workOrders[0]?.date}`);
 
-    // 2. Ask the "Brain" for suggestions
-    console.log('✨ Triggering Magic Wand...');
-    const result = await suggestServiceItems(vehicle.id);
+    // 2. Call the Logic
+    console.log('\n🔮 Asking AI/Logic for suggestion...');
+    const result = await suggestServiceEstimate(vehicle.id, 'FULL');
 
-    // 3. Output Result
-    if (result.success) {
-        console.log(`✅ SUCCESS! Method Used: ${result.method}`);
-        console.log('📋 Suggested Items:');
-        result.items?.forEach((item: any) => {
-            console.log(`   - 🔧 ${item.name} ($${item.price}) x${item.quantity}`);
+    if (result.success && result.data) {
+        console.log('✅ Suggestion Successful!');
+        console.log('   Source:', result.data.source);
+        console.log('   Items Suggested:');
+        result.data.items.forEach((item: any) => {
+            console.log(`   - [${item.determinedCategory}] ${item.name} (Qty: ${item.quantity}) ${item.estimate ? '(Estimate)' : ''}`);
         });
-
-        if (result.items && result.items.length > 0) {
-            console.log('\n🎉 Verification PASSED: The system correctly recalled the history.');
-        } else {
-            console.error('❌ Verification FAILED: No items returned.');
-        }
-
     } else {
-        console.error('❌ Verification FAILED:', result.error);
+        console.error('❌ Suggestion Failed:', result.error);
     }
 }
 
 main()
-    .catch((e) => {
-        console.error(e);
-        process.exit(1);
-    })
-    .finally(async () => {
-        await prisma.$disconnect();
-    });
+    .catch(console.error)
+    .finally(async () => await prisma.$disconnect());

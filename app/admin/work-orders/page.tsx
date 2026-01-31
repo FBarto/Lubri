@@ -4,7 +4,12 @@ import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { Search, Calendar, Filter, ChevronDown, ChevronUp, FileText, CheckCircle, Clock, XCircle, AlertCircle, Share2, Printer } from 'lucide-react';
 
+import { useSearchParams } from 'next/navigation';
+
 export default function WorkOrdersList() {
+    const searchParams = useSearchParams();
+    const idParam = searchParams.get('id');
+
     const [workOrders, setWorkOrders] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
 
@@ -21,17 +26,18 @@ export default function WorkOrdersList() {
         try {
             // Build query params
             const params = new URLSearchParams();
-            if (dateRange.start) params.append('from', dateRange.start); // Note: Backend update might be needed for 'from/to' or we just fetch ALL if empty
-            // Current backend supports 'date' for exact day. If we want range, we need to update backend or fetch all.
-            // For now, let's fetch ALL (empty params) if no specific date is selected, 
-            // or we can stick to "Month" view if we had that.
-            // Let's rely on the current backend behavior: if no 'date' param, it returns ALL. 
-            // We'll filter by date client-side for "Interactive" speed if dataset is small (<1000).
+            if (dateRange.start) params.append('from', dateRange.start);
 
             const res = await fetch(`/api/work-orders`);
             const data = await res.json();
             if (Array.isArray(data)) {
                 setWorkOrders(data);
+
+                // If ID param exists, auto-select it once data is loaded
+                if (idParam) {
+                    setSearchTerm(idParam);
+                    setExpandedRow(Number(idParam));
+                }
             }
         } catch (e) {
             console.error(e);
@@ -42,7 +48,7 @@ export default function WorkOrdersList() {
 
     useEffect(() => {
         fetchOrders();
-    }, []);
+    }, []); // idParam is stable enough effectively, or we can add it to deps if users navigate *within* the page with new params (unlikely for this flow)
 
     const filteredOrders = useMemo(() => {
         return workOrders.filter(wo => {

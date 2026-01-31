@@ -46,12 +46,64 @@ export async function generateVehicleReadyWhatsAppLink(workOrderId: number) {
     try {
         const wo = await prisma.workOrder.findUnique({
             where: { id: workOrderId },
-            include: { client: true, vehicle: true }
+            include: { client: true, vehicle: true, saleItems: { include: { product: true } } } // Include saleItems/product
         });
 
         if (!wo || !wo.client.phone) return { success: false, error: 'Cannot generate link' };
 
-        const message = `Hola ${wo.client.name.split(' ')[0]}! 👋\nTu ${wo.vehicle.brand} ${wo.vehicle.model} (${wo.vehicle.plate}) ya está listo para retirar! 🚗💨\n\nTe esperamos!`;
+        // 1. Gather Data
+        const vehicle = wo.vehicle;
+        const mileage = wo.mileage || 0;
+        const nextMileage = mileage + 10000; // Default assumption, maybe customizable later
+
+        // Parse Checklist from ServiceDetails
+        const details: any = wo.serviceDetails || {};
+        const checklist = details.checklist || {};
+        const items = (details.items || []).concat(wo.saleItems || []); // Combine items
+
+        // Find Oil Brand string
+        const oilItem = items.find((i: any) =>
+            (i.category === 'ENGINE_OIL') ||
+            (i.product?.category === 'ENGINE_OIL') ||
+            i.name?.toLowerCase().includes('aceite') ||
+            (i.description?.toLowerCase().includes('aceite'))
+        );
+        const oilName = oilItem ? (oilItem.name || oilItem.description) : 'Aceite Premium';
+
+        // 2. Build Message
+        let message = `Hola ${wo.client.name}! \n`;
+        message += `🚗 Queremos informarle que hemos completado el service de su vehículo ${vehicle.brand} ${vehicle.model} con patente ${vehicle.plate}. A continuación, le detallamos las tareas realizadas:\n\n`;
+
+        message += `🛢️ Cambio de aceite ${oilName} \n`;
+        message += `🌬️ Cambio del filtro de aire ${checklist.airFilter ? 'SI' : 'NO'}\n`;
+        message += `🛢️ Cambio del filtro de aceite ${checklist.oilFilter ? 'SI' : 'NO'}\n`;
+        message += `⛽ Cambio del filtro de combustible ${checklist.fuelFilter ? 'SI' : 'NO'}\n`;
+        message += `🏠 Cambio del filtro de habitáculo ${checklist.cabinFilter ? 'SI' : 'NO'}\n`;
+
+        message += `🔧 Revisión de lubricante de caja\n`;
+        message += `⚙️ Revisión lubricante de diferencial\n`;
+        message += `💧 Revisión de fluido hidráulico\n`;
+        message += `❄️ Control y reposición de líquido refrigerante\n`;
+        message += `🛑 Control y reposición de líquido de frenos\n`;
+        message += `🚿 Reposición de líquido limpiaparabrisas\n\n`;
+
+        message += `📍 Kilometraje actual: ${mileage || '---'}\n`;
+        message += `🔄 Próximo cambio de aceite: ${nextMileage}\n\n`;
+
+        message += `Si tiene alguna duda o necesita más información, no dude en contactarnos.\n`;
+        message += `¡Gracias por confiar en nosotros! 🙌\n\n`;
+
+        message += `📍 Asunción 505 Villa Carlos Paz Córdoba\n`;
+        message += `📞 Tel: 03516 75 6248\n`;
+        message += `Atentamente,\nLubricantes FB\n\n`;
+
+        message += `📱 Síguenos en nuestras redes sociales:\n`;
+        message += `👉 Instagram https://www.instagram.com/fblubricantes/\n`;
+        message += `👉 Facebook https://www.facebook.com/profile.php?id=100054567395088\n\n`;
+
+        message += `⭐ Nos encantaría conocer tu opinión. ¡Déjanos una reseña en Google Maps!\n`;
+        message += `👉 Dejar calificación https://www.google.com/maps/place/FB+Lubricentro+y+Bater%C3%ADas/@-31.419292,-64.5148519,17z/data=!4m8!3m7!1s0x942d6714e9ed44ed:0x410af4893ace95ba!8m2!3d-31.4192966!4d-64.512277!9m1!1b1`;
+
         const phone = wo.client.phone.replace(/\D/g, '');
         const waUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
 
@@ -108,11 +160,7 @@ export async function getBudgetDetails(token: string) {
         let items: any[] = [];
         let finalPrice = 0;
 
-        // Strategy: If linked to a Sale, the Sale is the source of truth for items and total.
-        // If not (Manual WO), we use wo.price + serviceDetails items.
-
         if (wo.saleId) {
-            // Fetch Sale Items (Sync fix ensures they are up to date)
             const saleItems = await prisma.saleItem.findMany({
                 where: { saleId: wo.saleId }
             });
@@ -122,16 +170,9 @@ export async function getBudgetDetails(token: string) {
 
             items = saleItems;
             finalPrice = sale?.total || wo.price;
-            // Note: if sale.total is 0 for some reason, fallback to wo.price could still be double counting if wo.price is total. 
-            // But usually sale.total is correct.
         } else {
-            // No Sale linked (Manual creation)
             const serviceDetailsItems = (wo.serviceDetails as any)?.items || [];
             items = [...wo.saleItems, ...serviceDetailsItems];
-
-            // Avoid duplicates if saleItems already contains serviceDetails items (unlikely if no saleId)
-            // But technically wo.saleItems are linked to Sale. If no Sale, wo.saleItems should be empty.
-
             const itemsTotal = items.reduce((sum: number, item: any) => sum + (item.quantity * (item.unitPrice || item.price || 0)), 0);
             finalPrice = wo.price + itemsTotal;
         }

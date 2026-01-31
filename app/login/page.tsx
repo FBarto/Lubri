@@ -60,6 +60,12 @@ export default function LoginPage() {
                         )}
                     </div>
                 </form>
+
+                <div className="mt-6 text-center pt-4 border-t border-slate-100">
+                    <a href="/" className="text-slate-400 font-bold text-xs hover:text-slate-600 transition-colors">
+                        ← VOLVER AL INICIO
+                    </a>
+                </div>
             </div>
         </div>
     );

@@ -6,6 +6,29 @@ import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 // Simple Badge component since we don't have a UI lib installed
+const STATUS_TRANSLATIONS: Record<string, string> = {
+    NEW: 'NUEVO',
+    IN_PROGRESS: 'EN PROCESO',
+    WAITING_CUSTOMER: 'ESPERANDO CLIENTE',
+    READY_TO_SCHEDULE: 'LISTO P/ AGENDAR',
+    SCHEDULED: 'PROGRAMADO',
+    QUOTED: 'PRESUPUESTADO',
+    WON: 'GANADO',
+    LOST: 'PERDIDO',
+    CLOSED: 'CERRADO',
+};
+
+const CATEGORY_TRANSLATIONS: Record<string, string> = {
+    OIL_SERVICE: 'CAMBIO DE ACEITE',
+    TYRES: 'NEUMÁTICOS',
+    BRAKES: 'FRENOS',
+    SUSPENSION: 'SUSPENSIÓN',
+    ENGINE: 'MECÁNICA',
+    ELECTRONICS: 'ELECTRÓNICA',
+    OTHER: 'OTROS',
+    BATTERY: 'BATERÍA'
+};
+
 const StatusBadge = ({ status }: { status: string }) => {
     const colors: any = {
         NEW: 'bg-blue-100 text-blue-700',
@@ -20,7 +43,7 @@ const StatusBadge = ({ status }: { status: string }) => {
     };
     return (
         <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${colors[status] || 'bg-gray-100'}`}>
-            {status.replace(/_/g, ' ')}
+            {STATUS_TRANSLATIONS[status] || status.replace(/_/g, ' ')}
         </span>
     );
 };
@@ -95,7 +118,7 @@ export default async function InboxPage() {
                                     </td>
                                     <td className="p-4">
                                         <span className="text-xs font-bold text-slate-600 bg-slate-100 px-2 py-1 rounded">
-                                            {c.serviceCategory}
+                                            {CATEGORY_TRANSLATIONS[c.serviceCategory] || c.serviceCategory}
                                         </span>
                                     </td>
                                     <td className="p-4">

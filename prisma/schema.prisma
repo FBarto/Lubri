@@ -169,6 +169,9 @@ model Product {
   barcode     String?
   category    String
   price       Float
+  cost        Float    @default(0) // Precio compra
+  markup      Float    @default(0) // % Ganancia
+  supplier    String?  // Proveedor
   stock       Float    @default(0)
   minStock    Float    @default(0)
   active      Boolean  @default(true)

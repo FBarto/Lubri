@@ -1,0 +1,27 @@
+
+Estoy trabajando en una aplicación de gestión para un Lubricentro (Taller de cambio de aceite) moderna construida con:
+- **Frontend:** Next.js 14 (App Router), React, Tailwind CSS, Lucide Icons.
+- **Backend:** Server Actions, Prisma ORM, PostgreSQL.
+- **Lenguaje:** TypeScript.
+
+**OBJETIVO ACTUAL:**
+Necesito crear un componente llamado `LegacyServiceModal` para cargar "Cambios Atrasados" (Historial Legacy).
+El usuario tiene fichas de papel o de un sistema viejo (Visual Basic) y quiere pasarlas rápido al sistema nuevo.
+
+**REQUERIMIENTOS DEL FORMULARIO (Basado en imagen de referencia):**
+Debe ser un formulario denso (High Density UI) que permita cargar rápidamente:
+1. **Fecha y Kilometraje:** Permite fechas pasadas.
+2. **Filtros (Checkboxes + Inputs opcionales):** Aire, Aceite, Combustible, Habitáculo.
+3. **Lubricantes:** Selector de Tipo de Aceite (Sintético/Semi), Litros (input numérico), y Marca (texto libre).
+4. **Fluidos/Varios:** Checkboxes para "Revisión Caja", "Diferencial", "Hidráulico".
+5. **Observaciones:** Texto libre.
+
+**RESTRICCIONES DE BASE DE DATOS (Prisma):**
+- Tengo un modelo `WorkOrder` que se vincula a `Vehicle`, `Client` y `Service`.
+- **IMPORTANTE:** Al cargar estos datos históricos, **NO QUIERO descontar stock** ni crear movimientos de caja (`Sale`).
+- El modelo `WorkOrder` tiene un campo JSON llamado `serviceDetails`. Quiero guardar toda esta data estructurada ahí (ej: `{ filters: ['Air', 'Oil'], oil: { type: '10W40', liters: 4 }, ... }`).
+- El estado de la orden debe nacer como `COMPLETED`.
+
+**PEDIDO:**
+Ayúdame a generar el código del componente `LegacyServiceModal.tsx` (Use Client) que reciba `vehicleId` y `clientId`.
+Debe tener un diseño compacto (grid system), visualmente parecido a una ficha técnica, y llamar a una Server Action `createLegacyWorkOrder` al guardar.

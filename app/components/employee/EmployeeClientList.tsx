@@ -178,15 +178,38 @@ export default function EmployeeClientList({ onClientAction }: EmployeeClientLis
                                                 {/* Plate Component */}
                                                 <Plate plate={v.plate} size="md" />
 
-                                                <div className="min-w-0 flex-1">
-                                                    <div className="font-bold text-slate-700 text-sm truncate">{v.brand} {v.model}</div>
-                                                    <div className="flex items-center gap-2 mt-1">
-                                                        {/* Status Indicator (Mocked for now) */}
-                                                        <span className="flex items-center gap-1 text-[10px] uppercase font-bold text-emerald-600 bg-emerald-100 px-2 py-0.5 rounded-full">
-                                                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                                                            Al día
-                                                        </span>
-                                                    </div>
+                                                <div className="font-bold text-slate-700 text-sm truncate">{v.brand} {v.model}</div>
+
+                                                {/* Status & Actions - Stacked for mobile, Row for desktop */}
+                                                <div className="flex flex-col gap-2 mt-2">
+                                                    <span className="flex items-center gap-1 text-[10px] uppercase font-bold text-emerald-600 bg-emerald-100 px-2 py-0.5 rounded-full w-fit">
+                                                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                                                        Al día
+                                                    </span>
+
+                                                    <button
+                                                        onClick={async (e) => {
+                                                            e.stopPropagation();
+                                                            try {
+                                                                const { generatePortalLinkForVehicle } = await import('../../lib/portal-actions');
+                                                                const res = await generatePortalLinkForVehicle(v.id);
+                                                                if (res.success && res.url) {
+                                                                    const fullUrl = window.location.origin + res.url;
+                                                                    const msg = `Hola ${client.name.split(' ')[0]}! 👋\nAcá tenés tu Tarjeta Digital del auto con todo el historial de mantenimiento.\nGuardala siempre a mano: ${fullUrl}`;
+                                                                    const phone = client.phone.replace(/\D/g, '');
+                                                                    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
+                                                                } else {
+                                                                    alert('Error: ' + res.error);
+                                                                }
+                                                            } catch (err) {
+                                                                console.error(err);
+                                                                alert('Error al generar enlace');
+                                                            }
+                                                        }}
+                                                        className="text-[10px] font-bold text-white bg-indigo-500 hover:bg-indigo-600 px-3 py-1.5 rounded-lg flex items-center justify-center gap-2 transition-all shadow-sm w-full"
+                                                    >
+                                                        📲 Enviar Tarjeta
+                                                    </button>
                                                 </div>
                                             </div>
                                         ))}
@@ -204,6 +227,10 @@ export default function EmployeeClientList({ onClientAction }: EmployeeClientLis
                                                 </button>
                                             </div>
                                         )}
+                                        {/* Hidden Portal Generator specific for Test - Can be made official feature */}
+                                        <div className="hidden">
+                                            {/* Helper for the agent to inject functionality */}
+                                        </div>
                                     </div>
                                 </div>
 
@@ -284,6 +311,6 @@ export default function EmployeeClientList({ onClientAction }: EmployeeClientLis
                 onSuccess={handleVehicleCreated}
             />
 
-        </div>
+        </div >
     );
 }

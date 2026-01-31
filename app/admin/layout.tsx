@@ -55,100 +55,67 @@ export default function AdminLayout({
                         FB Lubricentro
                     </h1>
                     <p className="text-slate-400 text-xs mt-1 uppercase tracking-widest hidden md:block">Panel de Control</p>
-                    {/* Mobile only title in sidebar top if needed, or just keep the menu items */}
-                    <div className="md:hidden mb-6">
-                        <p className="text-slate-400 text-xs uppercase tracking-widest">Menú de Navegación</p>
-                    </div>
                 </div>
 
-                <nav className="space-y-4">
+                <nav className="space-y-2">
                     <Link
                         href="/admin/dashboard"
-                        onClick={() => setIsMobileMenuOpen(false)}
-                        className="flex items-center space-x-3 p-3 rounded-xl hover:bg-slate-800 transition-all border border-transparent hover:border-slate-700"
+                        className="flex items-center space-x-3 p-3 rounded-xl hover:bg-slate-800 transition-all text-sm font-medium text-slate-300 hover:text-white"
                     >
                         <span>🏠</span>
                         <span>Dashboard</span>
                     </Link>
-                    <Link
-                        href="/admin/inbox"
-                        onClick={() => setIsMobileMenuOpen(false)}
-                        className="flex items-center space-x-3 p-3 rounded-xl hover:bg-slate-800 transition-all border border-transparent hover:border-slate-700"
-                    >
-                        <span>📥</span>
-                        <span>Inbox Romi</span>
-                    </Link>
-                    <Link
-                        href="/admin/reports"
-                        onClick={() => setIsMobileMenuOpen(false)}
-                        className="flex items-center space-x-3 p-3 rounded-xl hover:bg-slate-800 transition-all border border-transparent hover:border-slate-700"
-                    >
-                        <span>📊</span>
-                        <span>Reportes</span>
-                    </Link>
+
+                    <div className="pt-2 pb-1 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Gestión</div>
+
                     <Link
                         href="/admin/clients"
-                        onClick={() => setIsMobileMenuOpen(false)}
-                        className="flex items-center space-x-3 p-3 rounded-xl hover:bg-slate-800 transition-all border border-transparent hover:border-slate-700"
+                        className="flex items-center space-x-3 p-3 rounded-xl hover:bg-slate-800 transition-all text-sm font-medium text-slate-300 hover:text-white"
                     >
                         <span>👥</span>
-                        <span>Clientes</span>
+                        <span>Clientes y Vehículos</span>
                     </Link>
+
                     <Link
-                        href="/admin/vehicles"
-                        onClick={() => setIsMobileMenuOpen(false)}
-                        className="flex items-center space-x-3 p-3 rounded-xl hover:bg-slate-800 transition-all border border-transparent hover:border-slate-700"
-                    >
-                        <span>🚗</span>
-                        <span>Vehículos</span>
-                    </Link>
-                    <Link
-                        href="/admin/services"
-                        onClick={() => setIsMobileMenuOpen(false)}
-                        className="flex items-center space-x-3 p-3 rounded-xl hover:bg-slate-800 transition-all border border-transparent hover:border-slate-700"
-                    >
-                        <span>🛠️</span>
-                        <span>Servicios</span>
-                    </Link>
-                    <Link
-                        href="/admin/products"
-                        onClick={() => setIsMobileMenuOpen(false)}
-                        className="flex items-center space-x-3 p-3 rounded-xl hover:bg-slate-800 transition-all border border-transparent hover:border-slate-700"
+                        href="/admin/inventory"
+                        className="flex items-center space-x-3 p-3 rounded-xl hover:bg-slate-800 transition-all text-sm font-medium text-slate-300 hover:text-white"
                     >
                         <span>📦</span>
-                        <span>Stock</span>
+                        <span>Inventario Unificado</span>
                     </Link>
-                    <Link
-                        href="/admin/whatsapp"
-                        onClick={() => setIsMobileMenuOpen(false)}
-                        className="flex items-center space-x-3 p-3 rounded-xl hover:bg-slate-800 transition-all border border-transparent hover:border-slate-700"
-                    >
-                        <span>💬</span>
-                        <span>WhatsApp</span>
-                    </Link>
+
                     <Link
                         href="/admin/appointments"
-                        onClick={() => setIsMobileMenuOpen(false)}
-                        className="flex items-center space-x-3 p-3 rounded-xl hover:bg-slate-800 transition-all border border-transparent hover:border-slate-700"
+                        className="flex items-center space-x-3 p-3 rounded-xl hover:bg-slate-800 transition-all text-sm font-medium text-slate-300 hover:text-white"
                     >
                         <span>📅</span>
                         <span>Turnos</span>
                     </Link>
+
                     <Link
                         href="/admin/work-orders"
-                        onClick={() => setIsMobileMenuOpen(false)}
-                        className="flex items-center space-x-3 p-3 rounded-xl hover:bg-slate-800 transition-all border border-transparent hover:border-slate-700"
+                        className="flex items-center space-x-3 p-3 rounded-xl hover:bg-slate-800 transition-all text-sm font-medium text-slate-300 hover:text-white"
                     >
                         <span>✅</span>
-                        <span>Órdenes</span>
+                        <span>Órdenes de Trabajo</span>
                     </Link>
-                    <div className="pt-4 mt-4 border-t border-slate-800">
+
+                    <div className="pt-4 pb-1 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Comunicación</div>
+
+                    <Link
+                        href="/admin/inbox"
+                        className="flex items-center space-x-3 p-3 rounded-xl hover:bg-slate-800 transition-all text-sm font-medium text-slate-300 hover:text-white"
+                    >
+                        <span>📥</span>
+                        <span>Oportunidades</span>
+                    </Link>
+
+                    <div className="pt-4 mt-auto">
                         <Link
                             href="/admin/pos"
-                            onClick={() => setIsMobileMenuOpen(false)}
-                            className="flex items-center space-x-3 p-3 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-800 text-white shadow-lg shadow-emerald-900/50 hover:scale-105 transition-all font-bold"
+                            className="flex items-center space-x-3 p-3 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-800 text-white shadow-lg shadow-emerald-900/50 hover:scale-105 transition-all font-bold group"
                         >
-                            <span>🛒</span>
+                            <span className="group-hover:rotate-12 transition-transform">🛒</span>
                             <span>Punto de Venta</span>
                         </Link>
                     </div>
@@ -161,21 +128,45 @@ export default function AdminLayout({
                             <span>Cerrar Sesión</span>
                         </button>
                     </form>
-                    <Link href="/" className="text-slate-400 hover:text-white text-sm">
-                        ← Ver sitio público
-                    </Link>
                 </div>
             </aside>
 
             {/* Main Content */}
-            <main className="flex-1 p-4 md:p-8 max-w-7xl mx-auto w-full pt-20 md:pt-8 bg-slate-50 min-h-screen relative">
-                {/* Desktop Top Bar (Hidden on Mobile) */}
-                <div className="absolute top-4 right-8 hidden md:flex items-center gap-3 z-20">
-                    <PendingSalesUSD />
-                    {userId > 0 && <NotificationsWidget userId={userId} />}
+            <main className="flex-1 max-h-screen overflow-hidden flex flex-col bg-slate-50 relative">
+                {/* Top Navigation Bar with Search */}
+                <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 z-20 shrink-0">
+                    {/* Global Search - Always Visible */}
+                    <div className="flex-1 max-w-lg">
+                        <div className="relative group">
+                            <input
+                                type="text"
+                                placeholder="🔍 Buscar Patente o Cliente (Ctrl+K)..."
+                                className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 pl-4 pr-10 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all group-hover:bg-white group-hover:shadow-sm"
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                        // Simple redirect to clients page with search param
+                                        // Ideally this opens a global command palette, but this is a quick win.
+                                        window.location.href = `/admin/clients?search=${(e.target as HTMLInputElement).value}`;
+                                    }
+                                }}
+                            />
+                            <div className="absolute right-3 top-2.5 text-xs text-slate-400 font-mono hidden md:block">
+                                ⌘K
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center gap-4">
+                        <PendingSalesUSD />
+                        {userId > 0 && <NotificationsWidget userId={userId} />}
+                    </div>
+                </header>
+
+                {/* Scrollable Page Content */}
+                <div className="flex-1 overflow-auto p-4 md:p-8">
+                    {children}
                 </div>
-                {children}
             </main>
-        </div >
+        </div>
     );
 }

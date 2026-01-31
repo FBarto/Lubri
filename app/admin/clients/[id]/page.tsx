@@ -3,7 +3,10 @@
 import { useEffect, useState, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { getClientProfile } from '../../../lib/client-actions';
+import Link from 'next/link';
 import MaintenanceGrid from '../../../components/clients/MaintenanceGrid';
+import SharePortalButton from '../../../components/clients/SharePortalButton';
+import LegacyServiceModal from '../../../components/clients/LegacyServiceModal';
 import { ArrowLeft, User, Phone, Car, History, ShoppingBag, Calendar, Wrench, ChevronRight } from 'lucide-react';
 
 export default function ClientProfilePage({ params }: { params: Promise<{ id: string }> }) {
@@ -11,6 +14,7 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
     const [client, setClient] = useState<any>(null);
     const [activeTab, setActiveTab] = useState<'TIMELINE' | 'VEHICLES' | 'INFO'>('TIMELINE');
     const [loading, setLoading] = useState(true);
+    const [legacyVehicle, setLegacyVehicle] = useState<number | null>(null);
     const router = useRouter();
 
     useEffect(() => {
@@ -170,6 +174,16 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
                                         <Car size={24} />
                                     </div>
                                 </div>
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={() => setLegacyVehicle(v.id)}
+                                        className="bg-amber-100 hover:bg-amber-200 text-amber-800 p-2 rounded-lg transition-colors border border-amber-200"
+                                        title="Cargar Histórico Antiguo"
+                                    >
+                                        <History size={18} />
+                                    </button>
+                                    <SharePortalButton vehicleId={v.id} phone={client.phone} />
+                                </div>
 
                                 {v.predictedNextService && (
                                     <div className="mb-4 bg-blue-50/50 px-4 py-3 rounded-lg flex items-center gap-3 text-sm text-blue-800 border border-blue-100/50">
@@ -222,6 +236,17 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
                 )}
 
             </div>
+            {legacyVehicle && (
+                <LegacyServiceModal
+                    vehicleId={legacyVehicle}
+                    clientId={client.id}
+                    onClose={() => setLegacyVehicle(null)}
+                    onSuccess={() => {
+                        // Refresh client data to show new history
+                        window.location.reload();
+                    }}
+                />
+            )}
         </div>
     );
 }

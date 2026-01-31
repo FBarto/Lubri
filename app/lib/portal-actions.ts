@@ -71,6 +71,72 @@ export async function getClientDataByToken(token: string) {
 
     } catch (error) {
         console.error('Error fetching portal data:', error);
+
         return { success: false, error: 'Internal Server Error' };
+    }
+}
+
+export async function generatePortalLinkForVehicle(vehicleId: number) {
+    try {
+        const vehicle = await prisma.vehicle.findUnique({
+            where: { id: vehicleId },
+            include: { client: true }
+        });
+
+        if (!vehicle) return { success: false, error: 'Vehicle not found' };
+
+        // 1. Try to find an existing valid token for this vehicle (via any active appointment)
+        // This is a bit indirect, but we look for a token linked to an appointment for this vehicle
+        const existingToken = await prisma.whatsAppToken.findFirst({
+            where: {
+                appointment: { vehicleId: vehicle.id },
+                expiresAt: { gt: new Date() }
+            },
+            orderBy: { createdAt: 'desc' }
+        });
+
+        if (existingToken) {
+            return { success: true, url: `/portal/${existingToken.token}` };
+        }
+
+        // 2. If no token, create a dummy appointment (or use latest) to attach a token
+        // Use latest appointment if exists
+        let appointment = await prisma.appointment.findFirst({
+            where: { vehicleId: vehicle.id },
+            orderBy: { date: 'desc' }
+        });
+
+        if (!appointment) {
+            // Create a dummy one for system access (historical placeholder)
+            const service = await prisma.service.findFirst({ where: { active: true } });
+            appointment = await prisma.appointment.create({
+                data: {
+                    clientId: vehicle.clientId,
+                    vehicleId: vehicle.id,
+                    serviceId: service?.id || 1,
+                    date: new Date(),
+                    status: 'CONFIRMED',
+                    notes: 'System generated for Portal Access'
+                }
+            });
+        }
+
+        const crypto = require('crypto');
+        const token = crypto.randomBytes(32).toString('hex');
+
+        await prisma.whatsAppToken.create({
+            data: {
+                token: token,
+                action: 'ACCESS',
+                expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days valid for manual link
+                appointmentId: appointment.id
+            }
+        });
+
+        return { success: true, url: `/portal/${token}` };
+
+    } catch (error) {
+        console.error("Error generating portal link:", error);
+        return { success: false, error: 'Failed to generate link' };
     }
 }

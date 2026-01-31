@@ -1,0 +1,161 @@
+LEGACY SERVICE MODAL – IMPLEMENTACIÓN COMPLETA
+
+================================
+CONTEXTO
+================================
+Aplicación de gestión para Lubricentro moderno.
+
+Stack:
+- Frontend: Next.js 14 (App Router), React, Tailwind CSS, Lucide Icons
+- Backend: Server Actions
+- ORM: Prisma
+- DB: PostgreSQL
+- Lenguaje: TypeScript
+
+Objetivo:
+Cargar servicios históricos (cambios atrasados) provenientes de fichas en papel
+o sistema legacy (Visual Basic), sin afectar stock ni caja.
+
+================================
+COMPONENTE: LegacyServiceModal.tsx
+================================
+
+'use client'
+
+import { useState } from 'react'
+import { createLegacyWorkOrder } from '@/actions/workorders'
+import { X, Save } from 'lucide-react'
+
+interface LegacyServiceModalProps {
+  vehicleId: string
+  clientId: string
+  onClose: () => void
+}
+
+export default function LegacyServiceModal({
+  vehicleId,
+  clientId,
+  onClose,
+}: LegacyServiceModalProps) {
+  const [loading, setLoading] = useState(false)
+
+  const [form, setForm] = useState({
+    date: '',
+    mileage: '',
+    filters: {
+      air: false,
+      oil: false,
+      fuel: false,
+      cabin: false,
+    },
+    oil: {
+      type: 'SEMI',
+      liters: '',
+      brand: '',
+    },
+    fluids: {
+      gearbox: false,
+      differential: false,
+      hydraulic: false,
+    },
+    notes: '',
+  })
+
+  function update(path: string, value: any) {
+    setForm(prev => {
+      const copy: any = structuredClone(prev)
+      path.split('.').reduce((o, k, i, arr) => {
+        if (i === arr.length - 1) o[k] = value
+        return o[k]
+      }, copy)
+      return copy
+    })
+  }
+
+  async function handleSave() {
+    setLoading(true)
+    await createLegacyWorkOrder({
+      vehicleId,
+      clientId,
+      date: form.date,
+      mileage: Number(form.mileage),
+      serviceDetails: form,
+    })
+    setLoading(false)
+    onClose()
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+      <div className="bg-white w-full max-w-3xl rounded-lg p-4 grid gap-3 text-sm">
+        <div className="flex justify-between items-center border-b pb-2">
+          <h2 className="font-semibold">Carga Histórica de Servicio</h2>
+          <button onClick={onClose}>
+            <X size={18} />
+          </button>
+        </div>
+
+        <div className="grid grid-cols-3 gap-2">
+          <input type="date" className="input" />
+          <input type="number" placeholder="Kilometraje" className="input" />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+================================
+SERVER ACTION
+================================
+
+'use server'
+
+import { prisma } from '@/lib/prisma'
+
+export async function createLegacyWorkOrder(input) {
+  await prisma.workOrder.create({
+    data: {
+      vehicleId: input.vehicleId,
+      clientId: input.clientId,
+      status: 'COMPLETED',
+      isBillable: false,
+      affectsStock: false,
+      performedAt: new Date(input.date),
+      mileage: input.mileage,
+      serviceDetails: input.serviceDetails,
+    },
+  })
+}
+
+================================
+SHAPE serviceDetails (JSON)
+================================
+
+{
+  "filters": {
+    "air": true,
+    "oil": true,
+    "fuel": false,
+    "cabin": true
+  },
+  "oil": {
+    "type": "SEMI",
+    "liters": 4,
+    "brand": "Elaion 10W40"
+  },
+  "fluids": {
+    "gearbox": true,
+    "differential": false,
+    "hydraulic": true
+  },
+  "notes": "Service histórico cargado desde ficha papel"
+}
+
+================================
+REGLAS DE NEGOCIO
+================================
+- NO descuenta stock
+- NO genera ventas ni caja
+- WorkOrder nace COMPLETED
+- Solo valor histórico / técnico
+- Alimenta Smart Upselling y Libreta Digital
