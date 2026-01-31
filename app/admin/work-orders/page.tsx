@@ -1,12 +1,11 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, Suspense } from 'react';
 import Link from 'next/link';
 import { Search, Calendar, Filter, ChevronDown, ChevronUp, FileText, CheckCircle, Clock, XCircle, AlertCircle, Share2, Printer } from 'lucide-react';
-
 import { useSearchParams } from 'next/navigation';
 
-export default function WorkOrdersList() {
+function WorkOrdersContent() {
     const searchParams = useSearchParams();
     const idParam = searchParams.get('id');
 
@@ -48,7 +47,7 @@ export default function WorkOrdersList() {
 
     useEffect(() => {
         fetchOrders();
-    }, []); // idParam is stable enough effectively, or we can add it to deps if users navigate *within* the page with new params (unlikely for this flow)
+    }, []);
 
     const filteredOrders = useMemo(() => {
         return workOrders.filter(wo => {
@@ -268,5 +267,13 @@ export default function WorkOrdersList() {
                 </div>
             )}
         </div>
+    );
+}
+
+export default function WorkOrdersList() {
+    return (
+        <Suspense fallback={<div className="p-8 text-center text-slate-400">Cargando modulo de ordenes...</div>}>
+            <WorkOrdersContent />
+        </Suspense>
     );
 }
