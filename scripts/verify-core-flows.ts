@@ -106,7 +106,8 @@ async function main() {
     }
 
     // The seeded history was 90 days ago.
-    if (oilStatus && oilStatus.daysAgo >= 89 && oilStatus.daysAgo <= 91) {
+    const daysAgo = oilStatus?.daysAgo || 0;
+    if (oilStatus && daysAgo >= 89 && daysAgo <= 91) {
         console.log('✅ Portal History verification: SUCCESS (Correctly identifies last service ~90 days ago)');
     } else {
         console.warn(`⚠️ Portal History verification: CHECK NEEDED (Time drift? Days ago: ${oilStatus?.daysAgo})`);

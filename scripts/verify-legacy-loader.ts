@@ -45,6 +45,7 @@ async function main() {
 
     if (result.success) {
         console.log('✅ Action Success');
+        if (!result.workOrder) return;
         const wo = await prisma.workOrder.findUnique({ where: { id: result.workOrder.id } });
 
         if (wo) {

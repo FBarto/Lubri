@@ -69,7 +69,7 @@ async function main() {
             date: new Date('2025-10-15'),
             finishedAt: new Date('2025-10-15'),
             status: 'COMPLETED',
-            mileage: vehicle.mileage - 5000, // History mileage
+            mileage: (vehicle.mileage || 0) - 5000, // History mileage
             price: 50000,
             saleId: sale.id,
             notes: 'Service Completo realizado en Octubre'
