@@ -1,6 +1,6 @@
 'use client';
 
-import PriceListManager from '../../../components/employee/PriceListManager';
+import PriceListManager from '../../components/employee/PriceListManager';
 
 export default function PricingPage() {
     return (
