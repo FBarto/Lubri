@@ -68,7 +68,7 @@ export default function OpportunitiesWidget() {
     if (opportunities.length === 0) return null; // Hide if empty
 
     return (
-        <div className="bg-gradient-to-br from-indigo-600 to-purple-700 rounded-3xl p-6 text-white shadow-xl mb-8 relative overflow-hidden">
+        <div className="bg-gradient-to-br from-red-600 to-red-800 rounded-3xl p-6 text-white shadow-xl mb-8 relative overflow-hidden">
             <div className="absolute top-0 right-0 p-4 opacity-10">
                 <Sparkles size={120} />
             </div>
@@ -101,8 +101,8 @@ export default function OpportunitiesWidget() {
                                     <span className="text-xs bg-emerald-500/80 px-2 py-1 rounded font-bold">en {opp.daysUntil} días</span>
                                 )}
                             </div>
-                            <p className="text-sm text-indigo-100 mb-1">{opp.model} • {opp.plate}</p>
-                            <div className="flex items-center gap-1 text-xs text-indigo-200 mb-3">
+                            <p className="text-sm text-red-50 mb-1">{opp.model} • {opp.plate}</p>
+                            <div className="flex items-center gap-1 text-xs text-red-100 mb-3">
                                 <Calendar size={12} />
                                 Predicción: {new Date(opp.predictedDate).toLocaleDateString()}
                             </div>
@@ -121,7 +121,7 @@ export default function OpportunitiesWidget() {
 
             {opportunities.length > 6 && (
                 <div className="mt-4 text-center relative z-10">
-                    <button className="text-sm text-indigo-200 hover:text-white font-medium">
+                    <button className="text-sm text-red-100 hover:text-white font-medium">
                         Ver {opportunities.length - 6} más...
                     </button>
                 </div>
