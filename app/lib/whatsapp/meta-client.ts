@@ -4,13 +4,17 @@ const GRAPH_API_VERSION = 'v17.0'; // Or latest stable version
 interface WhatsAppMessagePayload {
     messaging_product: 'whatsapp';
     to: string;
-    type: 'template';
-    template: {
+    type: 'template' | 'text';
+    template?: {
         name: string;
         language: {
             code: string;
         };
         components?: any[];
+    };
+    text?: {
+        body: string;
+        preview_url?: boolean;
     };
 }
 

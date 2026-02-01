@@ -335,6 +335,8 @@ export async function getStockStats() {
     }
 }
 
+import { WhatsAppService } from './whatsapp/service';
+
 /**
  * Creates a Legacy Work Order for historical data.
  * DOES NOT affect stock or generate a Sale.
@@ -346,6 +348,9 @@ export async function createLegacyWorkOrder(input: {
     date: string; // ISO Date
     mileage: number;
     serviceDetails: any;
+    // New parameters
+    nextServiceMileage?: number;
+    sendWhatsApp?: boolean;
 }) {
     try {
         const vehicleId = Number(input.vehicleId);
@@ -360,15 +365,21 @@ export async function createLegacyWorkOrder(input: {
             service = await prisma.service.create({
                 data: {
                     name: 'Service Histórico Importado',
-                    category: 'General', // Using string as per schema
+                    category: 'General',
                     price: 0,
-                    duration: 0, // Using 'duration' as per schema
+                    duration: 0,
                     active: true
                 }
             });
         }
 
         const performedDate = new Date(input.date);
+
+        // Enrich serviceDetails with manual next service mileage if provided
+        const enrichedDetails = {
+            ...input.serviceDetails,
+            nextServiceMileage: input.nextServiceMileage
+        };
 
         const wo = await prisma.workOrder.create({
             data: {
@@ -382,13 +393,17 @@ export async function createLegacyWorkOrder(input: {
                 date: performedDate,
                 finishedAt: performedDate,
                 mileage: input.mileage,
-                serviceDetails: input.serviceDetails,
+                serviceDetails: enrichedDetails,
                 notes: input.serviceDetails.notes ? `[LEGACY] ${input.serviceDetails.notes}` : '[LEGACY] Carga Histórica'
             }
         });
 
         // Update Vehicle metrics if this is the newest record
-        const vehicle = await prisma.vehicle.findUnique({ where: { id: vehicleId } });
+        const vehicle = await prisma.vehicle.findUnique({
+            where: { id: vehicleId },
+            include: { client: true }
+        });
+
         if (vehicle) {
             const isNewer = !vehicle.lastServiceDate || performedDate > vehicle.lastServiceDate;
             if (isNewer) {
@@ -400,6 +415,44 @@ export async function createLegacyWorkOrder(input: {
                     }
                 });
             }
+
+            // Send WhatsApp if requested
+            if (input.sendWhatsApp && vehicle.client.phone) {
+                const filters = input.serviceDetails.filters || {};
+                const fluids = input.serviceDetails.fluids || {};
+                const oil = input.serviceDetails.oil || {};
+
+                // Construct Message
+                const message = `Hola ${vehicle.client.name},
+🚗 Queremos informarle que hemos completado el service de su vehículo ${vehicle.brand || ''} ${vehicle.model || ''} con patente ${vehicle.plate}. A continuación, le detallamos las tareas realizadas:
+🛢️ Cambio de aceite ${oil.brand || ''} ${oil.type || ''} ${oil.liters ? `(${oil.liters}L)` : ''}
+🌬️ Cambio del filtro de aire ${filters.air ? 'SI' : 'NO'}
+🛢️ Cambio del filtro de aceite ${filters.oil ? 'SI' : 'NO'}
+⛽ Cambio del filtro de combustible ${filters.fuel ? 'SI' : 'NO'}
+🏠 Cambio del filtro de habitáculo ${filters.cabin ? 'SI' : 'NO'}
+🔧 Revisión de lubricante de caja ${fluids.gearbox ? 'SI' : 'NO'}
+⚙️ Revisión lubricante de diferencial ${fluids.differential ? 'SI' : 'NO'}
+💧 Revisión de fluido hidráulico ${fluids.hydraulic ? 'SI' : 'NO'}
+❄️ Control y reposición de líquido refrigerante ${fluids.coolant ? 'SI' : 'NO'}
+🛑 Control y reposición de líquido de frenos ${fluids.brakes ? 'SI' : 'NO'}
+📍 Kilometraje actual: ${input.mileage}
+🔄 Próximo cambio de aceite: ${input.nextServiceMileage || (input.mileage + 10000)}
+
+Si tiene alguna duda o necesita más información, no dude en contactarnos.
+¡Gracias por confiar en nosotros! 🙌
+📍 Asunción 505 Villa Carlos Paz Córdoba
+📞 Tel: 03516 75 6248
+Atentamente,
+Lubricantes FB
+
+📱 Síguenos en nuestras redes sociales:
+👉 Instagram https://www.instagram.com/fblubricantes/
+👉 Facebook https://www.facebook.com/profile.php?id=100054567395088
+⭐ Nos encantaría conocer tu opinión. ¡Déjanos una reseña en Google Maps!
+👉 Dejar calificación https://www.google.com/maps/place/FB+Lubricentro+y+Bater%C3%ADas/@-31.419292,-64.5148519,17z`;
+
+                await WhatsAppService.sendServiceReport(vehicle.client.phone, message);
+            }
         }
 
         // Audit Log
@@ -409,7 +462,7 @@ export async function createLegacyWorkOrder(input: {
                 action: 'CREATE_LEGACY_WO',
                 entity: 'WORK_ORDER',
                 entityId: wo.id.toString(),
-                details: `Carga histórica para Vehículo #${vehicleId}`
+                details: `Carga histórica ${input.sendWhatsApp ? '+ WA' : ''} para Vehículo #${vehicleId}`
             }
         });
 

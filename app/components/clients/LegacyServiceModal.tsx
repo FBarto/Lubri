@@ -40,6 +40,9 @@ export default function LegacyServiceModal({ vehicleId, clientId, onClose, onSuc
         notes: ''
     });
 
+    const [nextServiceMileage, setNextServiceMileage] = useState('');
+    const [sendWhatsApp, setSendWhatsApp] = useState(false);
+
     const updateFilter = (key: string, val: boolean) => {
         setForm(prev => ({ ...prev, filters: { ...prev.filters, [key]: val } }));
     };
@@ -60,10 +63,16 @@ export default function LegacyServiceModal({ vehicleId, clientId, onClose, onSuc
                 clientId,
                 date: form.date,
                 mileage: Number(form.mileage),
-                serviceDetails: form
+                serviceDetails: form,
+                // New params
+                nextServiceMileage: nextServiceMileage ? Number(nextServiceMileage) : undefined,
+                sendWhatsApp
             });
 
             if (res.success) {
+                if (sendWhatsApp) alert('¡Ficha guardada y WhatsApp enviado!');
+                else alert('Ficha guardada correctamente');
+
                 onSuccess();
                 onClose();
             } else {
@@ -118,10 +127,32 @@ export default function LegacyServiceModal({ vehicleId, clientId, onClose, onSuc
                                         className="input-field pl-8"
                                         placeholder="0"
                                         value={form.mileage}
-                                        onChange={e => setForm({ ...form, mileage: e.target.value })}
+                                        onChange={e => {
+                                            const val = e.target.value;
+                                            setForm({ ...form, mileage: val });
+                                            // Auto-suggest next service (+10k)
+                                            if (val && !nextServiceMileage) {
+                                                setNextServiceMileage((Number(val) + 10000).toString());
+                                            }
+                                        }}
                                     />
                                     <Gauge size={14} className="absolute left-2.5 top-3 text-slate-400" />
                                 </div>
+                            </div>
+                        </div>
+
+                        {/* Next Service Field */}
+                        <div className="bg-amber-50 p-3 rounded-xl border border-amber-200">
+                            <label className="label text-amber-900">Próximo Cambio (Sticker)</label>
+                            <div className="relative">
+                                <input
+                                    type="number"
+                                    className="input-field pl-8 border-amber-300 focus:border-amber-500"
+                                    placeholder="Ej: 60000"
+                                    value={nextServiceMileage}
+                                    onChange={e => setNextServiceMileage(e.target.value)}
+                                />
+                                <span className="absolute left-2.5 top-3 text-amber-400 text-xs font-bold">KM</span>
                             </div>
                         </div>
 
@@ -245,17 +276,31 @@ export default function LegacyServiceModal({ vehicleId, clientId, onClose, onSuc
                 </div>
 
                 {/* Footer */}
-                <div className="bg-white border-t border-slate-200 px-6 py-4 flex justify-end gap-3 shrink-0">
-                    <button onClick={onClose} className="px-5 py-2.5 font-bold text-slate-500 hover:bg-slate-100 rounded-xl transition-colors">
-                        Cancelar
-                    </button>
-                    <button
-                        onClick={handleSave}
-                        disabled={loading}
-                        className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg shadow-blue-200 flex items-center gap-2 transition-all disabled:opacity-50 disabled:shadow-none"
-                    >
-                        {loading ? 'Guardando...' : <><Save size={18} /> Guardar Ficha</>}
-                    </button>
+                <div className="bg-white border-t border-slate-200 px-6 py-4 flex justify-between items-center shrink-0 gap-3">
+                    <label className="flex items-center gap-2 cursor-pointer p-2 hover:bg-slate-50 rounded-lg transition-colors">
+                        <input
+                            type="checkbox"
+                            className="w-5 h-5 rounded text-emerald-600 focus:ring-emerald-500"
+                            checked={sendWhatsApp}
+                            onChange={e => setSendWhatsApp(e.target.checked)}
+                        />
+                        <span className="text-sm font-bold text-slate-700 flex items-center gap-1">
+                            <span className="text-emerald-500">📱</span> Enviar Reporte WhatsApp
+                        </span>
+                    </label>
+
+                    <div className="flex gap-3">
+                        <button onClick={onClose} className="px-5 py-2.5 font-bold text-slate-500 hover:bg-slate-100 rounded-xl transition-colors">
+                            Cancelar
+                        </button>
+                        <button
+                            onClick={handleSave}
+                            disabled={loading}
+                            className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg shadow-blue-200 flex items-center gap-2 transition-all disabled:opacity-50 disabled:shadow-none"
+                        >
+                            {loading ? 'Guardando...' : <><Save size={18} /> Guardar Ficha</>}
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>

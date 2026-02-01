@@ -189,4 +189,13 @@ export class WhatsAppService {
             }
         });
     }
+
+    static async sendServiceReport(phone: string, text: string) {
+        return await client.sendMessage({
+            messaging_product: 'whatsapp',
+            to: phone,
+            type: 'text',
+            text: { body: text }
+        });
+    }
 }
