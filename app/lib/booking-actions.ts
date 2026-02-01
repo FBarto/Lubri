@@ -40,8 +40,10 @@ export interface CreateAppointmentInput {
 // --- Actions ---
 
 export async function createClient(data: CreateClientInput) {
+    console.log('[createClient] Input:', data);
     try {
         if (!data.name || !data.phone) {
+            console.error('[createClient] Missing fields:', data);
             return { success: false, error: 'Missing defined fields (name, phone)' };
         }
 
@@ -52,24 +54,28 @@ export async function createClient(data: CreateClientInput) {
             },
         });
 
+        console.log('[createClient] Success:', client.id);
         safeRevalidate('/admin/clients');
         return { success: true, client };
-        return { success: true, client };
     } catch (error: any) {
+        console.error('[createClient] Error:', error);
         if (error.code === 'P2002') {
+            console.log('[createClient] P2002 Collision, recovering...');
             // Client already exists! Return it.
             const existing = await prisma.client.findFirst({ where: { phone: data.phone } });
             if (existing) {
+                console.log('[createClient] Recovered existing:', existing.id);
                 return { success: true, client: existing, existing: true };
             }
         }
-        console.error('Error creating client:', error);
         return { success: false, error: error.message };
     }
 }
 export async function createVehicle(data: CreateVehicleInput) {
+    console.log('[createVehicle] Input:', data);
     try {
         if (!data.plate || !data.clientId) {
+            console.error('[createVehicle] Missing fields:', data);
             return { success: false, error: 'Missing required fields (plate, clientId)' };
         }
 
@@ -89,13 +95,14 @@ export async function createVehicle(data: CreateVehicleInput) {
             },
         });
 
+        console.log('[createVehicle] Success:', vehicle.id);
         safeRevalidate('/admin/vehicles');
         return { success: true, vehicle };
     } catch (error: any) {
+        console.error('[createVehicle] Error:', error);
         if (error.code === 'P2002') {
             return { success: false, error: 'A vehicle with this plate already exists' };
         }
-        console.error('Error creating vehicle:', error);
         return { success: false, error: error.message };
     }
 }
@@ -123,6 +130,7 @@ export async function updateVehicle(id: number, data: Partial<CreateVehicleInput
 }
 
 export async function createAppointment(data: CreateAppointmentInput) {
+    console.log('[createAppointment] Input:', JSON.stringify(data));
     try {
         let { clientId, vehicleId } = data;
         const { serviceId, date, notes, guestData, leadCaseId } = data;
