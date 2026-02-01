@@ -29,6 +29,13 @@ export default function ServiceModal({ isOpen, onClose, onConfirm, service, init
     const [notes, setNotes] = useState('');
     const [attachments, setAttachments] = useState<any[]>([]);
 
+    // Technical Details State
+    const [serviceDetails, setServiceDetails] = useState({
+        oil: { brand: '', liters: '', type: 'SINTETICO' },
+        filters: { air: false, oil: false, fuel: false, cabin: false },
+        fluids: { brakes: false, coolant: false, hydraulic: false }
+    });
+
     // Search Results
     const [clientResults, setClientResults] = useState<Client[]>([]);
     const [vehicleResults, setVehicleResults] = useState<Vehicle[]>([]);
@@ -50,6 +57,30 @@ export default function ServiceModal({ isOpen, onClose, onConfirm, service, init
         setAttachments([]);
         setClientResults([]);
         setVehicleResults([]);
+        setVehicleResults([]);
+
+        // Smart Pack Logic
+        if (service) {
+            const name = service.name.toLowerCase();
+            const isPack = name.includes('pack') || name.includes('full');
+            const isOil = name.includes('aceite') || name.includes('cambio');
+
+            if (isPack || isOil) {
+                setServiceDetails(prev => ({
+                    ...prev,
+                    filters: {
+                        oil: true, // Always change oil filter with oil
+                        air: isPack, // Full pack includes air
+                        fuel: isPack && name.includes('diesel'), // Diesel packs usually include fuel
+                        cabin: isPack // Full pack usually includes cabin
+                    },
+                    oil: {
+                        ...prev.oil,
+                        type: name.includes('sintetico') ? 'SINTETICO' : name.includes('semi') ? 'SEMI' : 'MINERAL'
+                    }
+                }));
+            }
+        }
     }, [service, isOpen, initialClient]);
 
     // Search Functions
@@ -132,6 +163,7 @@ export default function ServiceModal({ isOpen, onClose, onConfirm, service, init
             vehicleId: selectedVehicle?.id,
             mileage: mileage,
             notes: notes,
+            serviceDetails: serviceDetails,
             clientName: selectedClient?.name,
             vehiclePlate: selectedVehicle?.plate,
             attachments: attachments
@@ -227,6 +259,52 @@ export default function ServiceModal({ isOpen, onClose, onConfirm, service, init
                                 value={notes}
                                 onChange={(e) => setNotes(e.target.value)}
                             />
+                        </div>
+
+                        {/* Technical Checklist (Merged from Legacy) */}
+                        <div className="bg-slate-50 p-6 rounded-[2rem] border border-slate-200">
+                            <h3 className="text-xs font-black text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                                <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" /></svg>
+                                Detalle Técnico (Libreta)
+                            </h3>
+
+                            {/* Oil */}
+                            <div className="mb-6">
+                                <label className="label text-[10px] font-bold uppercase text-slate-500 mb-2 block">Aceite de Motor</label>
+                                <div className="grid grid-cols-2 gap-3 mb-3">
+                                    <input
+                                        type="text"
+                                        placeholder="Marca / Viscosidad (Ej: Shell 10W40)"
+                                        className="w-full p-3 rounded-xl border border-slate-200 text-sm font-bold placeholder:font-normal"
+                                        value={serviceDetails.oil.brand}
+                                        onChange={e => setServiceDetails({ ...serviceDetails, oil: { ...serviceDetails.oil, brand: e.target.value } })}
+                                    />
+                                    <input
+                                        type="text"
+                                        placeholder="Litros"
+                                        className="w-full p-3 rounded-xl border border-slate-200 text-sm font-bold placeholder:font-normal"
+                                        value={serviceDetails.oil.liters}
+                                        onChange={e => setServiceDetails({ ...serviceDetails, oil: { ...serviceDetails.oil, liters: e.target.value } })}
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Filters */}
+                            <div className="grid grid-cols-2 gap-3">
+                                {(['air', 'oil', 'fuel', 'cabin'] as const).map(f => (
+                                    <label key={f} className={`flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer ${serviceDetails.filters[f] ? 'bg-blue-50 border-blue-200' : 'bg-white border-slate-200'}`}>
+                                        <input
+                                            type="checkbox"
+                                            className="w-5 h-5 rounded text-blue-600 focus:ring-0"
+                                            checked={serviceDetails.filters[f]}
+                                            onChange={e => setServiceDetails({ ...serviceDetails, filters: { ...serviceDetails.filters, [f]: e.target.checked } })}
+                                        />
+                                        <span className="text-xs font-bold uppercase text-slate-700">
+                                            {f === 'air' ? 'Filtro Aire' : f === 'oil' ? 'Filtro Aceite' : f === 'fuel' ? 'Combustible' : 'Habitáculo'}
+                                        </span>
+                                    </label>
+                                ))}
+                            </div>
                         </div>
                     </div>
 

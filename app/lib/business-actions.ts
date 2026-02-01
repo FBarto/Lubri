@@ -19,6 +19,7 @@ interface WorkOrderInput {
     appointmentId?: number;
     price: number;
     attachments?: { url: string; type: string; description?: string }[];
+    serviceDetails?: any;
 }
 
 interface SaleItemInput {
@@ -57,6 +58,7 @@ export async function createWorkOrder(data: WorkOrderInput) {
                 notes: data.notes,
                 appointmentId: data.appointmentId,
                 price: data.price,
+                serviceDetails: data.serviceDetails,
                 attachments: data.attachments ? {
                     create: data.attachments.map(a => ({
                         url: a.url,

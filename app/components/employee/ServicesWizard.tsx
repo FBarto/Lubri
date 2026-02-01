@@ -63,7 +63,8 @@ export default function ServicesWizard({ onAddService, initialClient }: Services
                 userId: session?.user?.id ? Number(session.user.id) : undefined,
                 mileage: data.mileage ? Number(data.mileage) : undefined,
                 notes: data.notes,
-                price: selectedService.price, // Base price, editable later in cart?
+                price: selectedService.price,
+                serviceDetails: data.serviceDetails, // From ServiceModal (Wizard)
                 attachments: data.attachments
             });
 
@@ -164,9 +165,18 @@ export default function ServicesWizard({ onAddService, initialClient }: Services
                         key={service.id}
                         onClick={() => handleServiceClick(service)}
                         disabled={processing}
-                        className="flex flex-col items-center justify-center p-6 bg-white border-2 border-slate-200 rounded-2xl hover:border-blue-500 hover:shadow-lg transition-all group text-center h-48 disabled:opacity-50 animate-in fade-in zoom-in-95 duration-200"
+                        className={`relative flex flex-col items-center justify-center p-6 bg-white border-2 rounded-2xl transition-all group text-center h-48 disabled:opacity-50 animate-in fade-in zoom-in-95 duration-200 ${service.name.toLowerCase().includes('pack') || service.name.toLowerCase().includes('full')
+                                ? 'border-amber-400 shadow-[0_0_20px_rgba(251,191,36,0.2)] hover:shadow-amber-400/40 hover:scale-[1.02]'
+                                : 'border-slate-200 hover:border-blue-500 hover:shadow-lg'
+                            }`}
                     >
-                        <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mb-4 group-hover:bg-blue-100 transition-colors text-blue-600">
+                        {(service.name.toLowerCase().includes('pack') || service.name.toLowerCase().includes('full')) && (
+                            <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-amber-400 text-white text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full shadow-lg">
+                                Recomendado
+                            </div>
+                        )}
+                        <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 transition-colors ${service.name.toLowerCase().includes('pack') ? 'bg-amber-100 text-amber-600 group-hover:bg-amber-500 group-hover:text-white' : 'bg-blue-50 text-blue-600 group-hover:bg-blue-100'
+                            }`}>
                             {service.name.toLowerCase().includes('moto') ? <Bike size={32} /> :
                                 service.name.toLowerCase().includes('gomería') || service.name.toLowerCase().includes('parche') ? <div className="font-black text-2xl">O</div> :
                                     service.name.toLowerCase().includes('lámpara') ? <Lightbulb size={32} /> :
