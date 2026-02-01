@@ -221,4 +221,3 @@ function TelemetryGauge({ label, value, color }: { label: string, value: number,
         </div>
     );
 }
-}
