@@ -13,9 +13,10 @@ import EmployeeInbox from '../components/employee/EmployeeInbox';
 import SmartQuote from '../components/quotes/SmartQuote';
 import EmployeeDashboard from '../components/employee/EmployeeDashboard';
 import EmployeeClientList from '../components/employee/EmployeeClientList';
+import EmployeeCheckout from '../components/employee/EmployeeCheckout';
 
 export default function EmployeePage() {
-    const [activeTab, setActiveTab] = useState<'DASHBOARD' | 'VENTA' | 'SERVICIOS' | 'STOCK' | 'INGRESAR' | 'TURNOS' | 'TALLER' | 'INBOX' | 'COTIZAR' | 'CLIENTES'>('TALLER');
+    const [activeTab, setActiveTab] = useState<'DASHBOARD' | 'VENTA' | 'SERVICIOS' | 'STOCK' | 'INGRESAR' | 'TURNOS' | 'TALLER' | 'INBOX' | 'COTIZAR' | 'CLIENTES' | 'COBRAR'>('TALLER');
     const [cart, setCart] = useState<any[]>([]);
 
     // Shared Client Context for Actions
@@ -42,25 +43,55 @@ export default function EmployeePage() {
                         }`}
                 >
                     <Wrench className="w-5 h-5" />
-                    TABLERO UNIFICADO
+                    TABLERO
+                </button>
+                <button
+                    onClick={() => setActiveTab('COBRAR')}
+                    className={`flex items-center gap-2 px-6 py-4 rounded-t-2xl font-black text-sm tracking-wider transition-all border-t-2 border-x-2 ${activeTab === 'COBRAR'
+                        ? 'bg-emerald-600 border-emerald-600 text-white shadow-lg -mb-[1px] z-10'
+                        : 'bg-white border-transparent text-slate-400 hover:bg-slate-50 hover:text-slate-600'
+                        }`}
+                >
+                    <TrendingUp className="w-5 h-5" />
+                    COBRAR
                 </button>
                 <button
                     onClick={() => setActiveTab('VENTA')}
                     className={`flex items-center gap-2 px-6 py-4 rounded-t-2xl font-black text-sm tracking-wider transition-all border-t-2 border-x-2 ${activeTab === 'VENTA'
-                        ? 'bg-emerald-600 border-emerald-600 text-white shadow-lg -mb-[1px] z-10'
+                        ? 'bg-blue-600 border-blue-600 text-white shadow-lg -mb-[1px] z-10'
                         : 'bg-white border-transparent text-slate-400 hover:bg-slate-50 hover:text-slate-600'
                         }`}
                 >
                     <ShoppingCart className="w-5 h-5" />
                     <span className="flex items-center gap-2">
-                        CAJA
-                        {cart.length > 0 && <span className="bg-white text-emerald-600 px-1.5 py-0.5 rounded-md text-xs">{cart.length}</span>}
+                        COMPRA
+                        {cart.length > 0 && <span className="bg-white text-blue-600 px-1.5 py-0.5 rounded-md text-xs">{cart.length}</span>}
                     </span>
+                </button>
+                <button
+                    onClick={() => setActiveTab('STOCK')}
+                    className={`flex items-center gap-2 px-6 py-4 rounded-t-2xl font-black text-sm tracking-wider transition-all border-t-2 border-x-2 ${activeTab === 'STOCK'
+                        ? 'bg-amber-600 border-amber-600 text-white shadow-lg -mb-[1px] z-10'
+                        : 'bg-white border-transparent text-slate-400 hover:bg-slate-50 hover:text-slate-600'
+                        }`}
+                >
+                    <Package className="w-5 h-5" />
+                    STOCK
+                </button>
+                <button
+                    onClick={() => setActiveTab('INGRESAR')}
+                    className={`flex items-center gap-2 px-6 py-4 rounded-t-2xl font-black text-sm tracking-wider transition-all border-t-2 border-x-2 ${activeTab === 'INGRESAR'
+                        ? 'bg-purple-600 border-purple-600 text-white shadow-lg -mb-[1px] z-10'
+                        : 'bg-white border-transparent text-slate-400 hover:bg-slate-50 hover:text-slate-600'
+                        }`}
+                >
+                    <ArrowDownToLine className="w-5 h-5" />
+                    INGRESAR
                 </button>
                 <button
                     onClick={() => setActiveTab('CLIENTES')}
                     className={`flex items-center gap-2 px-6 py-4 rounded-t-2xl font-black text-sm tracking-wider transition-all border-t-2 border-x-2 ${activeTab === 'CLIENTES'
-                        ? 'bg-blue-600 border-blue-600 text-white shadow-lg -mb-[1px] z-10'
+                        ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg -mb-[1px] z-10'
                         : 'bg-white border-transparent text-slate-400 hover:bg-slate-50 hover:text-slate-600'
                         }`}
                 >
@@ -72,6 +103,9 @@ export default function EmployeePage() {
             {/* Tab Content */}
             <div className="flex-1 bg-slate-50 relative overflow-hidden flex flex-col">
                 {activeTab === 'DASHBOARD' && <EmployeeDashboard onNavigate={(tab) => setActiveTab(tab)} />}
+
+                {activeTab === 'COBRAR' && <EmployeeCheckout />}
+
                 {activeTab === 'VENTA' && (
                     <RestrictedPOS
                         cart={cart}
