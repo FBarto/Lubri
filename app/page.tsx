@@ -9,9 +9,9 @@ export default async function Home() {
 
       {/* --- PROMO BANNER --- */}
       <div className="bg-yellow-400 text-neutral-900 px-4 py-2 font-bold text-center text-sm md:text-base tracking-wide relative z-50 flex justify-center items-center gap-2">
-        <Bell className="w-4 h-4" />
-        <span>🎉 PROMO: 20% OFF en tu primer service reservando online.</span>
-        <Link href="/book" className="underline hover:text-red-700 ml-2">¡Reservar ya!</Link>
+        <MessageCircle className="w-4 h-4" />
+        <span>📱 Reservá tu turno online y asegurá tu lugar sin esperas.</span>
+        <Link href="/book" className="underline hover:text-red-700 ml-2">¡Elegir horario!</Link>
       </div>
 
       {/* --- HERO SECTION --- */}
@@ -54,7 +54,7 @@ export default async function Home() {
             </div>
 
             <p className="text-xl md:text-2xl text-neutral-400 mb-12 max-w-2xl mx-auto font-light leading-relaxed">
-              Mantenimiento de alta precisión. Tu vehículo listo en <span className="text-white font-semibold">45 minutos</span> con tecnología de punta y repuestos originales.
+              Mantenimiento preventivo oficial en el corazón de Carlos Paz. <span className="text-white font-semibold">Cuidamos tu auto</span> para que solo te preocupes por disfrutar el viaje.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
@@ -110,8 +110,8 @@ export default async function Home() {
                   <Clock size={24} />
                 </div>
                 <div>
-                  <h4 className="font-bold text-white uppercase tracking-tighter italic">Atención Express</h4>
-                  <p className="text-xs text-neutral-500 font-medium">Sin demoras innecesarias</p>
+                  <h4 className="font-bold text-white uppercase tracking-tighter italic">Service en el Acto</h4>
+                  <p className="text-xs text-neutral-500 font-medium">Sin vueltas. Mantenimiento rápido mientras esperás.</p>
                 </div>
               </div>
               <div className="flex items-center gap-4 group cursor-default">
@@ -119,8 +119,8 @@ export default async function Home() {
                   <Award size={24} />
                 </div>
                 <div>
-                  <h4 className="font-bold text-white uppercase tracking-tighter italic">Garantía de Marca</h4>
-                  <p className="text-xs text-neutral-500 font-medium">Solo marcas líderes mundiales</p>
+                  <h4 className="font-bold text-white uppercase tracking-tighter italic">Marcas Líderes</h4>
+                  <p className="text-xs text-neutral-500 font-medium">Total, Elaion y repuestos originales para tu motor.</p>
                 </div>
               </div>
               <div className="flex items-center gap-4 group cursor-default">
@@ -128,8 +128,8 @@ export default async function Home() {
                   <Shield size={24} />
                 </div>
                 <div>
-                  <h4 className="font-bold text-white uppercase tracking-tighter italic">Escaneo Digital</h4>
-                  <p className="text-xs text-neutral-500 font-medium">Reporte detallado en cada service</p>
+                  <h4 className="font-bold text-white uppercase tracking-tighter italic">Escaneo y Control</h4>
+                  <p className="text-xs text-neutral-500 font-medium">Revisión profunda de puntos críticos de seguridad.</p>
                 </div>
               </div>
             </div>
@@ -140,15 +140,13 @@ export default async function Home() {
         <section className="py-20 bg-neutral-900">
           <div className="container mx-auto px-6 max-w-4xl text-center">
             <h2 className="text-3xl font-black italic uppercase tracking-tighter mb-8">
-              Expertos en <span className="text-red-600">Tu Vehículo</span>
+              Tu confianza en <span className="text-red-600">Villa Carlos Paz</span>
             </h2>
             <p className="text-xl text-neutral-300 leading-relaxed mb-6">
-              En <strong>FB Lubricentro y Baterías</strong>, entendemos que tu auto es parte de tu vida y tus vacaciones.
-              Ubicados en el corazón de <strong>Villa Carlos Paz</strong> (Asunción 505), somos un negocio local apasionado por los fierros y la seguridad.
+              En <strong>FB Lubricentro</strong>, entendemos que tu auto es mucho más que un vehículo: es tu herramienta de trabajo o el compañero de tus vacaciones. Por eso, en nuestro local de <strong>Asunción 505</strong>, ofrecemos atención directa y honesta.
             </p>
             <p className="text-neutral-400">
-              Nos especializamos en mantenimiento preventivo rápido y eficiente. No somos solo un taller; somos tus aliados para que salgas a la ruta tranquilo.
-              Atención personalizada, honestidad y productos originales son nuestro sello.
+              Somos vecinos de Carlos Paz apasionados por lo que hacemos. Nos especializamos en que salgas a la ruta con la tranquilidad de que tu motor, tus frenos y tu batería están en perfectas condiciones. Atención personalizada y repuestos originales son nuestro sello.
             </p>
           </div>
         </section>
@@ -169,26 +167,26 @@ export default async function Home() {
               <ServiceCard
                 icon={<Droplet className="w-10 h-10" />}
                 title="Aceite y Filtros"
-                desc="Service completo con aceites sintéticos premium. Reemplazo de filtros originales para máxima vida útil."
-                tag="Mecánica"
+                desc="Service completo con aceites sintéticos y filtros originales. Mantener la garantía y la vida útil de tu motor es nuestra prioridad."
+                tag="Service Oficial"
               />
               <ServiceCard
                 icon={<Zap className="w-10 h-10" />}
                 title="Baterías"
-                desc="Diagnóstico digital gratuito, venta y colocación en el acto. Garantía oficial de las mejores marcas."
+                desc="Stock permanente de marcas líderes. Incluimos el control del sistema de carga y la colocación en el momento sin cargo extra."
                 tag="Electricidad"
               />
               <ServiceCard
                 icon={<Disc className="w-10 h-10" />}
                 title="Gomería"
-                desc="Reparación de pinchaduras, balanceo computarizado y rotación. Seguridad garantizada por expertos."
-                tag="Seguridad"
+                desc="Arreglo de pinchaduras, balanceo computarizado y rotación. Seguridad garantizada para que salgas a la ruta tranquilo."
+                tag="Gomería Express"
               />
               <ServiceCard
                 icon={<Shield className="w-10 h-10" />}
-                title="Integral"
-                desc="Chequeo completo de fluidos y sistemas críticos. Todo lo necesario para tu seguridad extrema."
-                tag="Preventivo"
+                title="Preventivo"
+                desc="Revisión de niveles, frenos y aditivos. Pequeños cuidados preventivos que evitan grandes gastos mecánicos en el futuro."
+                tag="Mantenimiento"
               />
             </div>
           </div>
@@ -205,19 +203,19 @@ export default async function Home() {
             <div className="grid gap-6">
               <FAQItem
                 question="¿Dónde hacer cambio de aceite en Villa Carlos Paz?"
-                answer="Estamos en Asunción 505, Villa Carlos Paz. Realizamos cambio de aceite y filtros en el acto para todo tipo de vehículos."
+                answer="Estamos en Asunción 505, casi esquina con el centro. Somos el lubricentro referente en la ciudad para locales y turistas."
               />
               <FAQItem
-                question="¿Atienden sin turno?"
-                answer="Sí, atendemos por orden de llegada. Sin embargo, recomendamos reservar turno online o por WhatsApp para asegurar tu lugar sin esperas."
+                question="¿Cuánto tiempo demora un service completo?"
+                answer="Generalmente, en menos de una hora tenemos tu auto listo, incluyendo el cambio de aceite, filtros y chequeo de puntos críticos."
               />
               <FAQItem
-                question="¿Qué horarios tienen?"
-                answer="En verano abrimos de Lunes a Viernes de 8:30 a 13:00 y de 16:30 a 20:30. Los sábados de 9:00 a 13:00."
+                question="¿Tienen baterías en stock para mi modelo?"
+                answer="Sí, contamos con stock permanente de baterías de marcas líderes para autos, camionetas y utilitarios. Colocación en el acto."
               />
               <FAQItem
-                question="¿Venden baterías para autos?"
-                answer="Sí, tenemos stock de baterías de todas las marcas y amperajes. Incluimos la colocación y control del sistema de carga."
+                question="¿Es necesario sacar turno previo?"
+                answer="Atendemos por orden de llegada, pero recomendamos reservar turno online para asegurar tu lugar sin esperas, especialmente en temporada alta."
               />
             </div>
           </div>
