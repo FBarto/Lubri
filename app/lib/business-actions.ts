@@ -351,9 +351,22 @@ export async function createLegacyWorkOrder(input: {
         const vehicleId = Number(input.vehicleId);
         const clientId = Number(input.clientId);
 
-        // Find a default service to satisfy FK (e.g., first active one)
-        const service = await prisma.service.findFirst({ where: { active: true } });
-        if (!service) throw new Error('No active service found in system to link legacy order.');
+        // Find or Create a dedicated "Legacy Service" so it appears correctly in reports
+        let service = await prisma.service.findFirst({
+            where: { name: 'Service Histórico Importado' }
+        });
+
+        if (!service) {
+            service = await prisma.service.create({
+                data: {
+                    name: 'Service Histórico Importado',
+                    category: 'General', // Using string as per schema
+                    price: 0,
+                    duration: 0, // Using 'duration' as per schema
+                    active: true
+                }
+            });
+        }
 
         const performedDate = new Date(input.date);
 
@@ -370,7 +383,7 @@ export async function createLegacyWorkOrder(input: {
                 finishedAt: performedDate,
                 mileage: input.mileage,
                 serviceDetails: input.serviceDetails,
-                notes: 'Carga Histórica / Legacy Data'
+                notes: input.serviceDetails.notes ? `[LEGACY] ${input.serviceDetails.notes}` : '[LEGACY] Carga Histórica'
             }
         });
 
@@ -388,6 +401,17 @@ export async function createLegacyWorkOrder(input: {
                 });
             }
         }
+
+        // Audit Log
+        await prisma.auditLog.create({
+            data: {
+                userId: 1, // System or Admin
+                action: 'CREATE_LEGACY_WO',
+                entity: 'WORK_ORDER',
+                entityId: wo.id.toString(),
+                details: `Carga histórica para Vehículo #${vehicleId}`
+            }
+        });
 
         safeRevalidate(`/admin/clients/${clientId}`);
         return { success: true, workOrder: wo };
