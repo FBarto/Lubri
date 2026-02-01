@@ -34,6 +34,7 @@ export interface CreateAppointmentInput {
         model?: string;
     };
     leadCaseId?: string;
+    force?: boolean;
 }
 
 // --- Actions ---
@@ -192,7 +193,9 @@ export async function createAppointment(data: CreateAppointmentInput) {
         const isMorning = timeInMinutes >= morningStart && timeInMinutes < morningEnd;
         const isAfternoon = timeInMinutes >= afternoonStart && timeInMinutes < afternoonEnd;
 
-        if (!isMorning && !isAfternoon) {
+        const { force = false } = data;
+
+        if (!isMorning && !isAfternoon && !force) {
             return { success: false, error: 'Horario fuera de atención. (08:30-13:00 / 16:30-20:30)' };
         }
 
@@ -204,24 +207,26 @@ export async function createAppointment(data: CreateAppointmentInput) {
         const endTime = new Date(startTime.getTime() + duration * 60000);
 
         // 3. Validate Overlap
-        const potentialCollisions = await prisma.appointment.findMany({
-            where: {
-                status: { not: 'CANCELLED' },
-                date: {
-                    gte: new Date(startTime.getTime() - 180 * 60000),
-                    lte: new Date(endTime.getTime() + 180 * 60000)
+        if (!force) {
+            const potentialCollisions = await prisma.appointment.findMany({
+                where: {
+                    status: { not: 'CANCELLED' },
+                    date: {
+                        gte: new Date(startTime.getTime() - 180 * 60000),
+                        lte: new Date(endTime.getTime() + 180 * 60000)
+                    }
+                },
+                include: { service: true }
+            });
+
+            for (const appt of potentialCollisions) {
+                const apptStart = new Date(appt.date);
+                const apptDuration = appt.service.duration;
+                const apptEnd = new Date(apptStart.getTime() + apptDuration * 60000);
+
+                if (startTime < apptEnd && endTime > apptStart) {
+                    return { success: false, error: `Conflicto de horario con otro turno (${appt.service.name} ${apptStart.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })})` };
                 }
-            },
-            include: { service: true }
-        });
-
-        for (const appt of potentialCollisions) {
-            const apptStart = new Date(appt.date);
-            const apptDuration = appt.service.duration;
-            const apptEnd = new Date(apptStart.getTime() + apptDuration * 60000);
-
-            if (startTime < apptEnd && endTime > apptStart) {
-                return { success: false, error: `Conflicto de horario con otro turno (${appt.service.name} ${apptStart.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })})` };
             }
         }
 

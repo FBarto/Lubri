@@ -27,6 +27,8 @@ export function getAvailableSlots(date: Date, serviceDuration: number, appointme
     if (dayOfWeek === 0) schedule = BUSINESS_HOURS.sunday as any;
     if (dayOfWeek === 6) schedule = BUSINESS_HOURS.saturday as any;
 
+    console.log(`[Slots] Date: ${baseDate.toISOString()}, DayOfWeek: ${dayOfWeek}, Schedule found: ${!!schedule}`);
+
     if (!schedule) return []; // Closed
 
     const ranges = [];

@@ -22,13 +22,28 @@ export async function GET(request: Request) {
             return NextResponse.json({ error: 'Invalid serviceId' }, { status: 400 });
         }
 
-        const service = await prisma.service.findUnique({
-            where: { id: serviceId }
-        });
+        let duration = 30;
+        let serviceName = 'Servicio';
 
-        if (!service) {
-            return NextResponse.json({ error: 'Service not found' }, { status: 404 });
+        if (serviceId === -1) {
+            // Smart Quote Fallback
+            duration = 45;
+            serviceName = 'Smart Quote';
+            console.log(`[Slots API] Handling Smart Quote (ID -1), using default duration: ${duration}`);
+        } else {
+            const service = await prisma.service.findUnique({
+                where: { id: serviceId }
+            });
+
+            if (!service) {
+                console.error(`[Slots API] Service not found for ID: ${serviceId}`);
+                return NextResponse.json({ error: 'Service not found' }, { status: 404 });
+            }
+            duration = service.duration || 30;
+            serviceName = service.name;
         }
+
+        console.log(`[Slots API] Request for ${serviceName}, Date: ${dateStr}, serviceId: ${serviceId}`);
 
         // Fetch appointments for the selected day
         // Parse date strictly as UTC midnight (YYYY-MM-DD -> UTC 00:00)
@@ -51,7 +66,8 @@ export async function GET(request: Request) {
             }
         });
 
-        const slots = getAvailableSlots(date, service.duration, appointments);
+        const slots = getAvailableSlots(date, duration, appointments);
+        console.log(`[Slots API] Generated ${slots.length} slots`);
 
         return NextResponse.json(slots);
     } catch (error: any) {

@@ -120,6 +120,7 @@ export default function BookAppointment() {
     const [date, setDate] = useState('');
     const [slots, setSlots] = useState<string[]>([]);
     const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
+    const [isSoftBooking, setIsSoftBooking] = useState(false);
 
     // --- STEP 0: SELECTION ---
     const selectMode = (returning: boolean) => {
@@ -431,7 +432,11 @@ export default function BookAppointment() {
         try {
             const res = await fetch(`/api/public/slots?date=${selectedDate}&serviceId=${selectedService.id}`);
             const data = await res.json();
-            setSlots(Array.isArray(data) ? data : []);
+            const slotsArray = Array.isArray(data) ? data : [];
+            setSlots(slotsArray);
+
+            // Auto-reset soft booking if we change date
+            setIsSoftBooking(false);
         } catch (e) {
             console.error(e);
             setSlots([]);
@@ -459,7 +464,8 @@ export default function BookAppointment() {
                     vehicleId: vehicle.id,
                     serviceId: isSmart ? 1 : selectedService.id, // Fallback to ID 1
                     date: selectedSlot,
-                    notes: noteContent
+                    force: isSoftBooking,
+                    notes: isSoftBooking ? `[SOLICITUD MANUAL] ${noteContent}` : noteContent
                 })
             });
 
@@ -992,8 +998,31 @@ export default function BookAppointment() {
                                         </button>
                                     );
                                 }) : (
-                                    <p className="col-span-3 text-center text-slate-400 py-4 font-medium bg-slate-100 rounded-xl">No hay turnos disponibles.</p>
+                                    <div className="col-span-3 text-center space-y-4 py-8 px-4 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200">
+                                        <p className="text-slate-400 font-bold uppercase tracking-tight text-sm">No hay turnos disponibles online</p>
+                                        <button
+                                            onClick={() => {
+                                                const fallbackTime = `${date}T08:30:00.000Z`;
+                                                setSelectedSlot(fallbackTime);
+                                                setIsSoftBooking(true);
+                                            }}
+                                            className="bg-white text-red-600 border-2 border-red-600 px-6 py-3 rounded-xl font-black text-sm hover:bg-red-50 transition-all uppercase italic"
+                                        >
+                                            Solicitar sobre-turno (Manual)
+                                        </button>
+                                        <p className="text-[10px] text-slate-400 leading-tight">Tu pedido entrará como pendiente y te confirmaremos la hora exacta por WhatsApp.</p>
+                                    </div>
                                 )}
+                            </div>
+                        )}
+
+                        {isSoftBooking && (
+                            <div className="mt-6 bg-amber-50 border-2 border-amber-200 p-4 rounded-2xl flex items-start gap-3 animate-in fade-in slide-in-from-bottom-2">
+                                <AlertCircle className="text-amber-500 shrink-0" size={20} />
+                                <div>
+                                    <p className="text-amber-900 font-black text-xs uppercase italic">Reserva en espera</p>
+                                    <p className="text-amber-700 text-[11px] font-medium leading-tight mt-0.5">Te asignamos un horario tentativo, pero un asesor se comunicará con vos para confirmarlo.</p>
+                                </div>
                             </div>
                         )}
 
