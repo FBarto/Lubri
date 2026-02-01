@@ -1,6 +1,6 @@
 
 import Link from 'next/link';
-import { Clock, CheckCircle2, Award, Zap, Shield, MapPin, Phone, MessageCircle, Droplet, Disc, ChevronDown, Bell, X } from 'lucide-react';
+import { Clock, CheckCircle2, Award, Zap, Shield, MapPin, Phone, MessageCircle, Droplet, Disc, ChevronDown, Bell, X, Lock } from 'lucide-react';
 import GoogleReviews from './components/GoogleReviews';
 
 export default async function Home() {
@@ -274,7 +274,10 @@ export default async function Home() {
         <div className="border-t border-neutral-900 pt-8 text-center text-neutral-600 text-sm">
           <p>&copy; 2026 FB Lubricentro – Service, baterías y gomería. Todos los derechos reservados.</p>
           <div className="mt-2 text-xs">
-            <Link href="/login" className="hover:text-neutral-400 transition-colors">Acceso interno</Link>
+            <Link href="/login" className="inline-flex items-center gap-2 text-neutral-600 hover:text-red-500 transition-colors py-2 px-4 rounded-lg hover:bg-white/5 border border-transparent hover:border-white/5">
+              <Lock size={14} />
+              <span className="font-semibold pt-0.5">Acceso Personal</span>
+            </Link>
           </div>
         </div>
       </footer>
