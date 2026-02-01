@@ -40,7 +40,7 @@ export default function LoginPage() {
                             name="password"
                             placeholder="••••••"
                             required
-                            minLength={6}
+                            minLength={1}
                         />
                     </div>
 

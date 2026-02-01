@@ -1,0 +1,413 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - button "Open Next.js Dev Tools" [ref=e7] [cursor=pointer]:
+    - img [ref=e8]
+  - alert [ref=e11]
+  - generic [ref=e12]:
+    - banner [ref=e13]:
+      - generic [ref=e14]:
+        - heading "FB LUBRICENTRO" [level=1] [ref=e15]
+        - paragraph [ref=e16]: Panel de Operador
+      - generic [ref=e17]:
+        - generic [ref=e18]:
+          - paragraph
+          - text: EMPLEADO
+        - button "Salir" [ref=e19]
+    - main [ref=e20]:
+      - generic [ref=e21]:
+        - button "TABLERO" [ref=e22]:
+          - img [ref=e23]
+          - text: TABLERO
+        - button "COBRAR" [ref=e25]:
+          - img [ref=e26]
+          - text: COBRAR
+        - button "COMPRA" [ref=e29]:
+          - img [ref=e30]
+          - generic [ref=e34]: COMPRA
+        - button "STOCK" [ref=e35]:
+          - img [ref=e36]
+          - text: STOCK
+        - button "INGRESAR" [ref=e40]:
+          - img [ref=e41]
+          - text: INGRESAR
+        - button "CLIENTES" [ref=e43]:
+          - img [ref=e44]
+          - text: CLIENTES
+      - generic [ref=e51]:
+        - generic [ref=e52]:
+          - generic [ref=e53]:
+            - heading "Tablero Unificado" [level=2] [ref=e54]:
+              - img [ref=e55]
+              - text: Tablero Unificado
+            - paragraph [ref=e60]: De Turnos a Entregas
+          - button "↻" [ref=e61]
+        - generic [ref=e63]:
+          - generic [ref=e64]:
+            - generic [ref=e65]:
+              - heading "Solicitado" [level=3] [ref=e66]
+              - generic [ref=e67]: "13"
+            - generic [ref=e68]:
+              - generic [ref=e69]:
+                - generic [ref=e70]:
+                  - generic [ref=e71]: 08:00 PM
+                  - generic [ref=e72]: TURN
+                - heading "ABC123" [level=4] [ref=e74]
+                - generic [ref=e75]: Volkswagen Vento
+                - generic [ref=e76]: Full Service
+                - generic [ref=e77]:
+                  - generic [ref=e78]:
+                    - generic [ref=e79]: F
+                    - generic [ref=e80]: Franco Barto
+                  - button "WhatsApp" [ref=e82]:
+                    - img [ref=e83]
+              - generic [ref=e86]:
+                - generic [ref=e87]:
+                  - generic [ref=e88]: 08:30 AM
+                  - generic [ref=e89]: TURN
+                - heading "AB991OR" [level=4] [ref=e91]
+                - generic [ref=e92]: RENAULT OROCH
+                - generic [ref=e93]: Servicio Histórico
+                - generic [ref=e94]:
+                  - generic [ref=e95]:
+                    - generic [ref=e96]: O
+                    - generic [ref=e97]: Omar Cisana
+                  - button "WhatsApp" [ref=e99]:
+                    - img [ref=e100]
+              - generic [ref=e103]:
+                - generic [ref=e104]:
+                  - generic [ref=e105]: 09:00 AM
+                  - generic [ref=e106]: TURN
+                - heading "AA1AA123BB23BB" [level=4] [ref=e108]
+                - generic [ref=e109]: Toyota Corolla
+                - generic [ref=e110]: Cambio Aceite
+                - generic [ref=e111]:
+                  - generic [ref=e112]:
+                    - generic [ref=e113]: T
+                    - generic [ref=e114]: Test User
+                  - button "WhatsApp" [ref=e116]:
+                    - img [ref=e117]
+              - generic [ref=e120]:
+                - generic [ref=e121]:
+                  - generic [ref=e122]: 10:00 AM
+                  - generic [ref=e123]: TURN
+                - heading "BB222CC" [level=4] [ref=e125]
+                - generic [ref=e126]: Ford Fiesta
+                - generic [ref=e127]: Servicio Histórico
+                - generic [ref=e128]:
+                  - generic [ref=e129]:
+                    - generic [ref=e130]: A
+                    - generic [ref=e131]: Ariel Test
+                  - button "WhatsApp" [ref=e133]:
+                    - img [ref=e134]
+              - generic [ref=e137]:
+                - generic [ref=e138]:
+                  - generic [ref=e139]: 10:30 AM
+                  - generic [ref=e140]: TURN
+                - heading "ASD123" [level=4] [ref=e142]
+                - generic [ref=e143]: FIAT SIENA
+                - generic [ref=e144]: Servicio Histórico
+                - generic [ref=e145]:
+                  - generic [ref=e146]:
+                    - generic [ref=e147]: "N"
+                    - generic [ref=e148]: Norma Cisana
+                  - button "WhatsApp" [ref=e150]:
+                    - img [ref=e151]
+              - generic [ref=e154]:
+                - generic [ref=e155]:
+                  - generic [ref=e156]: 07:30 PM
+                  - generic [ref=e157]: TURN
+                - heading "AA654KG" [level=4] [ref=e159]
+                - generic [ref=e160]: FORD FIESTA II
+                - generic [ref=e161]: Servicio Cambio de Aceite
+                - generic [ref=e162]:
+                  - generic [ref=e163]:
+                    - generic [ref=e164]: S
+                    - generic [ref=e165]: Santiago Lerda
+                  - button "WhatsApp" [ref=e167]:
+                    - img [ref=e168]
+              - generic [ref=e171]:
+                - generic [ref=e172]:
+                  - generic [ref=e173]: 11:00 AM
+                  - generic [ref=e174]: TURN
+                - heading "FINALTEST" [level=4] [ref=e176]
+                - generic [ref=e177]: Full Service
+                - generic [ref=e178]:
+                  - generic [ref=e179]:
+                    - generic [ref=e180]: F
+                    - generic [ref=e181]: Final Verification
+                  - button "WhatsApp" [ref=e183]:
+                    - img [ref=e184]
+              - generic [ref=e187]:
+                - generic [ref=e188]:
+                  - generic [ref=e189]: 12:44 PM
+                  - generic [ref=e190]: TURN
+                - heading "AATESBB" [level=4] [ref=e192]
+                - generic [ref=e193]: Toyota Corolla
+                - generic [ref=e194]: Parche Moto
+                - generic [ref=e195]:
+                  - generic [ref=e196]:
+                    - generic [ref=e197]: C
+                    - generic [ref=e198]: Cliente Simulado TEST-8888
+                  - button "WhatsApp" [ref=e200]:
+                    - img [ref=e201]
+              - generic [ref=e204]:
+                - generic [ref=e205]:
+                  - generic [ref=e206]: 12:46 PM
+                  - generic [ref=e207]: TURN
+                - heading "AA332BB" [level=4] [ref=e209]
+                - generic [ref=e210]: Toyota Corolla
+                - generic [ref=e211]: Parche Moto
+                - generic [ref=e212]:
+                  - generic [ref=e213]:
+                    - generic [ref=e214]: C
+                    - generic [ref=e215]: Cliente Simulado TEST-6332
+                  - button "WhatsApp" [ref=e217]:
+                    - img [ref=e218]
+              - generic [ref=e221]:
+                - generic [ref=e222]:
+                  - generic [ref=e223]: 08:30 AM
+                  - generic [ref=e224]: TURN
+                - heading "ASD123" [level=4] [ref=e226]
+                - generic [ref=e227]: FIAT SIENA
+                - generic [ref=e228]: Servicio Histórico
+                - generic [ref=e229]:
+                  - generic [ref=e230]:
+                    - generic [ref=e231]: "N"
+                    - generic [ref=e232]: Norma Cisana
+                  - button "WhatsApp" [ref=e234]:
+                    - img [ref=e235]
+              - generic [ref=e238]:
+                - generic [ref=e239]:
+                  - generic [ref=e240]: 04:30 PM
+                  - generic [ref=e241]: TURN
+                - heading "DKKWOW" [level=4] [ref=e243]
+                - generic [ref=e244]: Kkwjn Ifxsl
+                - generic [ref=e245]: Full Service
+                - generic [ref=e246]:
+                  - generic [ref=e247]:
+                    - generic [ref=e248]: W
+                    - generic [ref=e249]: Wjbwkwofk
+                  - button "WhatsApp" [ref=e251]:
+                    - img [ref=e252]
+              - generic [ref=e255]:
+                - generic [ref=e256]:
+                  - generic [ref=e257]: 08:30 AM
+                  - generic [ref=e258]: TURN
+                - heading "ASD123" [level=4] [ref=e260]
+                - generic [ref=e261]: FIAT SIENA
+                - generic [ref=e262]: Parche Moto
+                - generic [ref=e263]:
+                  - generic [ref=e264]:
+                    - generic [ref=e265]: "N"
+                    - generic [ref=e266]: Norma Cisana
+                  - button "WhatsApp" [ref=e268]:
+                    - img [ref=e269]
+              - generic [ref=e272]:
+                - generic [ref=e273]:
+                  - generic [ref=e274]: 10:00 AM
+                  - generic [ref=e275]: TURN
+                - heading "QA-PLATE-01" [level=4] [ref=e277]
+                - generic [ref=e278]: Ford Ka
+                - generic [ref=e279]: Parche Moto
+                - generic [ref=e280]:
+                  - generic [ref=e281]:
+                    - generic [ref=e282]: Q
+                    - generic [ref=e283]: QA Script User
+                  - button "WhatsApp" [ref=e285]:
+                    - img [ref=e286]
+          - generic [ref=e289]:
+            - generic [ref=e290]:
+              - heading "Confirmado" [level=3] [ref=e291]
+              - generic [ref=e292]: "2"
+            - generic [ref=e293]:
+              - generic [ref=e294]:
+                - generic [ref=e295]:
+                  - generic [ref=e296]: 10:00 AM
+                  - generic [ref=e297]: TURN
+                - heading "AA040SU" [level=4] [ref=e299]
+                - generic [ref=e300]: CITROEN C3
+                - generic [ref=e301]: Servicio Cambio de Aceite
+                - generic [ref=e302]:
+                  - generic [ref=e303]:
+                    - generic [ref=e304]: O
+                    - generic [ref=e305]: Olmos Morales Alejandro
+                  - button "WhatsApp" [ref=e307]:
+                    - img [ref=e308]
+              - generic [ref=e311]:
+                - generic [ref=e312]:
+                  - generic [ref=e313]: 08:42 PM
+                  - generic [ref=e314]: TURN
+                - heading "OIL873" [level=4] [ref=e316]
+                - generic [ref=e317]: Ford Focus
+                - generic [ref=e318]: Parche Moto
+                - generic [ref=e319]:
+                  - generic [ref=e320]:
+                    - generic [ref=e321]: T
+                    - generic [ref=e322]: Test Client Oil
+                  - button "WhatsApp" [ref=e324]:
+                    - img [ref=e325]
+          - generic [ref=e328]:
+            - generic [ref=e329]:
+              - heading "En Cola (Hoy)" [level=3] [ref=e330]
+              - generic [ref=e331]: "1"
+            - generic [ref=e333]:
+              - generic [ref=e334]:
+                - generic [ref=e335]: 12:38 AM
+                - generic [ref=e336]: TURN
+              - heading "OYX389" [level=4] [ref=e338]
+              - generic [ref=e339]: PEUGEOT 208
+              - generic [ref=e340]: Parche Moto
+              - generic [ref=e341]:
+                - generic [ref=e342]:
+                  - generic [ref=e343]: I
+                  - generic [ref=e344]: Ivan Duri
+                - button "WhatsApp" [ref=e346]:
+                  - img [ref=e347]
+          - generic [ref=e350]:
+            - generic [ref=e351]:
+              - heading "Ingresó Taller" [level=3] [ref=e352]
+              - generic [ref=e353]: "8"
+            - generic [ref=e354]:
+              - generic [ref=e355]:
+                - generic [ref=e356]:
+                  - generic [ref=e357]: 09:44 PM
+                  - generic [ref=e358]: ORDEN
+                - heading "PETE123" [level=4] [ref=e360]
+                - generic [ref=e361]: Toyota Etios
+                - generic [ref=e362]: Full Service
+                - generic [ref=e363]:
+                  - generic [ref=e364]:
+                    - generic [ref=e365]: V
+                    - generic [ref=e366]: Vieja
+                  - button [ref=e368]:
+                    - img [ref=e369]
+              - generic [ref=e374]:
+                - generic [ref=e375]:
+                  - generic [ref=e376]: 09:45 PM
+                  - generic [ref=e377]: ORDEN
+                - heading "PETE123" [level=4] [ref=e379]
+                - generic [ref=e380]: Toyota Etios
+                - generic [ref=e381]: Full Service
+                - generic [ref=e382]:
+                  - generic [ref=e383]:
+                    - generic [ref=e384]: V
+                    - generic [ref=e385]: Vieja
+                  - button [ref=e387]:
+                    - img [ref=e388]
+              - generic [ref=e393]:
+                - generic [ref=e394]:
+                  - generic [ref=e395]: 09:45 PM
+                  - generic [ref=e396]: ORDEN
+                - heading "AED332" [level=4] [ref=e398]
+                - generic [ref=e399]: Pija Larga
+                - generic [ref=e400]: Full Service
+                - generic [ref=e401]:
+                  - generic [ref=e402]:
+                    - generic [ref=e403]: M
+                    - generic [ref=e404]: Matias Turra
+                  - button [ref=e406]:
+                    - img [ref=e407]
+              - generic [ref=e412]:
+                - generic [ref=e413]:
+                  - generic [ref=e414]: 09:46 PM
+                  - generic [ref=e415]: ORDEN
+                - heading "AED332" [level=4] [ref=e417]
+                - generic [ref=e418]: Pija Larga
+                - generic [ref=e419]: Full Service
+                - generic [ref=e420]:
+                  - generic [ref=e421]:
+                    - generic [ref=e422]: M
+                    - generic [ref=e423]: Matias Turra
+                  - button [ref=e425]:
+                    - img [ref=e426]
+              - generic [ref=e431]:
+                - generic [ref=e432]:
+                  - generic [ref=e433]: 09:46 PM
+                  - generic [ref=e434]: ORDEN
+                - heading "AED332" [level=4] [ref=e436]
+                - generic [ref=e437]: Pija Larga
+                - generic [ref=e438]: Full Service
+                - generic [ref=e439]:
+                  - generic [ref=e440]:
+                    - generic [ref=e441]: M
+                    - generic [ref=e442]: Matias Turra
+                  - button [ref=e444]:
+                    - img [ref=e445]
+              - generic [ref=e450]:
+                - generic [ref=e451]:
+                  - generic [ref=e452]: 08:57 PM
+                  - generic [ref=e453]: ORDEN
+                - heading "ASD123" [level=4] [ref=e455]
+                - generic [ref=e456]: FIAT SIENA
+                - generic [ref=e457]: Full Service
+                - generic [ref=e458]:
+                  - generic [ref=e459]:
+                    - generic [ref=e460]: "N"
+                    - generic [ref=e461]: Norma Cisana
+                  - button [ref=e463]:
+                    - img [ref=e464]
+              - generic [ref=e469]:
+                - generic [ref=e470]:
+                  - generic [ref=e471]: 02:00 PM
+                  - generic [ref=e472]: ORDEN
+                - heading "TEST-999" [level=4] [ref=e474]
+                - generic [ref=e475]: Ford Focus
+                - generic [ref=e476]: Full Service
+                - generic [ref=e477]:
+                  - generic [ref=e478]:
+                    - generic [ref=e479]: T
+                    - generic [ref=e480]: Tester AI
+                  - button [ref=e482]:
+                    - img [ref=e483]
+              - generic [ref=e488]:
+                - generic [ref=e489]:
+                  - generic [ref=e490]: 01:42 PM
+                  - generic [ref=e491]: ORDEN
+                - heading "QA-TEST-02" [level=4] [ref=e493]
+                - generic [ref=e494]: Toyota Etios
+                - generic [ref=e495]: Parche Moto
+                - generic [ref=e496]:
+                  - generic [ref=e497]:
+                    - generic [ref=e498]: Q
+                    - generic [ref=e499]: QA New Client
+                  - button [ref=e501]:
+                    - img [ref=e502]
+          - generic [ref=e507]:
+            - generic [ref=e508]:
+              - heading "En Proceso" [level=3] [ref=e509]
+              - generic [ref=e510]: "0"
+            - generic [ref=e513]: Vacío
+          - generic [ref=e514]:
+            - generic [ref=e515]:
+              - heading "Listo / Avisar" [level=3] [ref=e516]
+              - generic [ref=e517]: "2"
+            - generic [ref=e518]:
+              - generic [ref=e519]:
+                - generic [ref=e520]:
+                  - generic [ref=e521]: 07:13 PM
+                  - generic [ref=e522]: ORDEN
+                - heading "AA227BB" [level=4] [ref=e524]
+                - generic [ref=e525]: Toyota Corolla
+                - generic [ref=e526]: Parche Moto
+                - generic [ref=e527]:
+                  - generic [ref=e528]:
+                    - generic [ref=e529]: C
+                    - generic [ref=e530]: Cliente Simulado TEST-7227
+                  - button [ref=e532]:
+                    - img [ref=e533]
+              - generic [ref=e536]:
+                - generic [ref=e537]:
+                  - generic [ref=e538]: 09:00 PM
+                  - generic [ref=e539]: ORDEN
+                - heading "HMA837" [level=4] [ref=e541]
+                - generic [ref=e542]: VOLKSWAGEN GOL
+                - generic [ref=e543]: Servicio Histórico
+                - generic [ref=e544]:
+                  - generic [ref=e545]:
+                    - generic [ref=e546]: B
+                    - generic [ref=e547]: Bricco Carla
+                  - button [ref=e549]:
+                    - img [ref=e550]
+```
