@@ -5,6 +5,7 @@ import { logActivity } from './logger';
 import { revalidatePath } from 'next/cache';
 import { SyncService } from '../../lib/syncService';
 import { safeRevalidate } from './server-utils';
+import { generatePortalLinkForVehicle } from './portal-actions';
 
 // --- Types ---
 
@@ -423,7 +424,7 @@ export async function createLegacyWorkOrder(input: {
                 const oil = input.serviceDetails.oil || {};
 
                 // Construct Message
-                const message = `Hola ${vehicle.client.name},
+                let message = `Hola ${vehicle.client.name},
 🚗 Queremos informarle que hemos completado el service de su vehículo ${vehicle.brand || ''} ${vehicle.model || ''} con patente ${vehicle.plate}. A continuación, le detallamos las tareas realizadas:
 🛢️ Cambio de aceite ${oil.brand || ''} ${oil.type || ''} ${oil.liters ? `(${oil.liters}L)` : ''}
 🌬️ Cambio del filtro de aire ${filters.air ? 'SI' : 'NO'}
@@ -450,6 +451,13 @@ Lubricantes FB
 👉 Facebook https://www.facebook.com/profile.php?id=100054567395088
 ⭐ Nos encantaría conocer tu opinión. ¡Déjanos una reseña en Google Maps!
 👉 Dejar calificación https://www.google.com/maps/place/FB+Lubricentro+y+Bater%C3%ADas/@-31.419292,-64.5148519,17z`;
+
+                // Generate Portal Link
+                const portalRes = await generatePortalLinkForVehicle(vehicleId);
+                if (portalRes.success && portalRes.url) {
+                    const fullUrl = `https://lubricentro-fb.com${portalRes.url}`;
+                    message += `\n\n📚 *Libreta de Salud Digital:*\nAcceda al historial completo de su vehículo aquí:\n${fullUrl}`;
+                }
 
                 await WhatsAppService.sendServiceReport(vehicle.client.phone, message);
             }
