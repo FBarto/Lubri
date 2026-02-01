@@ -109,6 +109,24 @@ export async function GET() {
             revenue: item._sum.subtotal || 0
         }));
 
+        // 6. Duplicate Plates Alert (Normalized)
+        const vehicles = await prisma.vehicle.findMany({
+            select: { id: true, plate: true }
+        });
+
+        const plateCounts: Record<string, { plate: string, count: number }> = {};
+        vehicles.forEach(v => {
+            const normalized = (v.plate || '').replace(/\s+/g, '').toUpperCase();
+            if (!plateCounts[normalized]) {
+                plateCounts[normalized] = { plate: v.plate, count: 0 };
+            }
+            plateCounts[normalized].count++;
+        });
+
+        const duplicatePlates = Object.values(plateCounts)
+            .filter(p => p.count > 1)
+            .map(p => p.plate);
+
         return NextResponse.json({
             kpi: {
                 salesToday: salesToday._sum.total || 0,
@@ -117,7 +135,8 @@ export async function GET() {
                 lowStock: lowStockCount
             },
             chart: chartData,
-            topProducts: topProducts
+            topProducts: topProducts,
+            duplicatePlates: duplicatePlates
         });
 
     } catch (error: any) {

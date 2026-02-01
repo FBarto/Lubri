@@ -482,3 +482,32 @@ Lubricantes FB
         return { success: false, error: 'Failed to create legacy record' };
     }
 }
+
+/**
+ * Checks for duplicate vehicle plates (normalized).
+ */
+export async function getDuplicatePlates() {
+    try {
+        const vehicles = await prisma.vehicle.findMany({
+            select: { id: true, plate: true, brand: true, model: true }
+        });
+
+        const counts: Record<string, { plate: string, ids: number[], details: string[] }> = {};
+
+        vehicles.forEach(v => {
+            const normalized = (v.plate || '').replace(/\s+/g, '').toUpperCase();
+            if (!counts[normalized]) {
+                counts[normalized] = { plate: v.plate, ids: [], details: [] };
+            }
+            counts[normalized].ids.push(v.id);
+            counts[normalized].details.push(`${v.brand || ''} ${v.model || ''}`.trim());
+        });
+
+        const duplicates = Object.values(counts).filter(item => item.ids.length > 1);
+
+        return { success: true, data: duplicates };
+    } catch (error) {
+        console.error('Error checking duplicate plates:', error);
+        return { success: false, error: 'Failed to check duplicates' };
+    }
+}

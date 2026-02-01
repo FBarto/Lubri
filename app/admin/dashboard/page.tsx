@@ -76,6 +76,29 @@ export default function KanbanDashboard() {
                 </header>
 
                 {/* KPI Grid */}
+                {data?.duplicatePlates && data.duplicatePlates.length > 0 && (
+                    <div className="mb-10 bg-red-600 p-8 rounded-[3rem] shadow-xl shadow-red-200 relative overflow-hidden group animate-in slide-in-from-top duration-500">
+                        <div className="relative z-10 flex items-center justify-between">
+                            <div>
+                                <h3 className="text-xl font-black text-white mb-2 flex items-center gap-2 italic uppercase">
+                                    <AlertCircle className="text-white" />
+                                    Conflicto de Patentes Duplicadas
+                                </h3>
+                                <p className="text-red-100 text-sm font-bold opacity-90">
+                                    Se han detectado {data.duplicatePlates.length} patentes con registros múltiples.
+                                    Patentes afectadas: <span className="text-white bg-red-800/50 px-2 py-0.5 rounded ml-1">{data.duplicatePlates.join(', ')}</span>
+                                </p>
+                            </div>
+                            <button className="bg-white text-red-600 px-6 py-3 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:scale-105 transition-transform shadow-lg">
+                                Gestionar Conflictos
+                            </button>
+                        </div>
+                        <div className="absolute -bottom-4 -right-4 text-white opacity-10 group-hover:scale-110 transition-transform pointer-events-none">
+                            <Scissors size={140} />
+                        </div>
+                    </div>
+                )}
+
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
                     <StatCard
                         title="Ventas Hoy"
