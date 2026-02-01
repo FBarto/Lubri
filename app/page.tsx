@@ -38,11 +38,12 @@ export default async function Home() {
             <div className="relative inline-block mb-6">
               <h1 className="text-4xl md:text-6xl lg:text-8xl font-black italic tracking-tighter text-white leading-[0.85] mb-2 drop-shadow-2xl">
                 FB <span className="text-transparent bg-clip-text bg-gradient-to-br from-white via-white to-neutral-500">LUBRICENTRO</span> <br />
-                <span className="relative inline-block mt-4">
+                <span className="relative inline-block mt-6">
                   <span className="absolute -inset-1 bg-red-600 blur-2xl opacity-20 animate-pulse"></span>
-                  <span className="relative text-sm md:text-xl lg:text-2xl text-red-500 tracking-[0.2em] font-bold uppercase not-italic">Service · Baterías · Gomería</span>
+                  <span className="relative text-base md:text-2xl text-red-500 font-bold uppercase not-italic tracking-tight">
+                    Service – Baterías – Gomería <span className="text-white/40 ml-2">Villa Carlos Paz</span>
+                  </span>
                 </span>
-                <div className="text-lg md:text-2xl mt-4 text-white/40 font-bold tracking-widest uppercase not-italic">Villa Carlos Paz</div>
               </h1>
             </div>
 
@@ -273,7 +274,7 @@ export default async function Home() {
         <div className="border-t border-neutral-900 pt-8 text-center text-neutral-600 text-sm">
           <p>&copy; 2026 FB Lubricentro – Service, baterías y gomería. Todos los derechos reservados.</p>
           <div className="mt-2 text-xs">
-            <Link href="/login" className="hover:text-neutral-400 transition-colors">Acceso Interno</Link>
+            <Link href="/login" className="hover:text-neutral-400 transition-colors">Acceso interno</Link>
           </div>
         </div>
       </footer>
