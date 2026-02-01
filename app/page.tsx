@@ -1,6 +1,6 @@
 
 import Link from 'next/link';
-import { Clock, CheckCircle2, Award, Zap, Shield, MapPin, Phone, MessageCircle, Droplet, Disc, ChevronDown, Bell, X, User } from 'lucide-react';
+import { Clock, CheckCircle2, Award, Zap, Shield, MapPin, Phone, MessageCircle, Droplet, Disc, ChevronDown, Bell, X } from 'lucide-react';
 import GoogleReviews from './components/GoogleReviews';
 
 export default async function Home() {
@@ -33,23 +33,16 @@ export default async function Home() {
               <span className="text-white/70 font-medium tracking-wide text-xs uppercase">Asunción 505, Villa Carlos Paz</span>
             </div>
 
-            <Link
-              href="/login"
-              className="absolute top-0 right-6 md:top-4 md:right-10 group px-5 py-2.5 rounded-full bg-white/5 hover:bg-white/10 backdrop-blur-xl border border-white/10 hover:border-red-500/50 transition-all duration-500 shadow-2xl z-50 flex items-center gap-3 overflow-hidden text-sm font-medium"
-            >
-              <div className="p-1.5 bg-red-600/20 rounded-full group-hover:bg-red-600 transition-all duration-300">
-                <User size={14} className="text-white" />
-              </div>
-              <span className="text-white/80 group-hover:text-white transition-colors">Portal Cliente</span>
-            </Link>
+            {/* Acceso interno removido del flujo público */}
 
             <div className="relative inline-block mb-6">
-              <h1 className="text-5xl md:text-7xl lg:text-9xl font-black italic tracking-tighter text-white leading-[0.85] mb-2 drop-shadow-2xl">
+              <h1 className="text-4xl md:text-6xl lg:text-8xl font-black italic tracking-tighter text-white leading-[0.85] mb-2 drop-shadow-2xl">
                 FB <span className="text-transparent bg-clip-text bg-gradient-to-br from-white via-white to-neutral-500">LUBRICENTRO</span> <br />
-                <span className="relative inline-block">
+                <span className="relative inline-block mt-4">
                   <span className="absolute -inset-1 bg-red-600 blur-2xl opacity-20 animate-pulse"></span>
-                  <span className="relative text-transparent bg-clip-text bg-gradient-to-r from-red-600 to-red-400">BATERÍAS</span>
+                  <span className="relative text-sm md:text-xl lg:text-2xl text-red-500 tracking-[0.2em] font-bold uppercase not-italic">Service · Baterías · Gomería</span>
                 </span>
+                <div className="text-lg md:text-2xl mt-4 text-white/40 font-bold tracking-widest uppercase not-italic">Villa Carlos Paz</div>
               </h1>
             </div>
 
@@ -94,8 +87,8 @@ export default async function Home() {
                 <div className="text-xl font-bold text-green-500">Service</div>
               </div>
               <div className="bg-white/5 backdrop-blur-md border border-white/5 p-4 rounded-2xl">
-                <div className="text-xs text-neutral-500 uppercase font-black mb-1">Diagnóstico</div>
-                <div className="text-xl font-bold text-yellow-500">Digital</div>
+                <div className="text-xs text-neutral-500 uppercase font-black mb-1">Revisión</div>
+                <div className="text-xl font-bold text-yellow-500">General</div>
               </div>
             </div>
           </div>
@@ -128,8 +121,8 @@ export default async function Home() {
                   <Shield size={24} />
                 </div>
                 <div>
-                  <h4 className="font-bold text-white uppercase tracking-tighter italic">Escaneo y Control</h4>
-                  <p className="text-xs text-neutral-500 font-medium">Revisión profunda de puntos críticos de seguridad.</p>
+                  <h4 className="font-bold text-white uppercase tracking-tighter italic">Control Preventivo</h4>
+                  <p className="text-xs text-neutral-500 font-medium">Chequeo general de fluidos y sistemas visibles.</p>
                 </div>
               </div>
             </div>
@@ -278,7 +271,7 @@ export default async function Home() {
         </div>
 
         <div className="border-t border-neutral-900 pt-8 text-center text-neutral-600 text-sm">
-          <p>&copy; 2026 FB Lubricentro y Baterías. Todos los derechos reservados.</p>
+          <p>&copy; 2026 FB Lubricentro – Service, baterías y gomería. Todos los derechos reservados.</p>
           <div className="mt-2 text-xs">
             <Link href="/login" className="hover:text-neutral-400 transition-colors">Acceso Interno</Link>
           </div>
