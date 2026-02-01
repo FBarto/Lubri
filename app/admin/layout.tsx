@@ -100,6 +100,14 @@ export default function AdminLayout({
                         <span>Órdenes de Trabajo</span>
                     </Link>
 
+                    <Link
+                        href="/admin/audit"
+                        className="flex items-center space-x-3 p-3 rounded-xl hover:bg-slate-800 transition-all text-sm font-medium text-slate-300 hover:text-white"
+                    >
+                        <span>🛡️</span>
+                        <span>Auditoría</span>
+                    </Link>
+
                     <div className="pt-4 pb-1 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Comunicación</div>
 
                     <Link
