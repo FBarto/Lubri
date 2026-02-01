@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-
 import UploadComponent from '../dvi/UploadComponent';
+import { createQuickClient, getConsumidorFinal } from '@/app/lib/business-actions';
 
 // Interfaces simplificadas para manejo local
 interface Client { id: number; name: string; phone: string; vehicles?: Vehicle[] }
@@ -33,6 +33,7 @@ export default function ServiceModal({ isOpen, onClose, onConfirm, service, init
     const [serviceDetails, setServiceDetails] = useState({
         oil: { brand: '', liters: '', type: 'SINTETICO' },
         filters: { air: false, oil: false, fuel: false, cabin: false },
+        filterDetails: { air: '', oil: '', fuel: '', cabin: '' },
         fluids: { brakes: false, coolant: false, hydraulic: false }
     });
 
@@ -40,6 +41,12 @@ export default function ServiceModal({ isOpen, onClose, onConfirm, service, init
     const [clientResults, setClientResults] = useState<Client[]>([]);
     const [vehicleResults, setVehicleResults] = useState<Vehicle[]>([]);
     const [productResults, setProductResults] = useState<any[]>([]);
+
+    // Quick Registration State
+    const [isRegistering, setIsRegistering] = useState(false);
+    const [newName, setNewName] = useState('');
+    const [newPhone, setNewPhone] = useState('');
+    const [isProcessing, setIsProcessing] = useState(false);
 
     useEffect(() => {
         // Reset when opening new service
@@ -180,17 +187,57 @@ export default function ServiceModal({ isOpen, onClose, onConfirm, service, init
     }
 
     // Confirm Handler
-    const handleConfirm = () => {
+    const handleConfirm = async () => {
+        setIsProcessing(true);
+        let currentClient = selectedClient;
+        let currentVehicle = selectedVehicle;
+
+        // 1. Handle Quick Registration if active
+        if (isRegistering && newName && newPhone) {
+            const res = await createQuickClient({
+                name: newName,
+                phone: newPhone,
+                plate: plateSearch,
+                brand: '',
+                model: ''
+            });
+            if (res.success) {
+                currentClient = res.client as Client;
+                currentVehicle = res.vehicle as Vehicle;
+            } else {
+                alert("Error al registrar cliente: " + res.error);
+                setIsProcessing(false);
+                return;
+            }
+        }
+
+        // 2. Handle "Consumidor Final" if no client selected and not registering
+        const noClientFound = !currentClient && !isRegistering && (phoneSearch === "Consumidor Final" || !phoneSearch);
+        if (noClientFound) {
+            const res = await getConsumidorFinal();
+            if (res.success) {
+                currentClient = res.client as Client;
+            }
+        }
+
+        if (!plateSearch && !currentVehicle) {
+            alert('Por favor ingrese una patente o seleccione un vehículo');
+            setIsProcessing(false);
+            return;
+        }
+
         onConfirm({
-            clientId: selectedClient?.id,
-            vehicleId: selectedVehicle?.id,
-            mileage: mileage,
-            notes: notes,
-            serviceDetails: serviceDetails,
-            clientName: selectedClient?.name,
-            vehiclePlate: selectedVehicle?.plate,
-            attachments: attachments
+            clientId: currentClient?.id || 0,
+            vehicleId: currentVehicle?.id || 0,
+            plate: plateSearch,
+            mileage,
+            notes,
+            attachments,
+            serviceDetails,
+            clientName: currentClient?.name,
+            vehiclePlate: currentVehicle?.plate || plateSearch
         });
+        setIsProcessing(false);
         onClose();
     };
 
@@ -237,11 +284,65 @@ export default function ServiceModal({ isOpen, onClose, onConfirm, service, init
                         {clientResults.length > 0 && (
                             <ul className="absolute z-20 w-full bg-white/95 backdrop-blur-md border border-slate-200 rounded-[1.5rem] mt-2 shadow-2xl overflow-hidden animate-in slide-in-from-top-2">
                                 {clientResults.map((c) => (
-                                    <li key={c.id} onClick={() => selectClient(c)} className="p-4 hover:bg-neutral-900 hover:text-white cursor-pointer transition-all border-b border-slate-50 last:border-0 group/item">
-                                        <div className="font-black italic uppercase tracking-tighter text-lg">{c.name}</div>
-                                        <div className="text-[10px] font-bold opacity-50 group-hover/item:text-red-400">{c.phone}</div>
+                                    <li key={c.id} onClick={() => selectClient(c)} className="p-4 hover:bg-neutral-900 hover:text-white cursor-pointer transition-all border-b border-slate-50 last:border-0 group/item flex justify-between items-center text-left">
+                                        <div>
+                                            <div className="font-black italic uppercase tracking-tighter text-lg">{c.name}</div>
+                                            <div className="text-[10px] font-bold opacity-50 group-hover/item:text-red-400">{c.phone}</div>
+                                        </div>
+                                        <span className="opacity-0 group-hover/item:opacity-100 transition-opacity bg-red-600 text-white text-[8px] font-black px-2 py-1 rounded uppercase tracking-widest">Seleccionar</span>
                                     </li>
                                 ))}
+                                {phoneSearch.length > 3 && clientResults.length === 0 && !selectedClient && !isRegistering && (
+                                    <li className="p-6 text-center bg-slate-50 border-t border-slate-100">
+                                        <p className="text-xs font-bold text-slate-500 mb-4 italic">No encontramos al cliente "{phoneSearch}"</p>
+                                        <div className="flex gap-2 justify-center">
+                                            <button
+                                                onClick={() => {
+                                                    setIsRegistering(true);
+                                                    setNewName(phoneSearch);
+                                                }}
+                                                className="bg-red-600 text-white text-[10px] font-black py-2 px-4 rounded-xl uppercase tracking-widest hover:scale-105 transition-transform shadow-lg"
+                                            >
+                                                Registrar Cliente
+                                            </button>
+                                            <button
+                                                onClick={() => setPhoneSearch("Consumidor Final")}
+                                                className="bg-slate-200 text-slate-600 text-[10px] font-black py-2 px-4 rounded-xl uppercase tracking-widest hover:bg-slate-300"
+                                            >
+                                                Continuar Sin Datos
+                                            </button>
+                                        </div>
+                                    </li>
+                                )}
+                                {isRegistering && (
+                                    <li className="p-6 bg-slate-900 text-white border-t border-red-600/50 space-y-4">
+                                        <div className="flex justify-between items-center mb-2">
+                                            <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-red-500 font-black">Nuevo Registro Rápido</h4>
+                                            <button onClick={() => setIsRegistering(false)} className="text-[8px] opacity-50 hover:opacity-100 uppercase font-black">Cancelar</button>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <div className="space-y-1">
+                                                <label className="text-[8px] uppercase font-black opacity-50">Nombre</label>
+                                                <input
+                                                    type="text"
+                                                    className="w-full bg-white/10 border border-white/20 rounded-xl p-3 text-sm font-bold placeholder:text-white/30"
+                                                    value={newName}
+                                                    onChange={e => setNewName(e.target.value)}
+                                                />
+                                            </div>
+                                            <div className="space-y-1">
+                                                <label className="text-[8px] uppercase font-black opacity-50">Teléfono</label>
+                                                <input
+                                                    type="text"
+                                                    className="w-full bg-white/10 border border-white/20 rounded-xl p-3 text-sm font-bold placeholder:text-white/30"
+                                                    value={newPhone}
+                                                    onChange={e => setNewPhone(e.target.value)}
+                                                />
+                                            </div>
+                                        </div>
+                                        <p className="text-[8px] opacity-40 font-bold italic">* Al confirmar la misión se guardará automáticamente.</p>
+                                    </li>
+                                )}
                             </ul>
                         )}
                     </div>
@@ -322,12 +423,13 @@ export default function ServiceModal({ isOpen, onClose, onConfirm, service, init
                                                     <li
                                                         key={p.id}
                                                         onClick={() => {
-                                                            setServiceDetails({ ...serviceDetails, oil: { ...serviceDetails.oil, brand: p.name } });
+                                                            setServiceDetails({ ...serviceDetails, oil: { ...serviceDetails.oil, brand: `${p.name} [${p.code || 'S/C'}]` } });
                                                             setProductResults([]);
                                                         }}
-                                                        className="p-3 hover:bg-slate-50 cursor-pointer text-xs font-bold border-b last:border-0"
+                                                        className="p-3 hover:bg-slate-50 cursor-pointer text-xs font-black border-b last:border-0 flex justify-between items-center group"
                                                     >
-                                                        {p.name}
+                                                        <span>{p.name}</span>
+                                                        <span className="text-[8px] bg-slate-100 text-slate-400 px-2 py-1 rounded-md opacity-70 group-hover:bg-red-50 group-hover:text-red-600 transition-colors uppercase font-black">{p.code || 'S/C'}</span>
                                                     </li>
                                                 ))}
                                             </ul>
@@ -344,19 +446,30 @@ export default function ServiceModal({ isOpen, onClose, onConfirm, service, init
                             </div>
 
                             {/* Filters */}
-                            <div className="grid grid-cols-2 gap-3">
+                            <div className="grid grid-cols-2 gap-4">
                                 {(['air', 'oil', 'fuel', 'cabin'] as const).map(f => (
-                                    <label key={f} className={`flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer ${serviceDetails.filters[f] ? 'bg-blue-50 border-blue-200' : 'bg-white border-slate-200'}`}>
-                                        <input
-                                            type="checkbox"
-                                            className="w-5 h-5 rounded text-blue-600 focus:ring-0"
-                                            checked={serviceDetails.filters[f]}
-                                            onChange={e => setServiceDetails({ ...serviceDetails, filters: { ...serviceDetails.filters, [f]: e.target.checked } })}
-                                        />
-                                        <span className="text-xs font-bold uppercase text-slate-700">
-                                            {f === 'air' ? 'Filtro Aire' : f === 'oil' ? 'Filtro Aceite' : f === 'fuel' ? 'Combustible' : 'Habitáculo'}
-                                        </span>
-                                    </label>
+                                    <div key={f} className="space-y-2">
+                                        <label className={`flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer ${serviceDetails.filters[f] ? 'bg-blue-50 border-blue-200' : 'bg-white border-slate-200 group'}`}>
+                                            <input
+                                                type="checkbox"
+                                                className="w-5 h-5 rounded text-blue-600 focus:ring-0"
+                                                checked={serviceDetails.filters[f]}
+                                                onChange={e => setServiceDetails({ ...serviceDetails, filters: { ...serviceDetails.filters, [f]: e.target.checked } })}
+                                            />
+                                            <span className="text-[10px] font-black uppercase text-slate-700">
+                                                {f === 'air' ? 'Fil. Aire' : f === 'oil' ? 'Fil. Aceite' : f === 'fuel' ? 'Combustible' : 'Habitáculo'}
+                                            </span>
+                                        </label>
+                                        {serviceDetails.filters[f] && (
+                                            <input
+                                                type="text"
+                                                placeholder="Marca / Código"
+                                                className="w-full p-2 bg-white rounded-lg border border-slate-200 text-[10px] font-bold focus:border-red-600 outline-none transition-all placeholder:font-normal"
+                                                value={serviceDetails.filterDetails[f]}
+                                                onChange={e => setServiceDetails({ ...serviceDetails, filterDetails: { ...serviceDetails.filterDetails, [f]: e.target.value } })}
+                                            />
+                                        )}
+                                    </div>
                                 ))}
                             </div>
                         </div>
@@ -378,7 +491,7 @@ export default function ServiceModal({ isOpen, onClose, onConfirm, service, init
                     </button>
                     <button
                         onClick={handleConfirm}
-                        disabled={!selectedClient || !selectedVehicle}
+                        disabled={isProcessing || (!selectedClient && !isRegistering && !plateSearch)}
                         className="px-10 py-5 rounded-[2rem] font-black bg-neutral-900 text-white hover:bg-red-600 disabled:opacity-20 disabled:grayscale disabled:scale-100 shadow-2xl hover:shadow-red-600/20 active:scale-[0.97] transition-all flex items-center gap-3 uppercase italic tracking-widest text-sm group"
                     >
                         <span>Confirmar Misión</span>

@@ -511,3 +511,71 @@ export async function getDuplicatePlates() {
         return { success: false, error: 'Failed to check duplicates' };
     }
 }
+
+/**
+ * Quick client and vehicle creation for ServiceModal
+ */
+export async function createQuickClient(data: { name: string; phone: string; plate?: string; brand?: string; model?: string }) {
+    try {
+        // Find existing client or create
+        let client = await prisma.client.findFirst({
+            where: { phone: data.phone }
+        });
+
+        if (!client) {
+            client = await prisma.client.create({
+                data: {
+                    name: data.name,
+                    phone: data.phone
+                }
+            });
+        }
+
+        let vehicle = null;
+        if (data.plate) {
+            vehicle = await prisma.vehicle.findFirst({
+                where: { plate: data.plate }
+            });
+
+            if (!vehicle) {
+                vehicle = await prisma.vehicle.create({
+                    data: {
+                        plate: data.plate,
+                        brand: data.brand,
+                        model: data.model,
+                        clientId: client.id
+                    }
+                });
+            }
+        }
+
+        return { success: true, client, vehicle };
+    } catch (error: any) {
+        console.error('Error creating quick client:', error);
+        return { success: false, error: error.message || 'Failed to create client' };
+    }
+}
+
+/**
+ * Get or create the generic "Consumidor Final" client
+ */
+export async function getConsumidorFinal() {
+    try {
+        let client = await prisma.client.findFirst({
+            where: { name: 'Consumidor Final' }
+        });
+
+        if (!client) {
+            client = await prisma.client.create({
+                data: {
+                    name: 'Consumidor Final',
+                    phone: '0000000000'
+                }
+            });
+        }
+
+        return { success: true, client };
+    } catch (error: any) {
+        return { success: false, error: 'Failed' };
+    }
+}
