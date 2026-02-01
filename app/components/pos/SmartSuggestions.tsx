@@ -99,23 +99,33 @@ export default function SmartSuggestions({ cart, allItems, onAddItem }: SmartSug
         .map(id => suggestions.find(s => s.id === id));
 
     return (
-        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 p-3 rounded-xl mb-4 animate-in fade-in slide-in-from-top-2">
-            <div className="flex items-center gap-2 mb-2 text-blue-700 font-bold text-xs uppercase tracking-wide">
-                <Sparkles className="w-3 h-3" />
-                Sugerencias Inteligentes
+        <div className="bg-neutral-900 border border-white/5 p-4 rounded-[1.8rem] mb-6 animate-in fade-in slide-in-from-top-4 duration-500 relative overflow-hidden group">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-red-600/10 blur-[60px] rounded-full translate-x-1/2 -translate-y-1/2"></div>
+
+            <div className="flex items-center gap-2 mb-4 relative z-10">
+                <div className="p-1.5 rounded-lg bg-red-600 text-white shadow-lg shadow-red-900/40 animate-pulse">
+                    <Sparkles className="w-3.5 h-3.5" />
+                </div>
+                <span className="text-[10px] font-black italic text-slate-100 uppercase tracking-[0.3em]">IA: Recomendaciones Estratégicas</span>
             </div>
-            <div className="flex gap-2 overflow-x-auto pb-1">
+
+            <div className="flex gap-3 overflow-x-auto pb-2 custom-scrollbar relative z-10">
                 {uniqueSuggestions.map((item: any) => (
                     <button
                         key={`${item.type}-${item.id}`}
                         onClick={() => onAddItem(item)}
-                        className="flex items-center gap-2 bg-white border border-blue-200 hover:border-blue-400 shadow-sm rounded-lg px-3 py-2 transition-all active:scale-95 shrink-0"
+                        className="flex items-center gap-4 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-red-600/30 shadow-2xl rounded-[1.2rem] pl-4 pr-3 py-2.5 transition-all active:scale-95 shrink-0 group/pill"
                     >
                         <div className="text-left">
-                            <div className="font-bold text-slate-700 text-xs">{item.name}</div>
-                            <div className="text-[10px] text-slate-500 font-bold">${item.price}</div>
+                            <div className="font-black italic text-slate-200 text-[11px] uppercase tracking-tight leading-none mb-1 group-hover/pill:text-red-500 transition-colors">{item.name}</div>
+                            <div className="flex items-baseline gap-1">
+                                <span className="text-[9px] font-black text-slate-500">$</span>
+                                <span className="text-sm font-black text-slate-100 italic tracking-tighter">{item.price.toLocaleString()}</span>
+                            </div>
                         </div>
-                        <Plus className="w-4 h-4 text-blue-500" />
+                        <div className="p-2 rounded-xl bg-neutral-800 text-slate-400 group-hover/pill:bg-red-600 group-hover/pill:text-white transition-all shadow-inner">
+                            <Plus className="w-4 h-4" />
+                        </div>
                     </button>
                 ))}
             </div>

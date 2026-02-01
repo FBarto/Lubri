@@ -258,16 +258,37 @@ export default function RestrictedPOS({ cart, setCart, initialClient }: Restrict
         }
     };
 
-    if (loading) return <div className="h-full flex items-center justify-center font-bold text-slate-500">Cargando Catálogo...</div>;
+    if (loading) return (
+        <div className="h-full flex flex-col items-center justify-center bg-neutral-900 text-white">
+            <div className="relative w-24 h-24 mb-8">
+                <div className="absolute inset-0 border-4 border-red-600/20 rounded-full"></div>
+                <div className="absolute inset-0 border-4 border-t-red-600 rounded-full animate-spin"></div>
+                <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="text-red-500 animate-pulse">
+                        <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                            <path d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                    </span>
+                </div>
+            </div>
+            <div className="text-[10px] font-black uppercase tracking-[0.5em] animate-pulse">Desplegando Catálogo...</div>
+        </div>
+    );
 
     const allItems = [...services, ...products];
     const total = cart.reduce((sum, i) => sum + i.subtotal, 0);
 
     return (
-        <div className="h-full w-full bg-slate-50 box-border overflow-hidden relative">
-            <div className="grid grid-cols-12 gap-4 h-full p-4">
-                {/* Left: Cart (5 cols for easier touch) */}
-                <div className="col-span-12 md:col-span-5 h-full overflow-hidden">
+        <div className="h-full w-full bg-[#f1f5f9] box-border overflow-hidden relative">
+            {/* Background elements */}
+            <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none opacity-40">
+                <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-400/10 blur-[120px] rounded-full"></div>
+                <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-red-400/10 blur-[120px] rounded-full"></div>
+            </div>
+
+            <div className="grid grid-cols-12 gap-8 h-full p-8 relative z-10">
+                {/* Left: Cart Area */}
+                <div className="col-span-12 lg:col-span-5 h-full overflow-hidden">
                     <Cart
                         items={cart}
                         onUpdateQuantity={handleUpdateQuantity}
@@ -282,14 +303,14 @@ export default function RestrictedPOS({ cart, setCart, initialClient }: Restrict
                     />
                 </div>
 
-                {/* Right: Grid (7 cols) */}
-                <div className="col-span-12 md:col-span-7 h-full overflow-hidden bg-white rounded-xl border border-slate-200 flex flex-col p-4">
+                {/* Right: Catalog Area */}
+                <div className="col-span-12 lg:col-span-7 h-full overflow-hidden flex flex-col space-y-6">
                     <SmartSuggestions
                         cart={cart}
                         allItems={allItems}
                         onAddItem={handleAddItem}
                     />
-                    <div className="flex-1 overflow-hidden">
+                    <div className="flex-1 overflow-hidden glass rounded-[3rem] border-white/60 shadow-2xl relative">
                         <ItemsGrid items={allItems} onAddItem={handleAddItem} />
                     </div>
                 </div>

@@ -142,90 +142,119 @@ export default function ServiceModal({ isOpen, onClose, onConfirm, service, init
     if (!isOpen || !service) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-            <div className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-                <div className="bg-slate-900 p-4 text-white flex justify-between items-center shrink-0">
-                    <div>
-                        <h2 className="text-xl font-bold">Configurar Servicio</h2>
-                        <p className="text-slate-400 text-sm">{service.name}</p>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-900/80 backdrop-blur-md p-4 animate-in fade-in duration-300">
+            <div className="bg-slate-100 w-full max-w-2xl rounded-[3rem] shadow-[0_32px_64px_-12px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col max-h-[90vh] border border-white/20">
+                {/* Header - Dark & Aggressive */}
+                <div className="bg-neutral-900 p-8 text-white flex justify-between items-center shrink-0 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-red-600/10 blur-[60px] rounded-full translate-x-1/2 -translate-y-1/2"></div>
+
+                    <div className="relative z-10">
+                        <span className="block text-[10px] font-black text-red-500 uppercase tracking-[0.3em] leading-none mb-1">System Override</span>
+                        <h2 className="text-3xl font-black italic uppercase tracking-tighter italic">Configurar <span className="text-red-600">Servicio</span></h2>
+                        <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-1 opacity-70">Target: {service.name}</p>
                     </div>
-                    <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full">✕</button>
+                    <button
+                        onClick={onClose}
+                        className="bg-white/5 hover:bg-red-600 p-3 rounded-2xl transition-all group relative z-10"
+                    >
+                        <svg className="w-5 h-5 group-hover:rotate-90 transition-all font-black" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
                 </div>
 
-                <div className="p-6 overflow-y-auto flex-1 space-y-6">
-                    {/* Client Search */}
-                    <div className="relative">
-                        <label className="block text-sm font-bold text-slate-700 mb-1">Cliente</label>
-                        <input
-                            type="text"
-                            className="w-full p-3 border rounded-xl bg-slate-50 focus:ring-2 ring-blue-500 outline-none font-medium"
-                            placeholder="Buscar por nombre o teléfono..."
-                            value={phoneSearch}
-                            onChange={(e) => searchClient(e.target.value)}
-                        />
-                        {clientResults.length > 0 && (
-                            <ul className="absolute z-10 w-full bg-white border rounded-xl mt-1 shadow-xl max-h-48 overflow-y-auto">
-                                {clientResults.map((c) => (
-                                    <li key={c.id} onClick={() => selectClient(c)} className="p-3 hover:bg-blue-50 cursor-pointer border-b last:border-0 border-slate-100">
-                                        <div className="font-bold text-slate-800">{c.name}</div>
-                                        <div className="text-xs text-slate-500">{c.phone}</div>
-                                    </li>
-                                ))}
-                            </ul>
-                        )}
-                    </div>
-
-                    {/* Vehicle Search */}
-                    <div className="relative">
-                        <label className="block text-sm font-bold text-slate-700 mb-1">Vehículo / Patente</label>
-                        <input
-                            type="text"
-                            className="w-full p-3 border rounded-xl bg-slate-50 focus:ring-2 ring-blue-500 outline-none font-medium uppercase"
-                            placeholder="AAA 123"
-                            value={plateSearch}
-                            onChange={(e) => searchVehicle(e.target.value)}
-                        />
-                        {vehicleResults.length > 0 && (
-                            <ul className="absolute z-10 w-full bg-white border rounded-xl mt-1 shadow-xl max-h-48 overflow-y-auto">
-                                {vehicleResults.map((v) => (
-                                    <li key={v.id} onClick={() => selectVehicle(v)} className="p-3 hover:bg-blue-50 cursor-pointer border-b last:border-0 border-slate-100">
-                                        <div className="font-bold text-slate-800">{v.plate}</div>
-                                        <div className="text-xs text-slate-500">{v.model}</div>
-                                    </li>
-                                ))}
-                            </ul>
-                        )}
-                    </div>
-
-                    <div className="grid grid-cols-1 gap-4">
-                        <div>
-                            <label className="block text-sm font-bold text-slate-700 mb-1">Notas (Opcional)</label>
+                <div className="p-8 overflow-y-auto flex-1 space-y-8 custom-scrollbar">
+                    {/* Client Search - Premium Input */}
+                    <div className="relative group">
+                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 ml-2">Asignar Cliente</label>
+                        <div className="relative">
                             <input
                                 type="text"
-                                className="w-full p-3 border rounded-xl bg-slate-50 outline-none focus:ring-2 ring-blue-500"
-                                placeholder="..."
+                                className="w-full pl-12 pr-4 py-4 rounded-[1.5rem] border-2 border-slate-200 bg-white focus:border-red-600 text-slate-900 font-black placeholder:text-slate-300 outline-none transition-all shadow-sm"
+                                placeholder="Nombre o teléfono del cliente..."
+                                value={phoneSearch}
+                                onChange={(e) => searchClient(e.target.value)}
+                            />
+                            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-red-600 transition-colors">
+                                <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" /></svg>
+                            </div>
+                        </div>
+                        {clientResults.length > 0 && (
+                            <ul className="absolute z-20 w-full bg-white/95 backdrop-blur-md border border-slate-200 rounded-[1.5rem] mt-2 shadow-2xl overflow-hidden animate-in slide-in-from-top-2">
+                                {clientResults.map((c) => (
+                                    <li key={c.id} onClick={() => selectClient(c)} className="p-4 hover:bg-neutral-900 hover:text-white cursor-pointer transition-all border-b border-slate-50 last:border-0 group/item">
+                                        <div className="font-black italic uppercase tracking-tighter text-lg">{c.name}</div>
+                                        <div className="text-[10px] font-bold opacity-50 group-hover/item:text-red-400">{c.phone}</div>
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+                    </div>
+
+                    {/* Vehicle Search - Premium Input */}
+                    <div className="relative group">
+                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 ml-2">Vehículo / Patente</label>
+                        <div className="relative">
+                            <input
+                                type="text"
+                                className="w-full pl-12 pr-4 py-4 rounded-[1.5rem] border-2 border-slate-200 bg-white focus:border-red-600 text-slate-900 font-black placeholder:text-slate-300 outline-none transition-all shadow-sm uppercase italic"
+                                placeholder="AAA 123"
+                                value={plateSearch}
+                                onChange={(e) => searchVehicle(e.target.value)}
+                            />
+                            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-red-600 transition-colors">
+                                <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="10" rx="2" /><circle cx="7" cy="15" r="2" /><circle cx="17" cy="15" r="2" /><path d="M4 11l2-7h12l2 7" /></svg>
+                            </div>
+                        </div>
+                        {vehicleResults.length > 0 && (
+                            <ul className="absolute z-20 w-full bg-white/95 backdrop-blur-md border border-slate-200 rounded-[1.5rem] mt-2 shadow-2xl overflow-hidden animate-in slide-in-from-top-2">
+                                {vehicleResults.map((v) => (
+                                    <li key={v.id} onClick={() => selectVehicle(v)} className="p-4 hover:bg-neutral-900 hover:text-white cursor-pointer transition-all border-b border-slate-50 last:border-0 group/item">
+                                        <div className="font-black italic uppercase tracking-tighter text-lg">{v.plate}</div>
+                                        <div className="text-[10px] font-bold opacity-50 group-hover/item:text-red-400">{v.model}</div>
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-6">
+                        <div className="group">
+                            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 ml-2">Notas Técnicas</label>
+                            <textarea
+                                className="w-full p-5 rounded-[1.5rem] border-2 border-slate-200 bg-white focus:border-red-600 text-slate-900 font-bold outline-none transition-all shadow-sm min-h-[100px]"
+                                placeholder="Especificaciones adicionales o requerimientos..."
                                 value={notes}
                                 onChange={(e) => setNotes(e.target.value)}
                             />
                         </div>
                     </div>
-                    {/* DVI Upload */}
-                    <div>
-                        <label className="block text-sm font-bold text-slate-700 mb-2">Evidencia Digital (DVI)</label>
+
+                    {/* DVI Upload - Premium Integration */}
+                    <div className="bg-white p-6 rounded-[2rem] border-2 border-dashed border-slate-200 group-hover:border-red-600/30 transition-all">
+                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 text-center">Evidencia Digital (DVI)</label>
                         <UploadComponent onUploadComplete={setAttachments} />
                     </div>
                 </div>
 
-            </div>
-
-            <div className="p-4 border-t border-slate-100 flex justify-end gap-3 bg-slate-50 shrink-0">
-                <button onClick={onClose} className="px-6 py-3 rounded-xl font-bold text-slate-600 hover:bg-slate-200">Cancelar</button>
-                <button
-                    onClick={handleConfirm}
-                    className="px-8 py-3 rounded-xl font-bold bg-slate-900 text-white hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transition-all"
-                >
-                    Confirmar y Agregar
-                </button>
+                <div className="p-8 bg-white border-t border-slate-100 flex justify-between items-center shrink-0">
+                    <button
+                        onClick={onClose}
+                        className="px-8 py-4 rounded-2xl font-black text-slate-400 hover:text-red-600 uppercase tracking-widest text-[10px] hover:bg-red-50 transition-all"
+                    >
+                        Cancelar
+                    </button>
+                    <button
+                        onClick={handleConfirm}
+                        disabled={!selectedClient || !selectedVehicle}
+                        className="px-10 py-5 rounded-[2rem] font-black bg-neutral-900 text-white hover:bg-red-600 disabled:opacity-20 disabled:grayscale disabled:scale-100 shadow-2xl hover:shadow-red-600/20 active:scale-[0.97] transition-all flex items-center gap-3 uppercase italic tracking-widest text-sm group"
+                    >
+                        <span>Confirmar Misión</span>
+                        <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={4}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                        </svg>
+                    </button>
+                </div>
             </div>
         </div>
     );

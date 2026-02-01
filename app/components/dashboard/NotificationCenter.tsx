@@ -64,42 +64,55 @@ export default function NotificationCenter() {
             </button>
 
             {isOpen && (
-                <div className="absolute right-0 mt-4 w-96 glass-dark rounded-3xl shadow-2xl p-6 z-50 animate-scale-in border border-white/5 ring-1 ring-black/5">
-                    <div className="flex justify-between items-center mb-6">
+                <div className="absolute right-0 mt-4 w-96 glass-dark rounded-[2.5rem] shadow-2xl p-8 z-50 animate-scale-in border border-white/10 ring-1 ring-white/10 overflow-hidden">
+                    {/* Background glow */}
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-red-600/10 blur-3xl rounded-full -translate-y-1/2 translate-x-1/2"></div>
+
+                    <div className="flex justify-between items-center mb-6 relative z-10">
                         <h3 className="text-white font-black text-xl flex items-center gap-2 italic uppercase">
                             Notificaciones
-                            <span className="bg-red-600 text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider not-italic">Activas</span>
+                            <span className="bg-red-600/20 text-red-500 text-[10px] px-2 py-0.5 rounded-full border border-red-500/30 uppercase tracking-wider not-italic">Activas</span>
                         </h3>
-                        <button onClick={() => setIsOpen(false)} className="text-slate-400 hover:text-white">
-                            <X size={20} />
+                        <button onClick={() => setIsOpen(false)} className="w-8 h-8 flex items-center justify-center rounded-full bg-white/5 text-slate-400 hover:text-white hover:bg-white/10 transition-all">
+                            <X size={18} />
                         </button>
                     </div>
 
-                    <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                    <div className="space-y-4 max-h-[450px] overflow-y-auto pr-2 custom-scrollbar relative z-10">
                         {loading ? (
-                            <div className="p-8 text-center text-slate-400">Cargando...</div>
+                            <div className="p-8 text-center text-slate-400 animate-pulse">Consultando el servidor...</div>
                         ) : count === 0 ? (
-                            <div className="p-8 text-center text-slate-400 font-medium">No hay notificaciones pendientes ✨</div>
+                            <div className="p-12 text-center">
+                                <div className="w-16 h-16 bg-white/5 rounded-3xl flex items-center justify-center mx-auto mb-4 text-slate-500">
+                                    <Bell size={32} opacity={0.2} />
+                                </div>
+                                <p className="text-slate-400 font-bold italic tracking-tight">Todo bajo control. No hay pendientes por ahora ✨</p>
+                            </div>
                         ) : (
                             notifications.map(notif => (
-                                <div key={notif.id} className="bg-white/5 hover:bg-white/10 p-4 rounded-2xl border border-white/5 transition-all group">
+                                <div key={notif.id} className="bg-white/5 hover:bg-white/10 p-5 rounded-3xl border border-white/5 transition-all group relative overflow-hidden">
                                     <div className="flex items-start gap-4">
-                                        <div className={`p-3 rounded-xl ${notif.type === 'READY' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-indigo-500/20 text-indigo-400'}`}>
-                                            {notif.type === 'READY' ? <CheckCircle2 size={20} /> : <Calendar size={20} />}
+                                        <div className={`p-3 rounded-2xl shadow-lg ${notif.type === 'READY' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}`}>
+                                            {notif.type === 'READY' ? <CheckCircle2 size={24} /> : <Calendar size={24} />}
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <p className="text-white font-bold text-sm truncate">{notif.title}</p>
-                                            <p className="text-slate-400 text-xs leading-relaxed mt-1">{notif.message}</p>
+                                            <div className="flex justify-between items-start mb-1">
+                                                <p className="text-white font-black text-sm uppercase tracking-tight">{notif.title}</p>
+                                                <span className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">{notif.type === 'READY' ? 'Vehículo Listo' : 'Recordatorio'}</span>
+                                            </div>
+                                            <p className="text-slate-400 text-xs leading-relaxed font-medium">{notif.message}</p>
 
                                             <button
                                                 onClick={() => sendWhatsApp(notif)}
-                                                className="mt-4 w-full py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-colors"
+                                                className="mt-4 w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl text-[11px] font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-lg shadow-emerald-900/40 active:scale-95"
                                             >
-                                                <MessageCircle size={14} />
+                                                <MessageCircle size={16} fill="currentColor" className="opacity-20 translate-x-1" />
                                                 Notificar a {notif.clientName.split(' ')[0]}
                                             </button>
                                         </div>
                                     </div>
+                                    {/* Item decorative line */}
+                                    <div className={`absolute left-0 top-1/4 bottom-1/4 w-1 rounded-r-full ${notif.type === 'READY' ? 'bg-emerald-500' : 'bg-red-500'} opacity-30 group-hover:opacity-100 transition-opacity`}></div>
                                 </div>
                             ))
                         )}

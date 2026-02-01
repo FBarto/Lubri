@@ -132,133 +132,170 @@ export default function ItemsGrid({ items, onAddItem }: ItemsGridProps) {
     };
 
     return (
-        <div className="flex flex-col h-full bg-slate-50">
-            {/* Header / Search Controls */}
-            <div className="p-4 bg-white border-b border-slate-200 shadow-sm shrink-0 z-10 sticky top-0">
+        <div className="flex flex-col h-full bg-[#f8fafc] overflow-hidden">
+            {/* Header / Search Controls - Glass Style */}
+            <div className="p-6 bg-white border-b border-slate-100 shadow-sm shrink-0 z-10 sticky top-0">
                 <div className="flex gap-4 items-center">
                     {selectedCategory && (
                         <button
                             onClick={handleBack}
-                            className="bg-slate-100 hover:bg-slate-200 p-2.5 rounded-xl transition-colors text-slate-600"
+                            className="bg-slate-100 hover:bg-red-600 hover:text-white p-3 rounded-2xl transition-all shadow-sm active:scale-90"
                         >
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg>
                         </button>
                     )}
 
-                    <div className="flex-1 relative">
+                    <div className="flex-1 relative group">
                         <input
                             type="text"
-                            placeholder={selectedCategory ? "Buscar item..." : "Buscar en todo..."}
-                            className="w-full pl-4 pr-10 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:ring-2 focus:ring-slate-900 outline-none transition-all"
+                            placeholder={selectedCategory ? `Explorar en ${CATEGORIES.find(c => c.id === selectedCategory)?.label}...` : "Buscar productos o servicios mediante código o nombre..."}
+                            className="w-full pl-12 pr-12 py-4 rounded-2xl border-2 border-slate-100 bg-slate-50 focus:bg-white focus:border-red-600 text-slate-900 font-bold placeholder:text-slate-400 placeholder:italic outline-none transition-all shadow-inner"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
-                        <svg className="absolute right-3 top-3 text-slate-400" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-red-600 transition-colors">
+                            <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        </div>
+                        {searchTerm && (
+                            <button
+                                onClick={() => setSearchTerm('')}
+                                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 hover:text-red-600 transition-colors"
+                            >
+                                <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"></path></svg>
+                            </button>
+                        )}
                     </div>
                 </div>
 
                 {selectedCategory && (
-                    <div className="mt-2 text-xs font-bold text-slate-400 uppercase tracking-widest pl-2">
-                        {CATEGORIES.find(c => c.id === selectedCategory)?.label}
+                    <div className="mt-4 flex items-center gap-2">
+                        <span className="text-[10px] font-black text-red-600 bg-red-50 px-3 py-1 rounded-full uppercase tracking-[0.2em] border border-red-100 shadow-sm">
+                            {CATEGORIES.find(c => c.id === selectedCategory)?.label}
+                        </span>
+                        <span className="h-[1px] flex-1 bg-slate-50"></span>
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic">{finalFilteredItems.length} resultados encontrados</span>
                     </div>
                 )}
             </div>
 
             {/* Content Area */}
-            <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
+            <div className="flex-1 overflow-y-auto p-8 custom-scrollbar relative">
+                {/* Decorative background for grid */}
+                <div className="absolute top-0 right-0 w-[40%] h-[40%] bg-slate-200/20 blur-[100px] rounded-full -z-10 pointer-events-none"></div>
 
-                {/* 1. Category View */}
+                {/* 1. Category View - Premium Square Cards */}
                 {!selectedCategory && !searchTerm && (
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                         {CATEGORIES.map(cat => (
                             <button
                                 key={cat.id}
                                 onClick={() => handleCategorySelect(cat.id)}
-                                className="flex flex-col items-center justify-center gap-3 p-6 bg-white border border-slate-200 rounded-2xl shadow-sm hover:shadow-lg hover:border-slate-300 hover:-translate-y-1 transition-all aspect-square group"
+                                className="flex flex-col items-start justify-between p-8 bg-white border border-slate-100 rounded-[2.5rem] shadow-sm hover:shadow-2xl hover:border-red-500/20 hover:-translate-y-2 transition-all aspect-square group relative overflow-hidden"
                             >
-                                <div className={`p-4 rounded-full bg-slate-50 group-hover:bg-slate-100 text-slate-600 group-hover:text-slate-900 transition-colors`}>
+                                <div className="absolute -bottom-4 -right-4 text-slate-50 opacity-0 group-hover:opacity-100 transition-opacity scale-150 rotate-12">
                                     <cat.icon />
                                 </div>
-                                <span className="font-bold text-lg text-slate-700">{cat.label}</span>
-                                <span className="text-xs font-medium text-slate-400">
-                                    {itemsByCategory[cat.id]?.length || 0} items
-                                </span>
+
+                                <div className={`p-4 rounded-3xl bg-slate-50 group-hover:bg-red-600 text-slate-400 group-hover:text-white transition-all shadow-inner group-hover:rotate-12 group-hover:scale-110`}>
+                                    <cat.icon />
+                                </div>
+
+                                <div className="relative z-10 w-full">
+                                    <span className="block font-black text-xl text-slate-900 uppercase italic tracking-tighter group-hover:text-red-600 transition-colors leading-tight mb-1">{cat.label}</span>
+                                    <div className="flex items-center gap-1.5 font-bold text-[10px] text-slate-400 uppercase tracking-widest">
+                                        <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
+                                        {itemsByCategory[cat.id]?.length || 0} items
+                                    </div>
+                                </div>
                             </button>
                         ))}
                     </div>
                 )}
 
-                {/* 2. Items View */}
+                {/* 2. Items View - Modern Grid Cards */}
                 {(selectedCategory || searchTerm) && (
                     <>
-                        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 mb-4">
-                            {paginatedItems.map(item => (
-                                <button
-                                    key={`${item.type}-${item.id}`}
-                                    onClick={() => onAddItem(item)}
-                                    className="text-left bg-white rounded-xl p-0 border border-slate-200 shadow-sm hover:shadow-md hover:border-blue-400 transition-all flex flex-col items-stretch overflow-hidden group min-h-[140px]"
-                                >
-                                    <div className={`p-1.5 text-[0.6rem] font-black uppercase tracking-wider text-center ${item.type === 'SERVICE' ? 'bg-emerald-50 text-emerald-700' : 'bg-blue-50 text-blue-700'}`}>
-                                        {item.category || (item.type === 'SERVICE' ? 'SERVICIO' : 'PRODUCTO')}
-                                    </div>
+                        {paginatedItems.length === 0 ? (
+                            <div className="h-64 flex flex-col items-center justify-center text-slate-300">
+                                <svg width="64" height="64" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24" className="mb-4 opacity-20"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                                <p className="font-black uppercase tracking-[0.2em] italic">No results found</p>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
+                                {paginatedItems.map(item => (
+                                    <button
+                                        key={`${item.type}-${item.id}`}
+                                        onClick={() => onAddItem(item)}
+                                        className="text-left glass rounded-[2.2rem] p-6 border-white/60 shadow-sm hover:shadow-2xl hover:border-red-600/30 transition-all flex flex-col justify-between group min-h-[180px] hover:-translate-y-1 relative overflow-hidden"
+                                    >
+                                        <div className="relative z-10">
+                                            <div className="flex justify-between items-start mb-4">
+                                                <span className={`text-[9px] font-black uppercase tracking-[0.2em] px-2 py-0.5 rounded-full border ${item.type === 'SERVICE' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' : 'bg-blue-50 text-blue-600 border-blue-200'}`}>
+                                                    {item.category || (item.type === 'SERVICE' ? 'Service' : 'Product')}
+                                                </span>
+                                                {item.type === 'PRODUCT' && (
+                                                    <div className={`text-[9px] font-black px-2 py-0.5 rounded-full border ${!item.stock || item.stock <= 0 ? 'bg-red-50 text-red-600 border-red-200' : item.stock <= (item.minStock || 0) ? 'bg-amber-50 text-amber-600 border-amber-200' : 'bg-slate-50 text-slate-400 border-slate-200'}`}>
+                                                        {!item.stock || item.stock <= 0 ? 'Out' : item.stock <= (item.minStock || 0) ? `Min: ${item.stock}` : `Stock: ${item.stock}`}
+                                                    </div>
+                                                )}
+                                            </div>
 
-                                    <div className="p-3 flex-1 flex flex-col justify-between items-start w-full">
-                                        <div className="w-full mb-2">
                                             {item.code && (
-                                                <h3 className="font-black text-slate-800 text-lg leading-tight mb-1 break-words w-full">
+                                                <h3 className="font-black text-slate-900 text-2xl leading-none tracking-tighter mb-2 italic group-hover:text-red-600 transition-colors uppercase">
                                                     {item.code}
                                                 </h3>
                                             )}
-                                            <p className={`font-medium text-slate-600 leading-snug break-words w-full ${item.code ? 'text-xs opacity-80' : 'text-sm font-bold'}`}>
+                                            <p className={`font-bold text-slate-500 leading-tight uppercase tracking-tight line-clamp-2 italic ${item.code ? 'text-[10px]' : 'text-base'}`}>
                                                 {item.name}
                                             </p>
                                         </div>
 
-                                        <div className="flex justify-between items-end w-full border-t border-slate-50 pt-2 mt-1">
-                                            <span className="text-lg font-black text-slate-900 shrink-0">
-                                                ${item.price.toLocaleString()}
-                                            </span>
+                                        <div className="flex justify-between items-end mt-4 relative z-10">
+                                            <div className="flex items-start">
+                                                <span className="text-xs font-black text-red-600 mt-1 mr-0.5">$</span>
+                                                <span className="text-3xl font-black text-slate-900 tracking-tighter italic leading-none">
+                                                    {Math.floor(item.price).toLocaleString()}
+                                                </span>
+                                            </div>
 
-                                            {item.type === 'PRODUCT' && (
-                                                <div className={`text-[0.65rem] font-bold px-1.5 py-0.5 rounded ml-2 shrink-0 ${!item.stock || item.stock <= 0 ? 'bg-red-100 text-red-600' : item.stock <= (item.minStock || 0) ? 'bg-amber-100 text-amber-700' : 'text-slate-400'}`}>
-                                                    {!item.stock || item.stock <= 0 ? 'Sin Stock' : item.stock <= (item.minStock || 0) ? `Bajo: ${item.stock}` : `Stock: ${item.stock}`}
-                                                </div>
-                                            )}
+                                            <div className="w-8 h-8 rounded-full bg-slate-900 text-white flex items-center justify-center opacity-0 translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all shadow-xl shadow-slate-900/40">
+                                                <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="4" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"></path></svg>
+                                            </div>
                                         </div>
-                                    </div>
-                                </button>
-                            ))}
-                        </div>
 
-                        {/* Pagination Controls */}
+                                        {/* Decorative gloss */}
+                                        <div className="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-b from-white/30 to-transparent pointer-events-none"></div>
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+
+                        {/* Pagination Controls - Premium Styling */}
                         {totalPages > 1 && (
-                            <div className="flex justify-center items-center gap-4 py-4 mt-auto">
+                            <div className="flex justify-center items-center gap-6 py-8 mt-auto border-t border-slate-100">
                                 <button
                                     onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                                     disabled={currentPage === 1}
-                                    className="px-4 py-2 rounded-lg bg-white border border-slate-200 text-slate-600 font-bold disabled:opacity-50 hover:bg-slate-50"
+                                    className="px-6 py-2.5 rounded-2xl bg-white border-2 border-slate-100 text-slate-600 font-black text-[10px] uppercase tracking-widest disabled:opacity-20 hover:border-red-600 hover:text-red-600 transition-all shadow-sm active:scale-90"
                                 >
-                                    Anterior
+                                    Prev
                                 </button>
-                                <span className="text-sm font-bold text-slate-500">
-                                    Página {currentPage} de {totalPages}
-                                </span>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic">Phase</span>
+                                    <span className="w-8 h-8 rounded-full bg-slate-900 text-white flex items-center justify-center font-black text-xs italic">{currentPage}</span>
+                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic mx-1">/</span>
+                                    <span className="text-sm font-black text-slate-600 italic">{totalPages}</span>
+                                </div>
                                 <button
                                     onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                                     disabled={currentPage === totalPages}
-                                    className="px-4 py-2 rounded-lg bg-white border border-slate-200 text-slate-600 font-bold disabled:opacity-50 hover:bg-slate-50"
+                                    className="px-6 py-2.5 rounded-2xl bg-white border-2 border-slate-100 text-slate-600 font-black text-[10px] uppercase tracking-widest disabled:opacity-20 hover:border-red-600 hover:text-red-600 transition-all shadow-sm active:scale-90"
                                 >
-                                    Siguiente
+                                    Next
                                 </button>
                             </div>
                         )}
                     </>
-                )}
-
-                {(selectedCategory || searchTerm) && filteredItems.length === 0 && (
-                    <div className="h-full flex flex-col items-center justify-center text-slate-400 py-12">
-                        <p className="font-medium">No se encontraron resultados</p>
-                    </div>
                 )}
             </div>
         </div>

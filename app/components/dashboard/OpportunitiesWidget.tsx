@@ -68,51 +68,57 @@ export default function OpportunitiesWidget() {
     if (opportunities.length === 0) return null; // Hide if empty
 
     return (
-        <div className="bg-gradient-to-br from-red-600 to-red-800 rounded-3xl p-6 text-white shadow-xl mb-8 relative overflow-hidden">
-            <div className="absolute top-0 right-0 p-4 opacity-10">
-                <Sparkles size={120} />
-            </div>
+        <div className="bg-neutral-900 rounded-[2.5rem] p-8 text-white shadow-2xl mb-8 relative overflow-hidden border border-white/5">
+            {/* Animated background element */}
+            <div className="absolute top-0 right-0 w-64 h-64 bg-red-600/10 blur-[100px] rounded-full -translate-y-1/2 translate-x-1/2 animate-pulse"></div>
 
-            <h3 className="text-xl font-bold mb-4 flex items-center gap-2 relative z-10">
-                <Sparkles className="text-yellow-300" />
-                Oportunidades Predictivas
-                <span className="bg-white/20 px-2 py-0.5 rounded-full text-xs font-medium">
-                    {opportunities.length}
-                </span>
+            <div className="flex justify-between items-center mb-8 relative z-10">
+                <h3 className="text-2xl font-black flex items-center gap-3 italic uppercase tracking-tighter">
+                    <Sparkles className="text-red-500" size={28} />
+                    <span>Oportunidades Predictivas</span>
+                    <span className="bg-red-600/20 text-red-500 text-xs px-3 py-1 rounded-full border border-red-500/30 not-italic">
+                        {opportunities.length} detectadas
+                    </span>
+                </h3>
                 <button
                     onClick={handleRefresh}
                     disabled={refreshing}
-                    className={`ml-auto p-2 bg-white/10 rounded-full hover:bg-white/20 transition-all ${refreshing ? 'animate-spin' : ''}`}
-                    title="Actualizar análisis"
+                    className={`p-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl transition-all ${refreshing ? 'animate-spin' : 'hover:rotate-180'}`}
+                    title="Recalcular con IA"
                 >
-                    <RefreshCw size={16} />
+                    <RefreshCw size={20} />
                 </button>
-            </h3>
+            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 relative z-10">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 relative z-10">
                 {opportunities.slice(0, 6).map(opp => (
-                    <div key={opp.id} className="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/10 hover:bg-white/20 transition-all flex flex-col justify-between">
+                    <div key={opp.id} className="glass-dark hover:bg-white/10 rounded-[2rem] p-6 border border-white/5 hover:border-red-500/30 transition-all group flex flex-col justify-between">
                         <div>
-                            <div className="flex justify-between items-start mb-2">
-                                <span className="font-bold text-lg">{opp.clientName}</span>
+                            <div className="flex justify-between items-start mb-4">
+                                <div className="p-3 bg-red-500/10 text-red-500 rounded-2xl group-hover:bg-red-500 group-hover:text-white transition-all">
+                                    <Sparkles size={20} />
+                                </div>
                                 {opp.daysUntil < 0 ? (
-                                    <span className="text-xs bg-red-500/80 px-2 py-1 rounded font-bold">Vencido</span>
+                                    <span className="text-[10px] font-black bg-red-600/20 text-red-500 border border-red-600/30 px-3 py-1 rounded-full uppercase tracking-widest">Vencido {Math.abs(opp.daysUntil)}d</span>
                                 ) : (
-                                    <span className="text-xs bg-emerald-500/80 px-2 py-1 rounded font-bold">en {opp.daysUntil} días</span>
+                                    <span className="text-[10px] font-black bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-3 py-1 rounded-full uppercase tracking-widest">en {opp.daysUntil} días</span>
                                 )}
                             </div>
-                            <p className="text-sm text-red-50 mb-1">{opp.model} • {opp.plate}</p>
-                            <div className="flex items-center gap-1 text-xs text-red-100 mb-3">
-                                <Calendar size={12} />
+
+                            <h4 className="font-black text-xl mb-1 truncate group-hover:text-red-500 transition-colors uppercase tracking-tight">{opp.clientName}</h4>
+                            <p className="text-xs text-slate-400 font-bold mb-4 uppercase tracking-[0.1em]">{opp.model} • <span className="text-slate-300">{opp.plate}</span></p>
+
+                            <div className="flex items-center gap-2 text-[10px] text-slate-500 font-black uppercase tracking-widest mb-6">
+                                <Calendar size={14} className="text-red-500" />
                                 Predicción: {new Date(opp.predictedDate).toLocaleDateString()}
                             </div>
                         </div>
 
                         <button
                             onClick={() => sendWhatsapp(opp)}
-                            className="w-full py-2 bg-green-500 hover:bg-green-600 rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition-colors shadow-lg shadow-green-900/20"
+                            className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 active:scale-95 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-all shadow-lg shadow-emerald-950/40"
                         >
-                            <MessageCircle size={16} />
+                            <MessageCircle size={18} fill="currentColor" className="opacity-20" />
                             Contactar por WhatsApp
                         </button>
                     </div>
@@ -120,9 +126,9 @@ export default function OpportunitiesWidget() {
             </div>
 
             {opportunities.length > 6 && (
-                <div className="mt-4 text-center relative z-10">
-                    <button className="text-sm text-red-100 hover:text-white font-medium">
-                        Ver {opportunities.length - 6} más...
+                <div className="mt-8 text-center relative z-10">
+                    <button className="px-8 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-full text-xs font-black uppercase tracking-widest text-slate-400 hover:text-white transition-all">
+                        Ver {opportunities.length - 6} oportunidades adicionales
                     </button>
                 </div>
             )}
