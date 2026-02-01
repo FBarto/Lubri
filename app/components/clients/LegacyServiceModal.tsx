@@ -1,19 +1,18 @@
-
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { createLegacyWorkOrder } from '../../lib/business-actions';
-import { X, Save, Calendar, Gauge, CheckSquare, Droplets } from 'lucide-react';
+import { getLastServiceItems } from '../../lib/maintenance-actions';
+import { History, X, Calendar, Gauge, CheckSquare, Droplets, Save, Search, Sparkles } from 'lucide-react';
 
-interface LegacyServiceModalProps {
+export default function LegacyServiceModal({ vehicleId, clientId, onClose, onSuccess }: {
     vehicleId: number;
     clientId: number;
     onClose: () => void;
     onSuccess: () => void;
-}
-
-export default function LegacyServiceModal({ vehicleId, clientId, onClose, onSuccess }: LegacyServiceModalProps) {
+}) {
     const [loading, setLoading] = useState(false);
+    const [suggesting, setSuggesting] = useState(false);
 
     // Default to today, generic 15k mileage if unknown
     const [form, setForm] = useState({
@@ -26,8 +25,8 @@ export default function LegacyServiceModal({ vehicleId, clientId, onClose, onSuc
             cabin: false, cabinCode: ''
         },
         oil: {
-            type: 'SEMI', // SEMI, SINTETICO, MINERAL
-            liters: '',
+            type: 'SINTETICO', // SEMI, SINTETICO, MINERAL
+            liters: '4',
             brand: ''
         },
         fluids: {
@@ -42,6 +41,52 @@ export default function LegacyServiceModal({ vehicleId, clientId, onClose, onSuc
 
     const [nextServiceMileage, setNextServiceMileage] = useState('');
     const [sendWhatsApp, setSendWhatsApp] = useState(false);
+    const [wasSuggested, setWasSuggested] = useState(false);
+
+    useEffect(() => {
+        async function fetchSuggestions() {
+            setSuggesting(true);
+            try {
+                const res = await getLastServiceItems(vehicleId);
+                if (res.success && res.data) {
+                    const history = res.data;
+                    const newForm = { ...form };
+
+                    history.items.forEach((item: any) => {
+                        const lowName = item.name.toLowerCase();
+                        if (item.category === 'ENGINE_OIL' || lowName.includes('aceite')) {
+                            newForm.oil.brand = item.name;
+                            newForm.oil.liters = item.quantity.toString();
+                        }
+                        if (item.category === 'OIL_FILTER' || lowName.includes('filtro aceite') || lowName.includes('wo')) {
+                            newForm.filters.oil = true;
+                            newForm.filters.oilCode = item.code || item.name;
+                        }
+                        if (item.category === 'AIR_FILTER' || lowName.includes('filtro aire') || lowName.includes('wa')) {
+                            newForm.filters.air = true;
+                            newForm.filters.airCode = item.code || item.name;
+                        }
+                        if (item.category === 'FUEL_FILTER' || lowName.includes('filtro comb') || lowName.includes('wg')) {
+                            newForm.filters.fuel = true;
+                            newForm.filters.fuelCode = item.code || item.name;
+                        }
+                        if (item.category === 'CABIN_FILTER' || lowName.includes('filtro habit') || lowName.includes('akx')) {
+                            newForm.filters.cabin = true;
+                            newForm.filters.cabinCode = item.code || item.name;
+                        }
+                    });
+
+                    setForm(newForm);
+                    setWasSuggested(true);
+                }
+            } catch (error) {
+                console.error("Error fetching suggestions:", error);
+            } finally {
+                setSuggesting(false);
+            }
+        }
+        fetchSuggestions();
+    }, [vehicleId]);
 
     const updateFilter = (key: string, val: boolean) => {
         setForm(prev => ({ ...prev, filters: { ...prev.filters, [key]: val } }));
@@ -94,7 +139,12 @@ export default function LegacyServiceModal({ vehicleId, clientId, onClose, onSuc
                 <div className="bg-slate-900 text-white px-6 py-4 flex justify-between items-center shrink-0">
                     <div>
                         <h2 className="text-lg font-bold flex items-center gap-2">
-                            <HistoryIcon /> Carga Histórica de Servicio
+                            <History /> Carga Histórica de Servicio
+                            {wasSuggested && (
+                                <span className="flex items-center gap-1.5 px-2 py-0.5 bg-blue-500/20 text-blue-300 rounded-full text-[10px] animate-pulse">
+                                    <Sparkles size={10} /> Sugerencias Aplicadas
+                                </span>
+                            )}
                         </h2>
                         <p className="text-xs text-slate-400">Importar datos de fichas anteriores (Legacy)</p>
                     </div>
@@ -102,6 +152,12 @@ export default function LegacyServiceModal({ vehicleId, clientId, onClose, onSuc
                         <X size={20} />
                     </button>
                 </div>
+
+                {suggesting && (
+                    <div className="bg-blue-600/10 text-blue-600 px-6 py-1 text-[10px] font-bold text-center animate-pulse">
+                        Buscando datos del último service...
+                    </div>
+                )}
 
                 {/* Body - Dense Grid */}
                 <div className="p-6 overflow-y-auto grid grid-cols-1 md:grid-cols-12 gap-6 bg-slate-50">

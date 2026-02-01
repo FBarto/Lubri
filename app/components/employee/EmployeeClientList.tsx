@@ -7,6 +7,7 @@ import CreateClientModal from './CreateClientModal';
 import PostClientActionModal from './PostClientActionModal';
 import CreateVehicleModal from './CreateVehicleModal';
 import ClientHistoryModal from './ClientHistoryModal';
+import LegacyServiceModal from '../clients/LegacyServiceModal';
 
 interface Client {
     id: number;
@@ -38,6 +39,7 @@ export default function EmployeeClientList({ onClientAction }: EmployeeClientLis
 
     const [createdClient, setCreatedClient] = useState<Client | null>(null);
     const [selectedClient, setSelectedClient] = useState<Client | null>(null); // New
+    const [legacyVehicle, setLegacyVehicle] = useState<any>(null); // Track vehicle for legacy modal
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -188,27 +190,11 @@ export default function EmployeeClientList({ onClientAction }: EmployeeClientLis
                                                     </span>
 
                                                     <button
-                                                        onClick={async (e) => {
-                                                            e.stopPropagation();
-                                                            try {
-                                                                const { generatePortalLinkForVehicle } = await import('../../lib/portal-actions');
-                                                                const res = await generatePortalLinkForVehicle(v.id);
-                                                                if (res.success && res.url) {
-                                                                    const fullUrl = window.location.origin + res.url;
-                                                                    const msg = `Hola ${client.name.split(' ')[0]}! 👋\nAcá tenés tu Tarjeta Digital del auto con todo el historial de mantenimiento.\nGuardala siempre a mano: ${fullUrl}`;
-                                                                    const phone = client.phone.replace(/\D/g, '');
-                                                                    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
-                                                                } else {
-                                                                    alert('Error: ' + res.error);
-                                                                }
-                                                            } catch (err) {
-                                                                console.error(err);
-                                                                alert('Error al generar enlace');
-                                                            }
-                                                        }}
-                                                        className="text-[10px] font-bold text-white bg-indigo-500 hover:bg-indigo-600 px-3 py-1.5 rounded-lg flex items-center justify-center gap-2 transition-all shadow-sm w-full"
+                                                        onClick={() => setLegacyVehicle(v)}
+                                                        className="text-[10px] font-bold text-white bg-amber-500 hover:bg-amber-600 px-3 py-1.5 rounded-lg flex items-center justify-center gap-2 transition-all shadow-sm w-full"
+                                                        title="Cargar Histórico (Ficha Vieja)"
                                                     >
-                                                        📲 Enviar Tarjeta
+                                                        <History size={12} strokeWidth={3} /> Historial
                                                     </button>
                                                 </div>
                                             </div>
@@ -310,6 +296,18 @@ export default function EmployeeClientList({ onClientAction }: EmployeeClientLis
                 onClose={() => setIsVehicleModalOpen(false)}
                 onSuccess={handleVehicleCreated}
             />
+
+            {legacyVehicle && (
+                <LegacyServiceModal
+                    vehicleId={legacyVehicle.id}
+                    clientId={selectedClient?.id || createdClient?.id || 0}
+                    onClose={() => setLegacyVehicle(null)}
+                    onSuccess={() => {
+                        setLegacyVehicle(null);
+                        alert('Historial actualizado correctamente');
+                    }}
+                />
+            )}
 
         </div >
     );
