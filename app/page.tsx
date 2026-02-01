@@ -37,7 +37,7 @@ export default async function Home() {
 
             <div className="relative inline-block mb-6">
               <h1 className="text-4xl md:text-6xl lg:text-8xl font-black italic tracking-tighter text-white leading-[0.85] mb-2 drop-shadow-2xl">
-                FB <span className="text-transparent bg-clip-text bg-gradient-to-br from-white via-white to-neutral-500 pr-2">LUBRICENTRO</span> <br />
+                FB <span className="text-transparent bg-clip-text bg-gradient-to-br from-white via-white to-neutral-500 pr-2">LUBRICENTRO&nbsp</span> <br />
                 <span className="relative inline-block mt-6">
                   <span className="absolute -inset-1 bg-red-600 blur-2xl opacity-20 animate-pulse"></span>
                   <span className="relative text-base md:text-2xl text-red-500 font-bold uppercase not-italic tracking-tight">
