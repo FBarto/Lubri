@@ -1,0 +1,129 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - button "Open Next.js Dev Tools" [ref=e7] [cursor=pointer]:
+    - img [ref=e8]
+  - alert [ref=e11]
+  - generic [ref=e12]:
+    - banner [ref=e13]:
+      - generic [ref=e14]:
+        - heading "FB LUBRICENTRO" [level=1] [ref=e15]
+        - paragraph [ref=e16]: Panel de Operador
+      - generic [ref=e17]:
+        - generic [ref=e18]:
+          - paragraph
+          - text: EMPLEADO
+        - button "Salir" [ref=e19]
+    - main [ref=e20]:
+      - generic [ref=e21]:
+        - button "TABLERO" [ref=e22]:
+          - img [ref=e23]
+          - text: TABLERO
+        - button "COBRAR" [ref=e25]:
+          - img [ref=e26]
+          - text: COBRAR
+        - button "COMPRA 1" [ref=e29]:
+          - img [ref=e30]
+          - generic [ref=e34]:
+            - text: COMPRA
+            - generic [ref=e35]: "1"
+        - button "STOCK" [ref=e36]:
+          - img [ref=e37]
+          - text: STOCK
+        - button "INGRESAR" [ref=e41]:
+          - img [ref=e42]
+          - text: INGRESAR
+        - button "CLIENTES" [ref=e44]:
+          - img [ref=e45]
+          - text: CLIENTES
+      - generic [ref=e52]:
+        - generic [ref=e54]:
+          - generic [ref=e55]:
+            - generic [ref=e57]:
+              - img [ref=e59]
+              - generic [ref=e63]:
+                - generic [ref=e64]: Session Active
+                - generic [ref=e65]: Venta Actual
+            - generic [ref=e66]:
+              - button "Ver Cierre de Caja" [ref=e67]:
+                - img [ref=e68]
+              - button "Abortar Misión (Requiere motivo)" [ref=e70]:
+                - img [ref=e71]
+          - generic [ref=e74]:
+            - generic [ref=e75]:
+              - generic [ref=e76]: 1 Items registrados
+              - button "Vaciar Carrito" [ref=e77]
+            - generic [ref=e78]:
+              - generic [ref=e80]:
+                - generic [ref=e81]:
+                  - generic [ref=e83]: Product
+                  - heading "CDM SERIE NUEVA SECUNDARIO AMP 339 (LANSS EF771R / BISCAYNE NFB7017)" [level=4] [ref=e84]
+                - button [ref=e85]:
+                  - img [ref=e86]
+              - generic [ref=e89]:
+                - generic [ref=e90]:
+                  - button "-" [ref=e91]:
+                    - generic [ref=e92]: "-"
+                  - generic [ref=e93]:
+                    - spinbutton [ref=e94]: "1"
+                    - generic [ref=e95]: Qty
+                  - button "+" [ref=e96]:
+                    - generic [ref=e97]: +
+                - generic [ref=e98]:
+                  - generic [ref=e99]: Unit Price
+                  - button "$70,101.384" [ref=e100]:
+                    - generic [ref=e101]: $70,101.384
+                    - img [ref=e102]
+          - generic [ref=e104]:
+            - generic [ref=e106]:
+              - generic [ref=e107]:
+                - generic [ref=e108]: Total a Liquidar
+                - generic [ref=e109]:
+                  - generic [ref=e110]: $
+                  - generic [ref=e111]: 70,101.384
+              - generic [ref=e112]:
+                - generic [ref=e113]: Efficiency Status
+                - text: Optimal Flow
+            - button "Mandar a Caja" [ref=e114]:
+              - generic [ref=e116]: Mandar a Caja
+              - img [ref=e117]
+        - generic [ref=e119]:
+          - generic [ref=e120]:
+            - generic [ref=e122]:
+              - img [ref=e124]
+              - generic [ref=e127]: "IA: Recomendaciones Estratégicas"
+            - generic [ref=e128]:
+              - button "Agua Destilada 5L $ 3,000" [ref=e129]:
+                - generic [ref=e130]:
+                  - generic [ref=e131]: Agua Destilada 5L
+                  - generic [ref=e132]:
+                    - generic [ref=e133]: $
+                    - generic [ref=e134]: 3,000
+                - img [ref=e136]
+              - button "Lámpara H7 Osram $ 4,500" [ref=e137]:
+                - generic [ref=e138]:
+                  - generic [ref=e139]: Lámpara H7 Osram
+                  - generic [ref=e140]:
+                    - generic [ref=e141]: $
+                    - generic [ref=e142]: 4,500
+                - img [ref=e144]
+          - generic [ref=e146]:
+            - generic [ref=e149]:
+              - textbox "Buscar productos o servicios mediante código o nombre..." [ref=e150]: AMP 339
+              - img [ref=e152]
+              - button [ref=e154]:
+                - img [ref=e155]
+            - button "FILTRO DE AIRE Out AMP 340 CDM SERIE NUEVA SECUNDARIO AMP 339 (LANSS EF771R / BISCAYNE NFB7017) $ 70,101" [ref=e159]:
+              - generic [ref=e160]:
+                - generic [ref=e161]:
+                  - generic [ref=e162]: FILTRO DE AIRE
+                  - generic [ref=e163]: Out
+                - heading "AMP 340" [level=3] [ref=e164]
+                - paragraph [ref=e165]: CDM SERIE NUEVA SECUNDARIO AMP 339 (LANSS EF771R / BISCAYNE NFB7017)
+              - generic [ref=e166]:
+                - generic [ref=e167]:
+                  - generic [ref=e168]: $
+                  - generic [ref=e169]: 70,101
+                - img [ref=e171]
+```
