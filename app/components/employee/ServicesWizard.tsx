@@ -48,27 +48,18 @@ export default function ServicesWizard({ onAddService, initialClient }: Services
         try {
             // 1. Create Work Order in Backend
             const woResult = await createWorkOrder({
-                clientId: data.clientId, // If 0 or null, validation needed? Modal handles creation?
-                // Note: ServiceModal usually returns clientId if selected. If optional and skipped, might be null.
-                // Schemas require clientId for WorkOrder? Yes.
-                // If optional client (Quick Service), do we dummy it?
-                // Requirement 3.1: "Opcional para venta de mostrador". But 4 WO requires Client.
-                // If skipped, we might not create a WO, just add item to cart?
-                // Requirements 3.2: "Confirmación Genera WO".
-                // If client is optional, maybe WO is optional?
-                // Let's assume if Client is present, Create WO. If not, just Add to Cart (Simple Sale).
-
-                vehicleId: data.vehicleId,
-                serviceId: selectedService.id,
+                clientId: Number(data.clientId),
+                vehicleId: Number(data.vehicleId),
+                serviceId: Number(selectedService.id),
                 userId: session?.user?.id ? Number(session.user.id) : undefined,
                 mileage: data.mileage ? Number(data.mileage) : undefined,
                 notes: data.notes,
-                price: selectedService.price,
+                price: Number(selectedService.price),
                 serviceDetails: data.serviceDetails, // From ServiceModal (Wizard)
                 attachments: data.attachments
             });
 
-            if (data.clientId && !woResult.success) {
+            if (!woResult.success) {
                 alert('Error al crear Orden de Trabajo: ' + woResult.error);
                 setProcessing(false);
                 return;
@@ -166,8 +157,8 @@ export default function ServicesWizard({ onAddService, initialClient }: Services
                         onClick={() => handleServiceClick(service)}
                         disabled={processing}
                         className={`relative flex flex-col items-center justify-center p-6 bg-white border-2 rounded-2xl transition-all group text-center h-48 disabled:opacity-50 animate-in fade-in zoom-in-95 duration-200 ${service.name.toLowerCase().includes('pack') || service.name.toLowerCase().includes('full')
-                                ? 'border-amber-400 shadow-[0_0_20px_rgba(251,191,36,0.2)] hover:shadow-amber-400/40 hover:scale-[1.02]'
-                                : 'border-slate-200 hover:border-blue-500 hover:shadow-lg'
+                            ? 'border-amber-400 shadow-[0_0_20px_rgba(251,191,36,0.2)] hover:shadow-amber-400/40 hover:scale-[1.02]'
+                            : 'border-slate-200 hover:border-blue-500 hover:shadow-lg'
                             }`}
                     >
                         {(service.name.toLowerCase().includes('pack') || service.name.toLowerCase().includes('full')) && (

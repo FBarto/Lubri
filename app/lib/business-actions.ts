@@ -48,16 +48,15 @@ interface ProcessSaleInput {
 export async function createWorkOrder(data: WorkOrderInput) {
     try {
         const wo = await prisma.workOrder.create({
-            // ... (same data)
             data: {
-                clientId: data.clientId,
-                vehicleId: data.vehicleId,
-                serviceId: data.serviceId,
-                userId: data.userId,
-                mileage: data.mileage,
+                clientId: Number(data.clientId),
+                vehicleId: Number(data.vehicleId),
+                serviceId: Number(data.serviceId),
+                userId: data.userId ? Number(data.userId) : undefined,
+                mileage: data.mileage ? Number(data.mileage) : undefined,
                 notes: data.notes,
-                appointmentId: data.appointmentId,
-                price: data.price,
+                appointmentId: data.appointmentId ? Number(data.appointmentId) : undefined,
+                price: Number(data.price),
                 serviceDetails: data.serviceDetails,
                 attachments: data.attachments ? {
                     create: data.attachments.map(a => ({
@@ -72,7 +71,7 @@ export async function createWorkOrder(data: WorkOrderInput) {
         // If mileage provided, update vehicle mileage
         if (data.mileage) {
             await prisma.vehicle.update({
-                where: { id: data.vehicleId },
+                where: { id: Number(data.vehicleId) },
                 data: { mileage: Number(data.mileage) }, // Ensure number
             });
         }

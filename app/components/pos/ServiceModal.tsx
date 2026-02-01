@@ -39,6 +39,7 @@ export default function ServiceModal({ isOpen, onClose, onConfirm, service, init
     // Search Results
     const [clientResults, setClientResults] = useState<Client[]>([]);
     const [vehicleResults, setVehicleResults] = useState<Vehicle[]>([]);
+    const [productResults, setProductResults] = useState<any[]>([]);
 
     useEffect(() => {
         // Reset when opening new service
@@ -57,7 +58,13 @@ export default function ServiceModal({ isOpen, onClose, onConfirm, service, init
         setAttachments([]);
         setClientResults([]);
         setVehicleResults([]);
-        setVehicleResults([]);
+
+        // Auto-populate vehicle options if client is selected
+        if (initialClient?.vehicles) {
+            setVehicleResults(initialClient.vehicles as Vehicle[]);
+        } else if (selectedClient?.vehicles) {
+            setVehicleResults(selectedClient.vehicles as Vehicle[]);
+        }
 
         // Smart Pack Logic
         if (service) {
@@ -76,12 +83,13 @@ export default function ServiceModal({ isOpen, onClose, onConfirm, service, init
                     },
                     oil: {
                         ...prev.oil,
-                        type: name.includes('sintetico') ? 'SINTETICO' : name.includes('semi') ? 'SEMI' : 'MINERAL'
+                        type: name.includes('sintetico') ? 'SINTETICO' : name.includes('semi') ? 'SEMI' : 'MINERAL',
+                        liters: isPack ? '4.0' : prev.oil.liters
                     }
                 }));
             }
         }
-    }, [service, isOpen, initialClient]);
+    }, [service, isOpen, initialClient, selectedClient]);
 
     // Search Functions
     const searchClient = async (val: string) => {
@@ -125,6 +133,21 @@ export default function ServiceModal({ isOpen, onClose, onConfirm, service, init
             }
         } else {
             setVehicleResults([]);
+        }
+    };
+
+    const searchProduct = async (val: string) => {
+        if (val.length > 2) {
+            try {
+                const res = await fetch(`/api/products?search=${val}&category=ACEITE`);
+                const data = await res.json();
+                setProductResults(Array.isArray(data.data) ? data.data : (Array.isArray(data) ? data : []));
+            } catch (e) {
+                console.error("Error searching product", e);
+                setProductResults([]);
+            }
+        } else {
+            setProductResults([]);
         }
     };
 
@@ -234,6 +257,11 @@ export default function ServiceModal({ isOpen, onClose, onConfirm, service, init
                                 value={plateSearch}
                                 onChange={(e) => searchVehicle(e.target.value)}
                             />
+                            {selectedClient && !selectedVehicle && vehicleResults.length > 0 && (
+                                <div className="absolute top-[-25px] right-2 bg-amber-400 text-white text-[9px] font-black uppercase tracking-tighter px-2 py-0.5 rounded-full animate-bounce shadow-lg">
+                                    Sugerencia de Cliente
+                                </div>
+                            )}
                             <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-red-600 transition-colors">
                                 <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="10" rx="2" /><circle cx="7" cy="15" r="2" /><circle cx="17" cy="15" r="2" /><path d="M4 11l2-7h12l2 7" /></svg>
                             </div>
@@ -241,9 +269,14 @@ export default function ServiceModal({ isOpen, onClose, onConfirm, service, init
                         {vehicleResults.length > 0 && (
                             <ul className="absolute z-20 w-full bg-white/95 backdrop-blur-md border border-slate-200 rounded-[1.5rem] mt-2 shadow-2xl overflow-hidden animate-in slide-in-from-top-2">
                                 {vehicleResults.map((v) => (
-                                    <li key={v.id} onClick={() => selectVehicle(v)} className="p-4 hover:bg-neutral-900 hover:text-white cursor-pointer transition-all border-b border-slate-50 last:border-0 group/item">
-                                        <div className="font-black italic uppercase tracking-tighter text-lg">{v.plate}</div>
-                                        <div className="text-[10px] font-bold opacity-50 group-hover/item:text-red-400">{v.model}</div>
+                                    <li key={v.id} onClick={() => selectVehicle(v)} className="p-4 hover:bg-neutral-900 hover:text-white cursor-pointer transition-all border-b border-slate-50 last:border-0 group/item flex justify-between items-center text-left">
+                                        <div>
+                                            <div className="font-black italic uppercase tracking-tighter text-lg">{v.plate}</div>
+                                            <div className="text-[10px] font-bold opacity-50 group-hover/item:text-red-400">{v.model}</div>
+                                        </div>
+                                        {selectedClient && (
+                                            <span className="bg-amber-100 text-amber-700 text-[8px] font-black px-2 py-1 rounded-md uppercase tracking-widest border border-amber-200">Recomendado</span>
+                                        )}
                                     </li>
                                 ))}
                             </ul>
@@ -271,14 +304,35 @@ export default function ServiceModal({ isOpen, onClose, onConfirm, service, init
                             {/* Oil */}
                             <div className="mb-6">
                                 <label className="label text-[10px] font-bold uppercase text-slate-500 mb-2 block">Aceite de Motor</label>
-                                <div className="grid grid-cols-2 gap-3 mb-3">
-                                    <input
-                                        type="text"
-                                        placeholder="Marca / Viscosidad (Ej: Shell 10W40)"
-                                        className="w-full p-3 rounded-xl border border-slate-200 text-sm font-bold placeholder:font-normal"
-                                        value={serviceDetails.oil.brand}
-                                        onChange={e => setServiceDetails({ ...serviceDetails, oil: { ...serviceDetails.oil, brand: e.target.value } })}
-                                    />
+                                <div className="grid grid-cols-2 gap-3 mb-3 relative">
+                                    <div className="relative">
+                                        <input
+                                            type="text"
+                                            placeholder="Marca / Viscosidad (Ej: Shell 10W40)"
+                                            className="w-full p-3 rounded-xl border border-slate-200 text-sm font-bold placeholder:font-normal"
+                                            value={serviceDetails.oil.brand}
+                                            onChange={e => {
+                                                setServiceDetails({ ...serviceDetails, oil: { ...serviceDetails.oil, brand: e.target.value } });
+                                                searchProduct(e.target.value);
+                                            }}
+                                        />
+                                        {productResults.length > 0 && (
+                                            <ul className="absolute z-30 w-full bg-white border border-slate-200 rounded-xl mt-1 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95">
+                                                {productResults.map(p => (
+                                                    <li
+                                                        key={p.id}
+                                                        onClick={() => {
+                                                            setServiceDetails({ ...serviceDetails, oil: { ...serviceDetails.oil, brand: p.name } });
+                                                            setProductResults([]);
+                                                        }}
+                                                        className="p-3 hover:bg-slate-50 cursor-pointer text-xs font-bold border-b last:border-0"
+                                                    >
+                                                        {p.name}
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        )}
+                                    </div>
                                     <input
                                         type="text"
                                         placeholder="Litros"
