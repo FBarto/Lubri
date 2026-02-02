@@ -12,7 +12,7 @@ import {
     CaseStatus,
     LogChannel
 } from '@prisma/client';
-import { parseLeadIntake } from '@/lib/gemini'; // Adjusted import
+import { parseLeadIntake } from '../lib/gemini';
 import { ActionResponse } from './types';
 
 // --- CHECKLIST TEMPLATES (Merged from specialized file) ---

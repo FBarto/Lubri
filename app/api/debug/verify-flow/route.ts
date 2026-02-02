@@ -1,7 +1,7 @@
 
 import { NextResponse } from 'next/server';
-import { createQuickClient, createQuickVehicle } from '../../actions/inbox';
-import { suggestServiceEstimate, confirmQuoteAsWorkOrder } from '../../actions/maintenance';
+import { createQuickClient, createQuickVehicle } from '@/app/actions/inbox';
+import { suggestServiceEstimate, confirmQuoteAsWorkOrder } from '@/app/actions/maintenance';
 
 export async function GET() {
     const results: any[] = [];
