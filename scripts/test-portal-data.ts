@@ -86,13 +86,13 @@ async function main() {
         console.log('Fetching data...');
         const result = await getClientDataByToken(mockToken);
 
-        if (result.success && result.client) {
+        if (result.success && result.data?.client) {
             console.log('✅ Success!');
-            console.log('Client Name:', result.client.name);
-            console.log('Vehicles:', result.client.vehicles.length);
-            console.log('Work Orders:', result.client.workOrders.length);
-            console.log('First WO Service:', result.client.workOrders[0]?.serviceName);
-            console.log('First WO Attachments:', result.client.workOrders[0]?.attachments.length);
+            console.log('Client Name:', result.data.client.name);
+            console.log('Vehicles:', result.data.client.vehicles.length);
+            console.log('Work Orders:', result.data.client.workOrders.length);
+            console.log('First WO Service:', result.data.client.workOrders[0]?.serviceName);
+            console.log('First WO Attachments:', result.data.client.workOrders[0]?.attachments.length);
         } else {
             console.error('❌ Failed:', result.error);
         }

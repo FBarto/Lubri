@@ -44,7 +44,7 @@ async function debug() {
     try {
         const result = await processSale(frontendPayload);
         if (result.success) {
-            console.log('Sale successful! ID:', result.sale?.id);
+            console.log('Sale successful! ID:', result.data?.sale?.id);
         } else {
             console.error('Sale failed with error:', result.error);
         }

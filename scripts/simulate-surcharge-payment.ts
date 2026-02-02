@@ -60,11 +60,11 @@ async function main() {
     });
 
     if (result.success) {
-        console.log(`Sale ID: ${result.sale?.id}, Total: ${result.sale?.total}`);
-        if (Math.abs((result.sale?.total || 0) - (baseAmount + surchargeAmount)) < 0.1) {
+        console.log(`Sale ID: ${result.data?.sale?.id}, Total: ${result.data?.sale?.total}`);
+        if (Math.abs((result.data?.sale?.total || 0) - (baseAmount + surchargeAmount)) < 0.1) {
             console.log("✅ SUCCESS: Surcharge applied correctly in total.");
         } else {
-            console.error(`❌ FAILURE: Expected ${baseAmount + surchargeAmount}, got ${result.sale?.total}`);
+            console.error(`❌ FAILURE: Expected ${baseAmount + surchargeAmount}, got ${result.data?.sale?.total}`);
         }
     } else {
         console.error("Sale failed", result.error);
