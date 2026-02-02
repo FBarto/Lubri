@@ -124,7 +124,19 @@ export default function EmployeePage() {
                     />
                 )}
                 {activeTab === 'COTIZAR' && (
-                    <div className="flex-1 overflow-y-auto p-6">
+                    <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-4">
+                        <div className="bg-blue-50 border-l-4 border-blue-600 p-4 flex justify-between items-center rounded-r-lg shadow-sm">
+                            <div>
+                                <h3 className="text-blue-800 font-bold">Nuevo Presupuestador</h3>
+                                <p className="text-blue-600 text-sm">Utiliza la nueva interfaz de pantalla completa para mayor comodidad.</p>
+                            </div>
+                            <a
+                                href="/employee/service-estimate"
+                                className="px-6 py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 shadow-md hover:shadow-lg transition-all"
+                            >
+                                Abrir Pantalla Completa
+                            </a>
+                        </div>
                         <SmartQuote initialClient={selectedClientForAction} />
                     </div>
                 )}
