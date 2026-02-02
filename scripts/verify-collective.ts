@@ -1,6 +1,6 @@
 
 import { PrismaClient } from '@prisma/client';
-import { suggestServiceItems } from '../app/lib/smart-actions';
+import { suggestServiceItems } from '../app/actions/smart';
 
 const prisma = new PrismaClient();
 
@@ -36,17 +36,17 @@ async function main() {
     const result = await suggestServiceItems(vehicle.id);
 
     // 4. Validate Resulst
-    if (result.success) {
-        console.log(`✅ SUCCESS! Method Used: ${result.method}`);
+    if (result.success && result.data) {
+        console.log(`✅ SUCCESS! Method Used: ${result.data.method}`);
 
-        if (result.method === 'COLLECTIVE_INTELLIGENCE') {
+        if (result.data.method === 'COLLECTIVE_INTELLIGENCE') {
             console.log('🎉 CORRECT: System used collective intelligence from other Ford Focus!');
         } else {
-            console.log(`⚠️ Expected COLLECTIVE_INTELLIGENCE, got ${result.method}`);
+            console.log(`⚠️ Expected COLLECTIVE_INTELLIGENCE, got ${result.data.method}`);
         }
 
         console.log('📋 Suggested Items:');
-        result.items?.forEach((item: any) => {
+        result.data.items?.forEach((item: any) => {
             console.log(`   - 🔧 ${item.name} ($${item.price})`);
         });
 

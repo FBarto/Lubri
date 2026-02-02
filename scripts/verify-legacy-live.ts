@@ -48,7 +48,7 @@ async function main() {
     console.log('2. Executing createLegacyWorkOrder...');
     const result = await createLegacyWorkOrder(input);
 
-    if (!result.success || !result.workOrder) {
+    if (!result.success || !result.data?.workOrder) {
         console.error('❌ Action Failed:', result.error);
         process.exit(1);
     }
