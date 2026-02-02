@@ -14,6 +14,8 @@ import {
 } from '@prisma/client';
 import { parseLeadIntake } from '../lib/gemini';
 import { ActionResponse } from './types';
+import { safeRevalidate } from '../lib/server-utils';
+import { WhatsAppService } from '../lib/whatsapp/service';
 
 // --- Types ---
 export interface CreateClientInput {
