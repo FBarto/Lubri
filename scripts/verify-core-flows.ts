@@ -80,7 +80,7 @@ async function main() {
         process.exit(1);
     }
 
-    console.log(`✅ Work Order Created! ID: ${confirmResult.workOrderId}`);
+    console.log(`✅ Work Order Created! ID: ${confirmResult.data?.workOrderId}`);
 
 
     // --- STEP 4: PORTAL HISTORY CHECK ---

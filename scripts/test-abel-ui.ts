@@ -10,12 +10,12 @@ async function testAbelUI() {
     if (result.success && result.data) {
         console.log("✅ Success!");
         console.log("\nFilters:");
-        result.data.filters.forEach(f => {
+        result.data.filters.forEach((f: any) => {
             console.log(` - ${f.label}: ${f.status} (${f.lastDate ? f.lastDate.toISOString().split('T')[0] : 'Never'}) - ${f.detail || 'No detail'}`);
         });
 
         console.log("\nFluids:");
-        result.data.fluids.forEach(f => {
+        result.data.fluids.forEach((f: any) => {
             console.log(` - ${f.label}: ${f.status} (${f.lastDate ? f.lastDate.toISOString().split('T')[0] : 'Never'}) - ${f.detail || 'No detail'}`);
         });
     } else {

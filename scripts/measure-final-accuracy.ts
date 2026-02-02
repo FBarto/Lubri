@@ -24,7 +24,7 @@ async function measureFinalAccuracy() {
         const res = await getLastServiceItems(v.id);
         if (res.success && res.data && res.data.items.length > 0) {
             let matchesInThisVehicle = 0;
-            res.data.items.forEach(item => {
+            res.data.items.forEach((item: any) => {
                 totalItems++;
                 if (item.found) {
                     mappedItems++;
