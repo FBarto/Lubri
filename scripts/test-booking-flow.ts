@@ -1,6 +1,6 @@
 
 import { prisma } from '../lib/prisma';
-import { createClient, createVehicle, createAppointment } from '../app/lib/booking-actions';
+import { createClient, createVehicle, createAppointment } from '../app/actions/booking';
 // Need to mock safeRevalidate? No, it catches errors.
 
 async function main() {
@@ -25,8 +25,8 @@ async function main() {
             phone: PHONE
         });
 
-        if (!clientRes.success || !clientRes.client) throw new Error('Failed to create client: ' + clientRes.error);
-        const CLIENT_ID = clientRes.client.id;
+        if (!clientRes.success || !clientRes.data?.client) throw new Error('Failed to create client: ' + clientRes.error);
+        const CLIENT_ID = clientRes.data.client.id;
         console.log('✅ Client Created:', CLIENT_ID);
 
         // 3. Create Vehicle
@@ -39,8 +39,8 @@ async function main() {
             type: 'AUTO'
         });
 
-        if (!vehicleRes.success || !vehicleRes.vehicle) throw new Error('Failed to create vehicle: ' + vehicleRes.error);
-        const VEHICLE_ID = vehicleRes.vehicle.id;
+        if (!vehicleRes.success || !vehicleRes.data?.vehicle) throw new Error('Failed to create vehicle: ' + vehicleRes.error);
+        const VEHICLE_ID = vehicleRes.data.vehicle.id;
         console.log('✅ Vehicle Created:', VEHICLE_ID);
 
         // 4. Fetch Service (Assume ID 1 exists, or fetch first)
@@ -58,12 +58,12 @@ async function main() {
             notes: 'Test Booking Script'
         });
 
-        if (!apptRes.success || !apptRes.appointment) throw new Error('Failed to create appointment: ' + apptRes.error);
-        console.log('✅ Appointment Created:', apptRes.appointment.id, apptRes.appointment.date);
+        if (!apptRes.success || !apptRes.data?.appointment) throw new Error('Failed to create appointment: ' + apptRes.error);
+        console.log('✅ Appointment Created:', apptRes.data.appointment.id, apptRes.data.appointment.date);
 
         // 6. Verify in DB
         const check = await prisma.appointment.findUnique({
-            where: { id: apptRes.appointment.id },
+            where: { id: apptRes.data.appointment.id },
             include: { client: true, vehicle: true }
         });
 

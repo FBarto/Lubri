@@ -1,5 +1,5 @@
 
-import { createClient, createVehicle } from '../app/lib/booking-actions';
+import { createClient, createVehicle } from '../app/actions/booking';
 import { prisma } from '../lib/prisma';
 
 async function testFix() {
@@ -20,11 +20,11 @@ async function testFix() {
     // 2. Create the Client for the first time
     console.log('\n--- Step 1: Creating New Client ---');
     const step1 = await createClient({ name: testName, phone: testPhone });
-    if (!step1.success || !step1.client) {
+    if (!step1.success || !step1.data?.client) {
         console.error('❌ Failed Step 1:', step1.error);
         process.exit(1);
     }
-    console.log('✅ Client Created:', step1.client.id, step1.client.name);
+    console.log('✅ Client Created:', step1.data.client.id, step1.data.client.name);
 
     // 3. Simulate "Existing User" entering same phone
     console.log('\n--- Step 2: Simulate Re-entry (Duplicate Phone) ---');
@@ -33,9 +33,9 @@ async function testFix() {
         // We expect the modified createClient to return the existing client NOT error
         const step2 = await createClient({ name: "Otro Nombre", phone: testPhone });
 
-        if (step2.success && step2.existing) {
+        if (step2.success && step2.data?.existing) {
             console.log('✅ SUCCESS: System detected existing user gracefully.');
-            console.log('   Client returned:', step2.client.id);
+            console.log('   Client returned:', step2.data.client.id);
         } else if (step2.success) {
             console.log('⚠️ WARNING: Success but "existing" flag missing? (Backend check)');
         } else {
@@ -43,7 +43,7 @@ async function testFix() {
             process.exit(1);
         }
 
-        if (!step2.client) {
+        if (!step2.data?.client) {
             console.error('❌ FAILED: Success reported but no client link returned');
             process.exit(1);
         }
@@ -55,13 +55,13 @@ async function testFix() {
             plate: "FIX123",
             brand: "TestBrand",
             model: "TestModel",
-            clientId: step2.client.id,
+            clientId: step2.data!.client.id,
             type: "AUTO"
         });
 
-        if (step3.success && step3.vehicle) {
+        if (step3.success && step3.data?.vehicle) {
             console.log('✅ SUCCESS: Vehicle created successfully for existing client!');
-            console.log('   Vehicle ID:', step3.vehicle.id);
+            console.log('   Vehicle ID:', step3.data.vehicle.id);
         } else {
             // TS Guard
             console.error('❌ FAILED: Could not link vehicle to existing client:', step3.error);
