@@ -1,5 +1,5 @@
 
-import { getClientProfile } from '../app/lib/client-actions';
+import { getClientProfile } from '../app/actions/client';
 import { prisma } from '../lib/prisma';
 
 async function testProfile() {
