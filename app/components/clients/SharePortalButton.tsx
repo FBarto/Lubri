@@ -17,7 +17,7 @@ export default function SharePortalButton({ vehicleId, phone }: { vehicleId: num
                 // Determine base URL (localhost, or production domain)
                 // For client side, window.location.origin is best
                 const origin = window.location.origin;
-                const fullLink = `${origin}${res.url}`;
+                const fullLink = `${origin}${res.data.url}`;
 
                 // Format message
                 const message = `Hola! Aquí tienes tu Libreta Digital de Mantenimiento para tu vehículo: ${fullLink}`;
