@@ -1,6 +1,6 @@
 
 import { PrismaClient } from '@prisma/client';
-import { processSale } from '../app/lib/business-actions';
+import { processSale } from '../app/actions/business';
 
 const prisma = new PrismaClient();
 
@@ -79,7 +79,7 @@ async function main() {
     });
 
     if (saleResult.success) {
-        console.log("4. Sale Processed Successfully:", saleResult.sale?.id);
+        console.log("4. Sale Processed Successfully:", saleResult.data?.sale?.id);
 
         // 5. Verify Stock Deduction
         const updatedProduct = await prisma.product.findUnique({ where: { id: product.id } });
