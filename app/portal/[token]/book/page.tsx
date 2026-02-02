@@ -15,13 +15,13 @@ export default async function ServiceBookPage({ params }: PageProps) {
 
     const data = await getClientDataByToken(token);
 
-    if (!data.success || !data.client) {
+    if (!data.success || !data.data?.client) {
         return notFound();
     }
 
     return (
         <div className="min-h-screen bg-slate-50 max-w-lg mx-auto shadow-2xl overflow-hidden">
-            <PublicServiceBook data={data.client} />
+            <PublicServiceBook data={data.data.client} />
         </div>
     );
 }

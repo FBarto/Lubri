@@ -13,7 +13,7 @@ export default function SharePortalButton({ vehicleId, phone }: { vehicleId: num
         setLoading(true);
         try {
             const res = await generatePortalLinkForVehicle(vehicleId);
-            if (res.success && res.url) {
+            if (res.success && res.data?.url) {
                 // Determine base URL (localhost, or production domain)
                 // For client side, window.location.origin is best
                 const origin = window.location.origin;

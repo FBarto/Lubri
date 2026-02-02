@@ -16,7 +16,7 @@ export default async function PortalPage({ params }: PageProps) {
 
     const data = await getClientDataByToken(token);
 
-    if (!data.success || !data.client) {
+    if (!data.success || !data.data?.client) {
         return (
             <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
                 <div className="text-center">
@@ -29,7 +29,7 @@ export default async function PortalPage({ params }: PageProps) {
 
     return (
         <div className="min-h-screen bg-slate-50 max-w-md mx-auto shadow-2xl overflow-hidden">
-            <PortalClientView data={data.client} />
+            <PortalClientView data={data.data.client} />
         </div>
     );
 }

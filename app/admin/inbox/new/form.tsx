@@ -29,8 +29,8 @@ export default function CreateCaseForm({ userId }: { userId: number }) {
             source
         });
 
-        if (res.success && res.caseId) {
-            router.push(`/admin/inbox/${res.caseId}`);
+        if (res.success && res.data?.id) {
+            router.push(`/admin/inbox/${res.data.id}`);
         } else {
             setError(res.error || 'Error desconocido');
             setLoading(false);
