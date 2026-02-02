@@ -29,7 +29,10 @@ export default function EmployeeLayout({
                         </span>
                     </div>
                     <button
-                        onClick={() => signOut({ callbackUrl: '/login' })}
+                        onClick={async () => {
+                            await signOut({ redirect: false });
+                            window.location.href = '/login';
+                        }}
                         className="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-lg text-sm transition-colors border border-slate-700"
                     >
                         Salir

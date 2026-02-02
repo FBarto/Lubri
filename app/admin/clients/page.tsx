@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import CreateVehicleModal from '../../components/employee/CreateVehicleModal';
 
 interface Vehicle {
     id: number;
@@ -33,6 +34,10 @@ export default function ClientsPage() {
         name: '',
         phone: '',
     });
+
+    // Flow state
+    const [isVehicleModalOpen, setIsVehicleModalOpen] = useState(false);
+    const [createdClient, setCreatedClient] = useState<Client | null>(null);
 
     // Debounce search
     useEffect(() => {
@@ -91,6 +96,14 @@ export default function ClientsPage() {
                 setShowModal(false);
                 setEditingClient(null);
                 setFormData({ name: '', phone: '' });
+
+                const savedClient = await res.json(); // Assuming API returns the created object
+                // If it was a create action (POST), trigger vehicle flow
+                if (!editingClient && savedClient.data) {
+                    setCreatedClient(savedClient.data);
+                    setIsVehicleModalOpen(true);
+                }
+
                 fetchData(currentPage, searchTerm);
             } else {
                 alert('Error al guardar');
@@ -296,6 +309,18 @@ export default function ClientsPage() {
                     </div>
                 </div>
             )}
+
+            <CreateVehicleModal
+                isOpen={isVehicleModalOpen}
+                clientId={createdClient?.id || null}
+                clientName={createdClient?.name}
+                onClose={() => setIsVehicleModalOpen(false)}
+                onSuccess={(vehicle) => {
+                    setIsVehicleModalOpen(false);
+                    alert('Vehículo creado correctamente (Flujo Admin finalizado)');
+                    fetchData(currentPage, searchTerm);
+                }}
+            />
         </div>
     );
 }
