@@ -20,6 +20,15 @@ interface PostClientActionModalProps {
 export default function PostClientActionModal({ isOpen, onClose, clientName, onAction, mode = 'CREATED' }: PostClientActionModalProps) {
     if (!isOpen) return null;
 
+    // Derived mode for "Vehicle Created" context if needed, 
+    // but for now we reuse 'CREATED' or add a new prop/logic.
+    // Let's assume the parent sets 'mode' or we infer it. 
+    // To keep it simple, we'll make the header generic if it's a vehicle flow, 
+    // OR we relies on the fact that `handleVehicleCreated` calls `setIsSuccessModalOpen(true)`.
+    // We should probably update the props or message.
+
+    const isVehicleContext = mode === 'CREATED' && clientName; // We can infer or add a prop.
+
     const actions = [
         {
             id: 'SERVICE',
@@ -39,9 +48,11 @@ export default function PostClientActionModal({ isOpen, onClose, clientName, onA
             bg: 'bg-emerald-50',
             hover: 'hover:border-emerald-200 hover:bg-emerald-50'
         },
+        // Only show "Add Vehicle" if we are managing or if we just finished adding one and want another?
+        // Usually if we just added a vehicle, we want to service IT.
         {
             id: 'VEHICLE',
-            label: 'Agregar Vehículo',
+            label: 'Agregar Otro Vehículo',
             sub: 'Vincular Auto/Moto',
             icon: <Car className="w-6 h-6 text-white" />,
             color: 'bg-slate-800',
@@ -62,9 +73,9 @@ export default function PostClientActionModal({ isOpen, onClose, clientName, onA
                             <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center mb-3 shadow-inner">
                                 <CheckCircle2 className="w-10 h-10 text-white" />
                             </div>
-                            <h2 className="text-2xl font-black text-white leading-tight">¡Cliente Creado!</h2>
+                            <h2 className="text-2xl font-black text-white leading-tight">¡Todo Listo!</h2>
                             <p className="text-emerald-100 font-medium mt-1 text-lg">
-                                {clientName} ya está en el sistema.
+                                {clientName} y su vehículo están registrados.
                             </p>
                         </div>
                     </div>

@@ -16,6 +16,7 @@ import SmartQuote from '../components/quotes/SmartQuote';
 import EmployeeDashboard from '../components/employee/EmployeeDashboard';
 import EmployeeClientList from '../components/employee/EmployeeClientList';
 import EmployeeCheckout from '../components/employee/EmployeeCheckout';
+import SharePortalButton from '../components/clients/SharePortalButton';
 
 
 export default function EmployeePage() {
@@ -28,11 +29,29 @@ export default function EmployeePage() {
     // Shared Client Context for Actions
     const [selectedClientForAction, setSelectedClientForAction] = useState<any>(null);
 
+    // WhatsApp Modal State
+    const [lastAddedVehicleId, setLastAddedVehicleId] = useState<number | null>(null);
+    const [lastAddedClientPhone, setLastAddedClientPhone] = useState<string | null>(null);
+    const [showPostServiceModal, setShowPostServiceModal] = useState(false);
+
     const handleAddFromWizard = (newItem: any) => {
         pos.addItem({
             ...newItem,
             type: newItem.type || 'PRODUCT'
         });
+
+        // Auto-Switch to POS
+        setActiveTab('VENTA');
+
+        // Trigger WhatsApp Modal if client/vehicle info available
+        if (newItem.vehicleId && newItem.clientId) {
+            // Optimistic approach: Use current selected client
+            // Ideally we pass full vehicle/client objects but IDs are what we have.
+            // We can rely on 'selectedClientForAction' context if mostly consistent.
+            setLastAddedVehicleId(newItem.vehicleId);
+            setLastAddedClientPhone(selectedClientForAction?.phone || null);
+            setShowPostServiceModal(true);
+        }
     };
 
     return (
@@ -203,6 +222,39 @@ export default function EmployeePage() {
                     </div>
                 )}
             </div>
-        </EmployeeLayout>
+
+            {/* Post Service Action Modal (WhatsApp) */}
+            {
+                showPostServiceModal && lastAddedVehicleId && (
+                    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-[2px] p-4 animate-in fade-in duration-300">
+                        <div className="bg-white p-8 rounded-3xl shadow-2xl max-w-sm w-full text-center header-gradient relative overflow-hidden">
+                            <div className="absolute top-0 left-0 w-full h-2 bg-emerald-500"></div>
+                            <h3 className="text-xl font-black text-slate-800 mb-2 mt-2">¡Servicio Agregado!</h3>
+                            <p className="text-slate-500 mb-6 text-sm">El servicio ya está en la "Caja" listo para cobrar.</p>
+
+                            <div className="space-y-3">
+                                {/* Reusing SharePortalButton logic logic dynamically or just rendering it if available */}
+                                {/* Since we can't easily import SharePortalButton from client components without context sometimes, let's just use a direct WA link generator here for simplicity or import the button if possible. */}
+                                {/* Better: Import SharePortalButton at top */}
+                                <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-100 mb-4">
+                                    <p className="text-xs font-bold text-emerald-700 mb-2 uppercase tracking-wider">Opcional</p>
+                                    <p className="text-sm font-medium text-slate-600 mb-3">¿Enviar Libreta Digital ahora?</p>
+                                    <div className="flex justify-center">
+                                        <SharePortalButton vehicleId={lastAddedVehicleId} phone={lastAddedClientPhone || ''} />
+                                    </div>
+                                </div>
+
+                                <button
+                                    onClick={() => setShowPostServiceModal(false)}
+                                    className="w-full py-3 bg-slate-900 text-white font-bold rounded-xl hover:bg-black transition-colors"
+                                >
+                                    Continuar en Caja
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )
+            }
+        </EmployeeLayout >
     );
 }

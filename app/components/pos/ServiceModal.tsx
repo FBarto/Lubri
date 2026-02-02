@@ -96,7 +96,27 @@ export default function ServiceModal({ isOpen, onClose, onConfirm, service, init
                 }));
             }
         }
-    }, [service, isOpen, initialClient, selectedClient]);
+
+        // Vehicle Suggestions Logic (Simple Heuristic for now)
+        if (selectedVehicle?.model) {
+            const m = selectedVehicle.model.toLowerCase();
+            let suggestedLiters = '';
+
+            if (m.includes('hilux') || m.includes('ranger') || m.includes('s10') || m.includes('amarok')) suggestedLiters = '7.5'; // Pickups
+            else if (m.includes('gol') || m.includes('suran') || m.includes('fox') || m.includes('polo')) suggestedLiters = '4.0'; // VW standard
+            else if (m.includes('cronos') || m.includes('argo') || m.includes('palio') || m.includes('siena')) suggestedLiters = '3.5'; // Fiat standard
+            else if (m.includes('partner') || m.includes('berlingo') || m.includes('kangoo')) suggestedLiters = '4.5'; // Utilities
+            else if (m.includes('etios') || m.includes('yaris') || m.includes('corolla')) suggestedLiters = '4.0'; // Toyota cars
+
+            if (suggestedLiters && !initialClient) { // Only suggest if not editing existing
+                setServiceDetails(prev => ({
+                    ...prev,
+                    oil: { ...prev.oil, liters: prev.oil.liters || suggestedLiters }
+                }));
+            }
+        }
+
+    }, [service, isOpen, initialClient, selectedClient, selectedVehicle]);
 
     // Search Functions
     const searchClient = async (val: string) => {

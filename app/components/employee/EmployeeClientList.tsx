@@ -69,7 +69,9 @@ export default function EmployeeClientList({ onClientAction }: EmployeeClientLis
     const handleClientCreated = (client: any) => {
         setIsCreateModalOpen(false);
         setCreatedClient(client);
-        setIsSuccessModalOpen(true);
+        // Auto-flow: Open Vehicle Modal immediately for new clients
+        setIsVehicleModalOpen(true);
+
         // Add to list and maybe select it
         setClients(prev => [client, ...prev]);
     };
@@ -96,8 +98,20 @@ export default function EmployeeClientList({ onClientAction }: EmployeeClientLis
 
     const handleVehicleCreated = (vehicle: any) => {
         setIsVehicleModalOpen(false);
-        alert('Vehículo agregado correctamente');
-        // Update the client in the list locally to show the new vehicle
+        // Auto-flow: Vehicle created, automatically start SERVICE flow
+        // We find the client and pass it up
+        const client = clients.find(c => c.id === vehicle.clientId);
+        if (client || createdClient) {
+            const clientToUse = client || createdClient;
+            // We need to attach the new vehicle to it locally so the service wizard sees it
+            const updatedClient = {
+                ...clientToUse,
+                vehicles: [...(clientToUse?.vehicles || []), vehicle]
+            };
+            onClientAction?.(updatedClient, 'SERVICE');
+        }
+
+        // Update the list locally
         setClients(prev => prev.map(c => {
             if (c.id === vehicle.clientId) {
                 return {
