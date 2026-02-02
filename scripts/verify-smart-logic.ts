@@ -1,6 +1,6 @@
 
 import { PrismaClient } from '@prisma/client';
-import { suggestServiceEstimate } from '../app/lib/maintenance-actions';
+import { suggestServiceEstimate } from '../app/actions/maintenance';
 
 // Mock server-only context if needed (usually fine in scripts if no headers/cookies used)
 const prisma = new PrismaClient();

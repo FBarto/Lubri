@@ -1,5 +1,5 @@
 
-import { getLastServiceItems } from '../app/lib/maintenance-actions';
+import { getLastServiceItems } from '../app/actions/maintenance';
 import { prisma } from '../lib/prisma';
 
 async function measureFinalAccuracy() {

@@ -1,5 +1,5 @@
 
-import { getVehicleMaintenanceHistory } from '../app/lib/maintenance-actions';
+import { getVehicleMaintenanceHistory } from '../app/actions/maintenance';
 
 async function testAbelUI() {
     const vehicleId = 111; // AD389JK for Abel

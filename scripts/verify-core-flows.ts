@@ -5,7 +5,7 @@ import { PrismaClient } from '@prisma/client';
 // We import directly here because we are running via tsx in the same environment
 // Note: In a real "black box" test we would call HTTP endpoints, but calling actions directly is fine for logic verification.
 // UPDATED: Imported from maintenance-actions (correct location) instead of business-actions
-import { suggestServiceEstimate, confirmQuoteAsWorkOrder, getVehicleMaintenanceHistory } from '../app/lib/maintenance-actions';
+import { suggestServiceEstimate, confirmQuoteAsWorkOrder, getVehicleMaintenanceHistory } from '../app/actions/maintenance';
 
 // We need to polyfill 'use server' context or just use the logic if possible.
 // Since these are just functions exported from files, they should run node-side if dependencies are met.
