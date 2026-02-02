@@ -67,8 +67,11 @@ export default function ServiceModal({ isOpen, onClose, onConfirm, service, init
         setVehicleResults([]);
 
         // Auto-populate vehicle options if client is selected
-        if (initialClient?.vehicles) {
+        if (initialClient?.vehicles && initialClient.vehicles.length > 0) {
             setVehicleResults(initialClient.vehicles as Vehicle[]);
+            // Auto-select the LAST vehicle (most likely the one just created)
+            const latestVehicle = initialClient.vehicles[initialClient.vehicles.length - 1];
+            selectVehicle(latestVehicle as Vehicle);
         } else if (selectedClient?.vehicles) {
             setVehicleResults(selectedClient.vehicles as Vehicle[]);
         }
