@@ -161,9 +161,11 @@ export async function createAppointment(data: CreateAppointmentInput): Promise<A
 
                 if (!client) {
                     const cResult = await createClient({ name: guestData.name, phone: guestData.phone });
-                    if (!cResult.success || !cResult.data) throw new Error(cResult.error);
-                    client = cResult.data;
+                    if (!cResult.success || !cResult.data?.client) throw new Error(cResult.error || 'Failed to create client');
+                    client = cResult.data.client;
                 }
+
+                if (!client) throw new Error('Client resolution failed');
 
                 // Find or Create Vehicle
                 let vehicle = await prisma.vehicle.findUnique({
@@ -176,7 +178,7 @@ export async function createAppointment(data: CreateAppointmentInput): Promise<A
                         model: guestData.model || 'Modelo Desconocido',
                         clientId: client.id
                     });
-                    if (!vResult.success || !vResult.data) throw new Error(vResult.error);
+                    if (!vResult.success || !vResult.data) throw new Error(vResult.error || 'Failed to create vehicle');
                     vehicle = vResult.data;
                 } else {
                     // Update vehicle owner logic if needed
@@ -187,6 +189,8 @@ export async function createAppointment(data: CreateAppointmentInput): Promise<A
                         });
                     }
                 }
+
+                if (!vehicle) throw new Error('Vehicle resolution failed');
 
                 clientId = client.id;
                 vehicleId = vehicle.id;
