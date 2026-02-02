@@ -81,9 +81,9 @@ export default function ServicesWizard({ onAddService, initialClient }: Services
 
             setIsModalOpen(false);
             // alert('Servicio agregado al carrito'); // Optional feedback
-        } catch (e) {
+        } catch (e: any) {
             console.error(e);
-            alert('Error al procesar servicio');
+            alert('Error al procesar servicio: ' + (e.message || JSON.stringify(e)));
         } finally {
             setProcessing(false);
         }
