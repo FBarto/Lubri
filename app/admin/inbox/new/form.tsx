@@ -25,8 +25,7 @@ export default function CreateCaseForm({ userId }: { userId: number }) {
             summary,
             serviceCategory: category,
             type,
-            authorUserId: userId,
-            source
+            authorUserId: userId
         });
 
         if (res.success && res.data?.id) {

@@ -65,7 +65,7 @@ export default function ServicesWizard({ onAddService, initialClient }: Services
                 return;
             }
 
-            const woId = woResult.success ? woResult.workOrder?.id : undefined;
+            const woId = woResult.success ? woResult.data?.id : undefined;
 
             // 2. Add to Cart (via Parent)
             onAddService({
