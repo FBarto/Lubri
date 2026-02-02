@@ -544,7 +544,7 @@ export async function suggestServiceEstimate(vehicleId: number, preset: 'BASIC' 
         const allItems = historyRes.data.items;
 
         // 3. Categorize items using keywords
-        const categorizedDetails = allItems.map(item => {
+        const categorizedDetails = allItems.map((item: any) => {
             const lowerName = item.name.toLowerCase();
 
             let category = 'OTHER';
