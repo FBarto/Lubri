@@ -390,7 +390,14 @@ export default function ServiceModal({ isOpen, onClose, onConfirm, service, init
                         {vehicleResults.length > 0 && (
                             <ul className="absolute z-20 w-full bg-white/95 backdrop-blur-md border border-slate-200 rounded-[1.5rem] mt-2 shadow-2xl overflow-hidden animate-in slide-in-from-top-2">
                                 {vehicleResults.map((v) => (
-                                    <li key={v.id} onClick={() => selectVehicle(v)} className="p-4 hover:bg-neutral-900 hover:text-white cursor-pointer transition-all border-b border-slate-50 last:border-0 group/item flex justify-between items-center text-left">
+                                    <li
+                                        key={v.id}
+                                        onMouseDown={(e) => {
+                                            e.preventDefault(); // Prevent input blur
+                                            selectVehicle(v);
+                                        }}
+                                        className="p-4 hover:bg-neutral-900 hover:text-white cursor-pointer transition-all border-b border-slate-50 last:border-0 group/item flex justify-between items-center text-left"
+                                    >
                                         <div>
                                             <div className="font-black italic uppercase tracking-tighter text-lg">{v.plate}</div>
                                             <div className="text-[10px] font-bold opacity-50 group-hover/item:text-red-400">{v.model}</div>
