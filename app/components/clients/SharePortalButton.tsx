@@ -2,7 +2,7 @@
 'use client';
 
 import { useState } from 'react';
-import { generatePortalLinkForVehicle } from '../../lib/portal-actions';
+import { generatePortalLinkForVehicle } from '@/app/actions/portal';
 import { Send, CheckCircle, Smartphone } from 'lucide-react';
 
 export default function SharePortalButton({ vehicleId, phone }: { vehicleId: number, phone: string }) {

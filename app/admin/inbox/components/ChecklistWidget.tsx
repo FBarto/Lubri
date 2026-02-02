@@ -1,7 +1,7 @@
 'use client';
 
 import { CaseChecklistItem, InputType } from '@prisma/client';
-import { updateChecklistItem } from '@/app/lib/actions/inbox-actions';
+import { updateChecklistItem } from '@/app/actions/inbox';
 import { useState } from 'react';
 
 

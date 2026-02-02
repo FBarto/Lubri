@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import SalesChart from '@/app/components/reports/SalesChart';
 import TopItemsTable from '@/app/components/reports/TopItemsTable';
-import { getInboxStats } from '../../lib/inbox-actions';
+import { getInboxStats } from '@/app/actions/inbox';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 export default function ReportsPage() {

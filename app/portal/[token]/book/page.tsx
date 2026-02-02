@@ -1,4 +1,4 @@
-import { getClientDataByToken } from '../../../lib/portal-actions';
+import { getClientDataByToken } from '@/app/actions/portal';
 import PublicServiceBook from '../../../components/portal/PublicServiceBook';
 import { notFound } from 'next/navigation';
 

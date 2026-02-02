@@ -1,5 +1,5 @@
 
-import { getClientDataByToken } from '../../lib/portal-actions';
+import { getClientDataByToken } from '@/app/actions/portal';
 import PortalClientView from '../../components/portal/PortalClientView';
 import { notFound } from 'next/navigation';
 

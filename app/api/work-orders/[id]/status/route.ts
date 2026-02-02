@@ -34,7 +34,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
             if (mileage) {
                 const m = parseInt(mileage);
                 // Update vehicle mileage and projections
-                const { updateVehicleProjections } = await import('@/app/lib/maintenance-actions');
+                const { updateVehicleProjections } = await import('@/app/actions/maintenance');
                 await updateVehicleProjections(currentWO.vehicleId, m);
 
                 dataToUpdate.mileage = m;

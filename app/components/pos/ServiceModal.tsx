@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import UploadComponent from '../dvi/UploadComponent';
-import { createQuickClient, getConsumidorFinal } from '@/app/lib/business-actions';
+import { createQuickClient, getConsumidorFinal } from '@/app/actions/business';
 
 // Interfaces simplificadas para manejo local
 interface Client { id: number; name: string; phone: string; vehicles?: Vehicle[] }

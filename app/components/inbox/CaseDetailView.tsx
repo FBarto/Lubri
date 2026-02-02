@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { LeadCase, CaseChecklistItem, CaseLog, CaseStatus, LogChannel, ChecklistTemplate } from '@prisma/client';
 import { ArrowLeft, CheckCircle2, Circle, Copy, Send, Save, AlertCircle, Sparkles, CalendarClock, X, MessageCircle, UserPlus, Car, FileText } from 'lucide-react';
-import { updateChecklistItem, addCaseLog, updateCaseStatus, convertCaseToAppointment, getServicesList, generateWhatsAppLink, searchClients, assignClientToCase, createQuickClient, createQuickVehicle, getClientVehicles, processLeadWithAI } from '../../lib/inbox-actions';
+import { updateChecklistItem, addCaseLog, updateCaseStatus, convertCaseToAppointment, getServicesList, generateWhatsAppLink, searchClients, assignClientToCase, createQuickClient, createQuickVehicle, getClientVehicles, processLeadWithAI } from '@/app/actions/inbox';
 import { useRouter } from 'next/navigation';
 import SmartInput from './SmartInput';
 import QuoteBuilder from './QuoteBuilder';

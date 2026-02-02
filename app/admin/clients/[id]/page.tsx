@@ -2,7 +2,7 @@
 
 import { useEffect, useState, use } from 'react';
 import { useRouter } from 'next/navigation';
-import { getClientProfile } from '../../../lib/client-actions';
+import { getClientProfile } from '@/app/actions/client';
 import Link from 'next/link';
 import MaintenanceGrid from '../../../components/clients/MaintenanceGrid';
 import SharePortalButton from '../../../components/clients/SharePortalButton';

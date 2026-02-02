@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import ServiceModal from '@/app/components/pos/ServiceModal';
 import { Wrench, Zap, Truck, Lightbulb, Bike } from 'lucide-react';
 import { useSession } from 'next-auth/react';
-import { createWorkOrder } from '../../lib/business-actions';
+import { createWorkOrder } from '@/app/actions/business';
 
 interface ServicesWizardProps {
     onAddService: (item: any) => void;

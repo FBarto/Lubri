@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { createLeadCase } from '@/app/lib/actions/inbox-actions';
+import { createLeadCase } from '@/app/actions/inbox';
 import { useRouter } from 'next/navigation';
 import { ServiceCategory, CaseType } from '@prisma/client';
 

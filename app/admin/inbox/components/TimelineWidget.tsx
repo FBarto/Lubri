@@ -1,7 +1,7 @@
 'use client';
 
 import { CaseLog, LogChannel, User } from '@prisma/client';
-import { addCaseLog } from '@/app/lib/actions/inbox-actions';
+import { addCaseLog } from '@/app/actions/inbox';
 import { useState, useRef, useEffect } from 'react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -46,8 +46,8 @@ export default function TimelineWidget({ logs, caseId, userId }: { logs: Timelin
                 {logs.map((log) => (
                     <div key={log.id} className={`flex flex-col ${log.channel === 'INTERNAL_NOTE' ? 'items-end' : 'items-start'}`}>
                         <div className={`max-w-[85%] rounded-lg p-3 text-sm shadow-sm ${log.channel === 'INTERNAL_NOTE' ? 'bg-yellow-50 border border-yellow-200 text-slate-800' :
-                                log.channel === 'WHATSAPP' ? 'bg-green-100 border border-green-200 text-slate-800' :
-                                    'bg-white border text-slate-700'
+                            log.channel === 'WHATSAPP' ? 'bg-green-100 border border-green-200 text-slate-800' :
+                                'bg-white border text-slate-700'
                             }`}>
                             <div className="flex justify-between items-center gap-4 mb-1 border-b border-black/5 pb-1">
                                 <span className="font-bold text-xs uppercase tracking-wider opacity-70">
