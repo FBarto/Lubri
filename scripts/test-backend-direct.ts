@@ -14,7 +14,7 @@ import { PrismaClient } from '@prisma/client';
 // No, import { revalidatePath } from 'next/cache' happens at top level.
 // If 'next' package is installed, it should work (it just might not do anything useful).
 
-const { createWorkOrder, processSale } = require('../app/lib/business-actions');
+const { createWorkOrder, processSale } = require('../app/actions/business');
 
 const prisma = new PrismaClient();
 

@@ -1,5 +1,5 @@
 
-import { createLegacyWorkOrder } from '../app/lib/business-actions';
+import { createLegacyWorkOrder } from '../app/actions/business';
 import { prisma } from '../lib/prisma';
 
 // Mock console.error to ignore cache errors in script context
@@ -45,8 +45,8 @@ async function main() {
 
     if (result.success) {
         console.log('✅ Action Success');
-        if (!result.workOrder) return;
-        const wo = await prisma.workOrder.findUnique({ where: { id: result.workOrder.id } });
+        if (!result.data?.workOrder) return;
+        const wo = await prisma.workOrder.findUnique({ where: { id: result.data.workOrder.id } });
 
         if (wo) {
             console.log(`   WO ID: ${wo.id}`);

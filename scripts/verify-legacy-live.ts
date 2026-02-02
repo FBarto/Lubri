@@ -1,6 +1,6 @@
 
 import { PrismaClient } from '@prisma/client';
-import { createLegacyWorkOrder } from '../app/lib/business-actions';
+import { createLegacyWorkOrder } from '../app/actions/business';
 
 const prisma = new PrismaClient();
 
@@ -59,7 +59,7 @@ async function main() {
 
     // Check Work Order
     const wo = await prisma.workOrder.findUnique({
-        where: { id: result.workOrder.id },
+        where: { id: result.data?.workOrder?.id },
         include: { service: true }
     });
 

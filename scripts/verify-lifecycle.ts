@@ -1,7 +1,7 @@
 
 import { prisma } from '../lib/prisma';
-import { createClient, createVehicle, createAppointment } from '../app/lib/booking-actions';
-import { createWorkOrder, processSale } from '../app/lib/business-actions';
+import { createClient, createVehicle, createAppointment } from '../app/actions/booking';
+import { createWorkOrder, processSale } from '../app/actions/business';
 
 async function main() {
     console.log('--- STARTING FULL LIFECYCLE VERIFICATION ---');
@@ -33,13 +33,13 @@ async function main() {
         console.log('\n[1] Booking: Creating Client...');
         const clientRes = await createClient({ name: 'Lifecycle User', phone: PHONE });
         if (!clientRes.success) throw new Error(clientRes.error);
-        const clientId = clientRes.client!.id;
+        const clientId = clientRes.data!.client!.id;
 
         // 2. PUBLIC BOOKING: Create Vehicle
         console.log('[2] Booking: Creating Vehicle...');
         const vehicleRes = await createVehicle({ clientId, plate: PLATE, model: 'Ford Test', type: 'AUTO' });
         if (!vehicleRes.success) throw new Error(vehicleRes.error);
-        const vehicleId = vehicleRes.vehicle!.id;
+        const vehicleId = vehicleRes.data!.id; // createVehicle returns Vehicle directly in data
 
         // 3. PUBLIC BOOKING: Create Appointment
         console.log('[3] Booking: Creating Appointment...');
@@ -58,7 +58,7 @@ async function main() {
             notes: 'Lifecycle Test Appt'
         });
         if (!apptRes.success) throw new Error(apptRes.error);
-        const apptId = apptRes.appointment!.id;
+        const apptId = apptRes.data!.appointment!.id;
         console.log(`✅ Appointment Created: ${apptId}`);
 
         // 4. ADMIN: Start Work Order (Convert Appt)
@@ -75,7 +75,7 @@ async function main() {
         });
 
         if (!woRes.success) throw new Error(woRes.error);
-        const woId = woRes.workOrder!.id;
+        const woId = woRes.data!.workOrder!.id;
         console.log(`✅ Work Order Created: ${woId}`);
 
         // Verify Appointment is COMPLETED
@@ -100,7 +100,7 @@ async function main() {
         });
 
         if (!saleRes.success) throw new Error(saleRes.error);
-        const saleId = saleRes.sale!.id;
+        const saleId = saleRes.data!.sale!.id;
         console.log(`✅ Sale Processed: ${saleId}`);
 
         // Verify WO Linked
