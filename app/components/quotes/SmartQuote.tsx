@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { Search, History, ArrowRight, Save, Send, AlertTriangle, CheckCircle, Package, Wrench, Droplet, FilePlus, Sparkles, Plus } from 'lucide-react';
-import { suggestServiceEstimate, getRecentWorkOrders, saveVehicleLearnedSpecs, confirmQuoteAsWorkOrder, getVehicleAIInsight, getLastServiceItems } from '../../lib/maintenance-actions';
-import { searchProductsForQuote } from '../../lib/inbox-actions';
+import { suggestServiceEstimate, getRecentWorkOrders, saveVehicleLearnedSpecs, confirmQuoteAsWorkOrder, getVehicleAIInsight, getLastServiceItems } from '../../actions/maintenance';
+import { searchProductsForQuote } from '../../actions/inbox';
 
 // Component for "Presupuesto Service Fácil"
 interface SmartQuoteProps {
@@ -112,7 +112,7 @@ export default function SmartQuote({ initialClient }: SmartQuoteProps) {
         // Load AI Insight
         setAiLoading(true);
         const aiRes = await getVehicleAIInsight(vehicle.id);
-        if (aiRes.success) setAiInsight(aiRes.insight || null);
+        if (aiRes.success) setAiInsight(aiRes.data?.insight || null);
         setAiLoading(false);
     };
 
@@ -313,7 +313,7 @@ export default function SmartQuote({ initialClient }: SmartQuoteProps) {
             });
 
             if (res.success) {
-                setSuccessId(res.workOrderId as number);
+                setSuccessId(res.data?.workOrderId as number);
                 // alert(`Orden de Trabajo #${res.workOrderId} creada con éxito.`);
             } else {
                 alert('Error al confirmar: ' + res.error);

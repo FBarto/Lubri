@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getPendingSales, finalizePendingSale } from '@/app/lib/business-actions';
+import { getPendingSales, finalizePendingSale } from '../../actions/business';
 import { ShoppingBag, ChevronRight, CheckCircle2, User, Clock, Package, CreditCard, Banknote, Landmark } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 
@@ -35,9 +35,18 @@ export default function EmployeeCheckout() {
     const handleFinalize = async (saleId: number, paymentMethod: string) => {
         if (!confirm(`¿Confirmar cobro de Venta #${saleId} por ${paymentMethod}?`)) return;
 
+        // Get checkbox state safely
+        const checkbox = document.getElementById(`wa-${saleId}`) as HTMLInputElement;
+        const sendWhatsApp = checkbox ? checkbox.checked : false;
+
         setFinishingId(saleId);
         try {
-            const res = await finalizePendingSale(saleId, paymentMethod, session?.user?.id ? Number(session.user.id) : 1);
+            const res = await finalizePendingSale(
+                saleId,
+                paymentMethod,
+                session?.user?.id ? Number(session.user.id) : 1,
+                sendWhatsApp // Pass the flag
+            );
 
             if (res.success) {
                 // Determine logic for receipt? 
@@ -143,6 +152,26 @@ export default function EmployeeCheckout() {
                                 {/* Actions */}
                                 <div className="p-5 pt-0 mt-auto space-y-2">
                                     <p className="text-[10px] text-center font-bold text-slate-400 uppercase tracking-widest mb-2">Seleccionar Método de Cobro</p>
+
+                                    <div className="flex items-center justify-center gap-2 mb-3">
+                                        <input
+                                            type="checkbox"
+                                            id={`wa-${sale.id}`}
+                                            className="w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500 cursor-pointer"
+                                            defaultChecked={true}
+                                            onChange={(e) => {
+                                                // Store state locally if needed, or just read `checked` status via ref/state
+                                                // For a mapped list, local state is trickier without a sub-component.
+                                                // Quick hack: Use a data attribute or document.getElementById in handler, 
+                                                // OR ideally extract this card to a component.
+                                                // Let's rely on extracting `checked` in the handler for now, finding element by ID.
+                                            }}
+                                        />
+                                        <label htmlFor={`wa-${sale.id}`} className="text-xs text-slate-600 cursor-pointer select-none">
+                                            Enviar comp. y libreta x WhatsApp
+                                        </label>
+                                    </div>
+
                                     <div className="grid grid-cols-3 gap-2">
                                         <button
                                             onClick={() => handleFinalize(sale.id, 'Efectivo')}

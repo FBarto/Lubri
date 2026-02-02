@@ -1,11 +1,13 @@
 'use server';
 
 import { prisma } from '../../lib/prisma';
-import { logActivity } from './logger';
+import { logActivity } from '../lib/logger';
 import { revalidatePath } from 'next/cache';
 import { SyncService } from '../../lib/syncService';
-import { safeRevalidate } from './server-utils';
-import { generatePortalLinkForVehicle } from './portal-actions';
+import { safeRevalidate } from '../lib/server-utils';
+import { generatePortalLinkForVehicle } from './portal';
+import { WhatsAppService } from '../lib/whatsapp/service';
+import { ActionResponse } from './types';
 
 // --- Types ---
 
@@ -45,7 +47,7 @@ interface ProcessSaleInput {
  * Creates a new Work Order.
  * Usually called from the Technician Wizard or when converting an Appointment.
  */
-export async function createWorkOrder(data: WorkOrderInput) {
+export async function createWorkOrder(data: WorkOrderInput): Promise<ActionResponse> {
     try {
         const wo = await prisma.workOrder.create({
             data: {
@@ -101,7 +103,7 @@ export async function createWorkOrder(data: WorkOrderInput) {
         // Also revalidate employee views?
         safeRevalidate('/employee');
 
-        return { success: true, workOrder: wo };
+        return { success: true, data: wo };
     } catch (error) {
         console.error('Error creating Work Order:', error);
         return { success: false, error: 'Failed to create Work Order' };
@@ -112,7 +114,7 @@ export async function createWorkOrder(data: WorkOrderInput) {
  * Processes a Sale (POS Checkout).
  * Handles: Sale creation, SaleItem creation, Stock deduction (only if COMPLETED), WorkOrder linking.
  */
-export async function processSale(data: ProcessSaleInput) {
+export async function processSale(data: ProcessSaleInput): Promise<ActionResponse> {
     const { userId, clientId, paymentMethod, items, status = 'COMPLETED' } = data;
 
     // Calculate total
@@ -189,7 +191,7 @@ export async function processSale(data: ProcessSaleInput) {
         safeRevalidate('/admin/dashboard');
         safeRevalidate('/admin/pos');
 
-        return { success: true, sale };
+        return { success: true, data: sale };
     } catch (error) {
         console.error('Error processing sale:', error);
         return { success: false, error: 'Transaction failed' };
@@ -200,12 +202,12 @@ export async function processSale(data: ProcessSaleInput) {
  * Finalizes a pending sale in Caja.
  * Deducts stock and updates status.
  */
-export async function finalizePendingSale(saleId: number, paymentMethod: string, userId: number) {
+export async function finalizePendingSale(saleId: number, paymentMethod: string, userId: number, sendWhatsApp: boolean = false): Promise<ActionResponse> {
     try {
         const result = await prisma.$transaction(async (tx) => {
             const sale = await tx.sale.findUnique({
                 where: { id: saleId },
-                include: { items: true }
+                include: { items: true, client: true }
             });
 
             if (!sale) throw new Error('Sale not found');
@@ -245,20 +247,60 @@ export async function finalizePendingSale(saleId: number, paymentMethod: string,
             return updatedSale;
         });
 
-        await logActivity(userId, 'FINALIZE_PENDING', 'SALE', saleId, { paymentMethod });
+        // 3. Send WhatsApp if requested
+        if (sendWhatsApp) {
+            // Need to fetch again or use the sale object from transaction scope (but logic is outside tx for speed/safety)
+            // functionality outside transaction to avoid locking
+            const sale = await prisma.sale.findUnique({
+                where: { id: saleId },
+                include: {
+                    client: true,
+                    items: { include: { workOrder: { include: { vehicle: true } } } }
+                }
+            });
+
+            if (sale && sale.client && sale.client.phone) {
+                let message = `*Hola ${sale.client.name}!* 👋\n\n✅ Hemos confirmado el pago de su compra/servicio.\n\n*Detalle:*\n`;
+                sale.items.forEach(item => {
+                    message += `• ${item.quantity}x ${item.description} - $${item.subtotal}\n`;
+                });
+                message += `\n*Total Abonado:* $${sale.total.toLocaleString()}\n*Forma de Pago:* ${paymentMethod}\n`;
+
+                // Check for WorkOrders to link Vehicle/Portal
+                const workOrderItems = sale.items.filter(i => i.workOrderId && i.workOrder?.vehicle);
+                if (workOrderItems.length > 0) {
+                    const vehicle = workOrderItems[0].workOrder!.vehicle; // Take the first vehicle found
+                    message += `\n🚗 *Vehículo:* ${vehicle.brand} ${vehicle.model} (${vehicle.plate})\n`;
+
+                    // Generate Portal Link
+                    const portalRes = await generatePortalLinkForVehicle(vehicle.id);
+                    if (portalRes.success && portalRes.data?.url) {
+                        const fullUrl = `https://lubricentro-fb.com${portalRes.data.url}`;
+                        message += `\n📚 *Libreta de Salud Digital:*\nGuarde este link para ver el historial de su auto:\n${fullUrl}`;
+                    }
+                } else {
+                    message += `\nGracias por confiar en FB Lubricentro! 🙌`;
+                }
+
+                // Send (Fire and forget or await?) - await to log error
+                await WhatsAppService.sendServiceReport(sale.client.phone, message);
+            }
+        }
+
+        await logActivity(userId, 'FINALIZE_PENDING', 'SALE', saleId, { paymentMethod, sendWhatsApp });
 
         safeRevalidate('/admin/pos');
         safeRevalidate('/admin/dashboard');
         safeRevalidate('/employee');
 
-        return { success: true, sale: result };
+        return { success: true, data: result };
     } catch (error: any) {
         console.error('Finalize Sale Error:', error);
         return { success: false, error: error.message };
     }
 }
 
-export async function getPendingSales() {
+export async function getPendingSales(): Promise<ActionResponse> {
     try {
         const sales = await prisma.sale.findMany({
             where: { status: 'PENDING' },
@@ -279,7 +321,7 @@ export async function getPendingSales() {
  * Updates the minimum stock level for a product.
  * Used by the Employee Stock Viewer.
  */
-export async function updateProductMinStock(productId: number, minStock: number) {
+export async function updateProductMinStock(productId: number, minStock: number): Promise<ActionResponse> {
     try {
         await prisma.product.update({
             where: { id: productId },
@@ -295,7 +337,7 @@ export async function updateProductMinStock(productId: number, minStock: number)
     }
 }
 
-export async function getStockStats() {
+export async function getStockStats(): Promise<ActionResponse> {
     try {
         const thirtyDaysAgo = new Date();
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
@@ -337,8 +379,6 @@ export async function getStockStats() {
     }
 }
 
-import { WhatsAppService } from './whatsapp/service';
-
 /**
  * Creates a Legacy Work Order for historical data.
  * DOES NOT affect stock or generate a Sale.
@@ -353,7 +393,7 @@ export async function createLegacyWorkOrder(input: {
     // New parameters
     nextServiceMileage?: number;
     sendWhatsApp?: boolean;
-}) {
+}): Promise<ActionResponse> {
     try {
         const vehicleId = Number(input.vehicleId);
         const clientId = Number(input.clientId);
@@ -455,8 +495,8 @@ Lubricantes FB
 
                 // Generate Portal Link
                 const portalRes = await generatePortalLinkForVehicle(vehicleId);
-                if (portalRes.success && portalRes.url) {
-                    const fullUrl = `https://lubricentro-fb.com${portalRes.url}`;
+                if (portalRes.success && portalRes.data?.url) {
+                    const fullUrl = `https://lubricentro-fb.com${portalRes.data.url}`;
                     message += `\n\n📚 *Libreta de Salud Digital:*\nAcceda al historial completo de su vehículo aquí:\n${fullUrl}`;
                 }
 
@@ -476,7 +516,7 @@ Lubricantes FB
         });
 
         safeRevalidate(`/admin/clients/${clientId}`);
-        return { success: true, workOrder: wo };
+        return { success: true, data: wo };
     } catch (error) {
         console.error('Error creating Legacy Work Order:', error);
         return { success: false, error: 'Failed to create legacy record' };
@@ -486,7 +526,7 @@ Lubricantes FB
 /**
  * Checks for duplicate vehicle plates (normalized).
  */
-export async function getDuplicatePlates() {
+export async function getDuplicatePlates(): Promise<ActionResponse> {
     try {
         const vehicles = await prisma.vehicle.findMany({
             select: { id: true, plate: true, brand: true, model: true }
@@ -515,7 +555,7 @@ export async function getDuplicatePlates() {
 /**
  * Quick client and vehicle creation for ServiceModal
  */
-export async function createQuickClient(data: { name: string; phone: string; plate?: string; brand?: string; model?: string }) {
+export async function createQuickClient(data: { name: string; phone: string; plate?: string; brand?: string; model?: string }): Promise<ActionResponse> {
     try {
         // Find existing client or create
         let client = await prisma.client.findFirst({
@@ -549,7 +589,7 @@ export async function createQuickClient(data: { name: string; phone: string; pla
             }
         }
 
-        return { success: true, client, vehicle };
+        return { success: true, data: { client, vehicle } }; // Fixed return struct
     } catch (error: any) {
         console.error('Error creating quick client:', error);
         return { success: false, error: error.message || 'Failed to create client' };
@@ -559,7 +599,7 @@ export async function createQuickClient(data: { name: string; phone: string; pla
 /**
  * Get or create the generic "Consumidor Final" client
  */
-export async function getConsumidorFinal() {
+export async function getConsumidorFinal(): Promise<ActionResponse> {
     try {
         let client = await prisma.client.findFirst({
             where: { name: 'Consumidor Final' }
@@ -574,7 +614,7 @@ export async function getConsumidorFinal() {
             });
         }
 
-        return { success: true, client };
+        return { success: true, data: client }; // Fixed return
     } catch (error: any) {
         return { success: false, error: 'Failed' };
     }

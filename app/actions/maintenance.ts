@@ -2,12 +2,13 @@
 
 import { prisma } from '../../lib/prisma';
 import { revalidatePath } from "next/cache";
-import { MAINTENANCE_ITEMS, MaintenanceStatus } from "./maintenance-data";
-import { safeRevalidate } from './server-utils';
-import { generateVehicleInsight } from './gemini';
-import { mapLegacyProductCode } from './product-mapper';
+import { MAINTENANCE_ITEMS, MaintenanceStatus } from "../lib/maintenance-data";
+import { safeRevalidate } from '../lib/server-utils';
+import { generateVehicleInsight } from '../lib/gemini';
+import { mapLegacyProductCode } from '../lib/product-mapper';
+import { ActionResponse } from './types';
 
-export async function getVehicleAIInsight(vehicleId: number) {
+export async function getVehicleAIInsight(vehicleId: number): Promise<ActionResponse> {
     try {
         const history = await prisma.workOrder.findMany({
             where: { vehicleId, status: { in: ['COMPLETED', 'DELIVERED'] } },
@@ -17,7 +18,7 @@ export async function getVehicleAIInsight(vehicleId: number) {
         });
 
         if (history.length === 0) {
-            return { success: true, insight: "🆕 Vehículo nuevo en el taller. Comienza a registrar su historia para recibir consejos inteligentes." };
+            return { success: true, data: "🆕 Vehículo nuevo en el taller. Comienza a registrar su historia para recibir consejos inteligentes." };
         }
 
         const historyText = history.map(wo => {
@@ -26,7 +27,7 @@ export async function getVehicleAIInsight(vehicleId: number) {
         }).join('\n');
 
         const res = await generateVehicleInsight(historyText);
-        return res;
+        return { success: true, data: { insight: res.insight } };
 
     } catch (error) {
         console.error("Error in getVehicleAIInsight:", error);
@@ -34,7 +35,7 @@ export async function getVehicleAIInsight(vehicleId: number) {
     }
 }
 
-export async function getVehicleMaintenanceHistory(vehicleId: number) {
+export async function getVehicleMaintenanceHistory(vehicleId: number): Promise<ActionResponse> {
     try {
         const workOrders = await prisma.workOrder.findMany({
             where: { vehicleId, status: { in: ['COMPLETED', 'DELIVERED'] } },
@@ -153,7 +154,7 @@ export async function getVehicleMaintenanceHistory(vehicleId: number) {
  * Updates vehicle projections (avg daily km, next service date)
  * Triggered when a Work Order is marked as COMPLETED with mileage.
  */
-export async function updateVehicleProjections(vehicleId: number, currentMileage: number) {
+export async function updateVehicleProjections(vehicleId: number, currentMileage: number) { // Returns void/undefined usually, but lets match Promise<void>
     try {
         const vehicle = await prisma.vehicle.findUnique({
             where: { id: vehicleId },
@@ -214,7 +215,7 @@ export async function updateVehicleProjections(vehicleId: number, currentMileage
  * Retrieves the items from the last specific service to pre-fill a new quote.
  * Tries to match historical items with current inventory codes/prices.
  */
-export async function getLastServiceItems(vehicleId: number) {
+export async function getLastServiceItems(vehicleId: number): Promise<ActionResponse> {
     try {
         const lastOrder = await prisma.workOrder.findFirst({
             where: { vehicleId, status: { in: ['COMPLETED', 'DELIVERED'] } },
@@ -330,7 +331,7 @@ export async function getLastServiceItems(vehicleId: number) {
     }
 }
 
-export async function getRecentWorkOrders(vehicleId: number, limit: number = 5) {
+export async function getRecentWorkOrders(vehicleId: number, limit: number = 5): Promise<ActionResponse> {
     try {
         const orders = await prisma.workOrder.findMany({
             where: { vehicleId, status: { in: ['COMPLETED', 'DELIVERED'] } },
@@ -354,7 +355,7 @@ export async function getRecentWorkOrders(vehicleId: number, limit: number = 5) 
 /**
  * Saves the "learned" preferences for a vehicle (e.g. which oil filter it uses).
  */
-export async function saveVehicleLearnedSpecs(vehicleId: number, learnedData: any) {
+export async function saveVehicleLearnedSpecs(vehicleId: number, learnedData: any): Promise<ActionResponse> {
     try {
         const vehicle = await prisma.vehicle.findUnique({ where: { id: vehicleId } });
         if (!vehicle) return { success: false, error: "Vehicle not found" };
@@ -391,7 +392,7 @@ export async function confirmQuoteAsWorkOrder(data: {
     items: any[],
     mileage?: number,
     userId?: number
-}) {
+}): Promise<ActionResponse> {
     try {
         // 1. Find a default service for "Service General" or similar if not specified
         const defaultService = await prisma.service.findFirst({
@@ -472,11 +473,11 @@ export async function confirmQuoteAsWorkOrder(data: {
         safeRevalidate('/admin/smart-quote');
         safeRevalidate('/employee');
 
-        return { success: true, workOrderId: wo.id };
+        return { success: true, data: { workOrderId: wo.id } };
 
     } catch (error: any) {
         console.error("Error confirming quote FULL ERROR:", error);
-        return { success: false, error: 'Failed to create work order', details: error.message };
+        return { success: false, error: 'Failed to create work order', data: error.message }; // put detail in data or append to error
     }
 }
 
@@ -484,7 +485,7 @@ export async function confirmQuoteAsWorkOrder(data: {
  * Generates a service estimate based on history or learned specs.
  * Applies presets (BASIC vs FULL).
  */
-export async function suggestServiceEstimate(vehicleId: number, preset: 'BASIC' | 'FULL' = 'BASIC') {
+export async function suggestServiceEstimate(vehicleId: number, preset: 'BASIC' | 'FULL' = 'BASIC'): Promise<ActionResponse> {
     try {
         const vehicle = await prisma.vehicle.findUnique({
             where: { id: vehicleId }

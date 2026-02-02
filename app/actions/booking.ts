@@ -1,8 +1,19 @@
 'use server';
 
-import { prisma } from '@/lib/prisma';
-import { safeRevalidate } from './server-utils';
-import { WhatsAppService } from './whatsapp/service';
+import { prisma } from '../../lib/prisma';
+import { revalidatePath } from 'next/cache';
+import {
+    LeadCase,
+    CaseType,
+    ServiceCategory,
+    Priority,
+    ChecklistTemplate,
+    InputType,
+    CaseStatus,
+    LogChannel
+} from '@prisma/client';
+import { parseLeadIntake } from '../lib/gemini';
+import { ActionResponse } from './types';
 
 // --- Types ---
 export interface CreateClientInput {
@@ -18,9 +29,10 @@ export interface CreateVehicleInput {
     notes?: string;
     mileage?: number;
     clientId: number;
-    fuelType?: string; // New
-    engine?: string;   // New
+    fuelType?: string;
+    engine?: string;
 }
+
 export interface CreateAppointmentInput {
     clientId?: number;
     vehicleId?: number;
@@ -39,7 +51,7 @@ export interface CreateAppointmentInput {
 
 // --- Actions ---
 
-export async function createClient(data: CreateClientInput) {
+export async function createClient(data: CreateClientInput): Promise<ActionResponse> {
     console.log('[createClient] Input:', data);
     try {
         if (!data.name || !data.phone) {
@@ -56,7 +68,7 @@ export async function createClient(data: CreateClientInput) {
 
         console.log('[createClient] Success:', client.id);
         safeRevalidate('/admin/clients');
-        return { success: true, client };
+        return { success: true, data: { client, existing: false } };
     } catch (error: any) {
         console.error('[createClient] Error:', error);
         if (error.code === 'P2002') {
@@ -65,13 +77,15 @@ export async function createClient(data: CreateClientInput) {
             const existing = await prisma.client.findFirst({ where: { phone: data.phone } });
             if (existing) {
                 console.log('[createClient] Recovered existing:', existing.id);
-                return { success: true, client: existing, existing: true };
+                // Return existing but mark success? Or return correct data structure
+                return { success: true, data: { client: existing, existing: true } };
             }
         }
         return { success: false, error: error.message };
     }
 }
-export async function createVehicle(data: CreateVehicleInput) {
+
+export async function createVehicle(data: CreateVehicleInput): Promise<ActionResponse> {
     console.log('[createVehicle] Input:', data);
     try {
         if (!data.plate || !data.clientId) {
@@ -97,7 +111,7 @@ export async function createVehicle(data: CreateVehicleInput) {
 
         console.log('[createVehicle] Success:', vehicle.id);
         safeRevalidate('/admin/vehicles');
-        return { success: true, vehicle };
+        return { success: true, data: vehicle };
     } catch (error: any) {
         console.error('[createVehicle] Error:', error);
         if (error.code === 'P2002') {
@@ -107,7 +121,7 @@ export async function createVehicle(data: CreateVehicleInput) {
     }
 }
 
-export async function updateVehicle(id: number, data: Partial<CreateVehicleInput>) {
+export async function updateVehicle(id: number, data: Partial<CreateVehicleInput>): Promise<ActionResponse> {
     try {
         const vehicle = await prisma.vehicle.update({
             where: { id },
@@ -122,14 +136,14 @@ export async function updateVehicle(id: number, data: Partial<CreateVehicleInput
         });
 
         safeRevalidate('/admin/vehicles');
-        return { success: true, vehicle };
+        return { success: true, data: vehicle };
     } catch (error: any) {
         console.error('Error updating vehicle:', error);
         return { success: false, error: error.message };
     }
 }
 
-export async function createAppointment(data: CreateAppointmentInput) {
+export async function createAppointment(data: CreateAppointmentInput): Promise<ActionResponse> {
     console.log('[createAppointment] Input:', JSON.stringify(data));
     try {
         let { clientId, vehicleId } = data;
@@ -145,8 +159,8 @@ export async function createAppointment(data: CreateAppointmentInput) {
 
                 if (!client) {
                     const cResult = await createClient({ name: guestData.name, phone: guestData.phone });
-                    if (!cResult.success || !cResult.client) throw new Error(cResult.error);
-                    client = cResult.client;
+                    if (!cResult.success || !cResult.data) throw new Error(cResult.error);
+                    client = cResult.data;
                 }
 
                 // Find or Create Vehicle
@@ -160,8 +174,8 @@ export async function createAppointment(data: CreateAppointmentInput) {
                         model: guestData.model || 'Modelo Desconocido',
                         clientId: client.id
                     });
-                    if (!vResult.success || !vResult.vehicle) throw new Error(vResult.error);
-                    vehicle = vResult.vehicle;
+                    if (!vResult.success || !vResult.data) throw new Error(vResult.error);
+                    vehicle = vResult.data;
                 } else {
                     // Update vehicle owner logic if needed
                     if (!vehicle.clientId) {
@@ -314,7 +328,7 @@ export async function createAppointment(data: CreateAppointmentInput) {
         );
 
         safeRevalidate('/admin/calendar');
-        return { success: true, appointment, caseId: finalCaseId };
+        return { success: true, data: { appointment, caseId: finalCaseId } };
 
     } catch (error: any) {
         console.error('Error creating appointment:', error);

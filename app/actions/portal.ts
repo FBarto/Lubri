@@ -1,8 +1,10 @@
 'use server';
 
 import { prisma } from '../../lib/prisma';
+import { ActionResponse } from './types';
+import { getVehicleMaintenanceHistory } from './maintenance';
 
-export async function getClientDataByToken(token: string) {
+export async function getClientDataByToken(token: string): Promise<ActionResponse> {
     try {
         // 1. Find Token and link to Client
         const waToken = await prisma.whatsAppToken.findUnique({
@@ -39,34 +41,37 @@ export async function getClientDataByToken(token: string) {
         // Iterate vehicles, check last service mileage/date and estimate next.
         // For MVP, we'll just list the vehicles and maybe a generic "Check due" if mileage is missing.
 
+        const vehiclesWithHistory = await Promise.all(client.vehicles.map(async v => {
+            const history = await getVehicleMaintenanceHistory(v.id);
+            return {
+                ...v,
+                predictedNextService: v.predictedNextService,
+                maintenanceStatus: history.success ? history.data : null
+            };
+        }));
+
+        const clientData = {
+            name: client.name,
+            phone: client.phone,
+            workOrders: client.workOrders.map(wo => ({
+                id: wo.id,
+                date: wo.date,
+                serviceName: wo.service.name,
+                vehiclePlate: wo.vehicle.plate,
+                vehicleModel: wo.vehicle.model,
+                mileage: wo.mileage,
+                status: wo.status,
+                price: wo.price,
+                serviceDetails: wo.serviceDetails,
+                serviceItems: wo.saleItems, // Map saleItems to serviceItems for UI
+                attachments: wo.attachments
+            })),
+            vehicles: vehiclesWithHistory
+        };
+
         return {
             success: true,
-            client: {
-                name: client.name,
-                phone: client.phone,
-                workOrders: client.workOrders.map(wo => ({
-                    id: wo.id,
-                    date: wo.date,
-                    serviceName: wo.service.name,
-                    vehiclePlate: wo.vehicle.plate,
-                    vehicleModel: wo.vehicle.model,
-                    mileage: wo.mileage,
-                    status: wo.status,
-                    price: wo.price,
-                    serviceDetails: wo.serviceDetails,
-                    serviceItems: wo.saleItems, // Map saleItems to serviceItems for UI
-                    attachments: wo.attachments
-                })),
-                vehicles: await Promise.all(client.vehicles.map(async v => {
-                    const { getVehicleMaintenanceHistory } = await import('./maintenance-actions');
-                    const history = await getVehicleMaintenanceHistory(v.id);
-                    return {
-                        ...v,
-                        predictedNextService: v.predictedNextService,
-                        maintenanceStatus: history.success ? history.data : null
-                    };
-                }))
-            }
+            data: { client: clientData }
         };
 
     } catch (error) {
@@ -76,7 +81,7 @@ export async function getClientDataByToken(token: string) {
     }
 }
 
-export async function generatePortalLinkForVehicle(vehicleId: number) {
+export async function generatePortalLinkForVehicle(vehicleId: number): Promise<ActionResponse> {
     try {
         const vehicle = await prisma.vehicle.findUnique({
             where: { id: vehicleId },
@@ -96,7 +101,7 @@ export async function generatePortalLinkForVehicle(vehicleId: number) {
         });
 
         if (existingToken) {
-            return { success: true, url: `/portal/${existingToken.token}` };
+            return { success: true, data: { url: `/portal/${existingToken.token}` } };
         }
 
         // 2. If no token, create a dummy appointment (or use latest) to attach a token
@@ -133,7 +138,7 @@ export async function generatePortalLinkForVehicle(vehicleId: number) {
             }
         });
 
-        return { success: true, url: `/portal/${token}` };
+        return { success: true, data: { url: `/portal/${token}` } };
 
     } catch (error) {
         console.error("Error generating portal link:", error);

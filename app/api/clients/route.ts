@@ -43,7 +43,7 @@ export async function GET(request: Request) {
     });
 }
 
-import { createClient } from '@/app/lib/booking-actions';
+import { createClient } from '@/app/actions/booking';
 
 export async function POST(request: Request) {
     try {
@@ -55,7 +55,8 @@ export async function POST(request: Request) {
         }
 
         // Return client data + existing flag if present
-        return NextResponse.json({ ...result.client, existing: result.existing }, { status: 201 });
+        const { client, existing } = result.data || {};
+        return NextResponse.json({ ...client, existing }, { status: 201 });
     } catch (error: any) {
         return NextResponse.json({ error: error.message }, { status: 500 });
     }

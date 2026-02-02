@@ -41,7 +41,7 @@ export async function GET(request: Request) {
     }
 }
 
-import { createWorkOrder } from '@/app/lib/business-actions';
+import { createWorkOrder } from '../../actions/business';
 
 export async function POST(request: Request) {
     try {
@@ -61,7 +61,7 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: result.error }, { status: 500 }); // createWorkOrder returns generic error usually
         }
 
-        return NextResponse.json(result.workOrder, { status: 201 });
+        return NextResponse.json(result.data, { status: 201 });
     } catch (error: any) {
         console.error('Error creating work order:', error);
         return NextResponse.json({ error: error.message }, { status: 500 });

@@ -1,8 +1,9 @@
 'use server';
 
 import { prisma } from '../../lib/prisma';
+import { ActionResponse } from './types';
 
-export async function getClientProfile(clientId: number) {
+export async function getClientProfile(clientId: number): Promise<ActionResponse> {
     try {
         const client = await prisma.client.findUnique({
             where: { id: clientId },

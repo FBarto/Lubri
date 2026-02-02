@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { createLegacyWorkOrder } from '../../lib/business-actions';
-import { getLastServiceItems } from '../../lib/maintenance-actions';
+import { createLegacyWorkOrder } from '../../actions/business';
+import { getLastServiceItems } from '../../actions/maintenance';
 import { History, X, Calendar, Gauge, CheckSquare, Droplets, Save, Search, Sparkles } from 'lucide-react';
 
 export default function LegacyServiceModal({ vehicleId, clientId, onClose, onSuccess }: {

@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { Search, Plus, Trash2, Save, FileText, Send, X, Loader2, Sparkles } from 'lucide-react';
-import { searchProductsForQuote, createOrUpdateQuote, getQuote } from '../../lib/inbox-actions';
-import { suggestServiceItems } from '../../lib/smart-actions';
+import { searchProductsForQuote, createOrUpdateQuote, getQuote } from '../../actions/inbox';
+import { suggestServiceItems } from '../../actions/smart';
 
 interface QuoteBuilderProps {
     leadCaseId: string;
@@ -54,15 +54,15 @@ export default function QuoteBuilder({ leadCaseId, clientPhone, onClose }: Quote
 
         const suggestion = await suggestServiceItems(vehicleId);
 
-        if (suggestion.success && suggestion.items) {
-            setItems(suggestion.items.map((i: any) => ({
+        if (suggestion.success && suggestion.data?.items) {
+            setItems(suggestion.data.items.map((i: any) => ({
                 id: i.id || Math.random(),
                 name: i.name,
                 price: i.price,
                 quantity: i.quantity,
                 type: i.type
             })));
-            setSuggestionMethod(suggestion.method || 'SMART');
+            setSuggestionMethod(suggestion.data.method || 'SMART');
         } else {
             alert(suggestion.error || 'No se encontraron sugerencias.');
         }

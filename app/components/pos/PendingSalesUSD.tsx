@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { getPendingSales } from '@/app/lib/business-actions';
+import { getPendingSales } from '../../actions/business';
 import { DollarSign } from 'lucide-react';
 import Link from 'next/link';
 

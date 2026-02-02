@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getPendingSales, finalizePendingSale } from '@/app/lib/business-actions';
+import { getPendingSales, finalizePendingSale } from '../../actions/business';
 import { ShoppingBag, ChevronRight, CheckCircle2, User, Clock, Package } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 

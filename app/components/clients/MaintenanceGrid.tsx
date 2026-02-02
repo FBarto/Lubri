@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getVehicleMaintenanceHistory } from '../../lib/maintenance-actions';
+import { getVehicleMaintenanceHistory } from '../../actions/maintenance';
 import { MaintenanceStatus } from '../../lib/maintenance-data';
 import { CheckCircle, AlertTriangle, AlertOctagon, HelpCircle, Droplet, Wind, Wrench, Info } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';

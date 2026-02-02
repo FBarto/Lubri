@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { Search, Plus, Trash2, Save, X, AlertTriangle, Sparkles } from 'lucide-react';
-import { getVehicleMaintenanceHistory } from '../../lib/maintenance-actions';
+import { getVehicleMaintenanceHistory } from '../../actions/maintenance';
 import { MaintenanceStatus } from '../../lib/maintenance-data';
 
 interface Product {

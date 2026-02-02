@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { Search, Sparkles, Loader2 } from 'lucide-react';
-import { searchVehicleModels, searchProducts, getVehicleInsights, SearchResult } from '../../lib/smart-actions';
+import { searchVehicleModels, searchProducts, getVehicleInsights, SearchResult } from '../../actions/smart';
 
 // Simple debounce impl if not exists
 function useLocalDebounce<T>(value: T, delay: number): T {

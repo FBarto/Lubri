@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { createLeadCase } from '../../lib/inbox-actions';
+import { createLeadCase } from '../../actions/inbox';
 import { Loader2, Sparkles } from 'lucide-react';
 import { parseLeadIntake } from '../../lib/gemini';
 

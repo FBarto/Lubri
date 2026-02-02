@@ -3,8 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { User, Car, ArrowRight, Check, AlertCircle, MessageCircle } from 'lucide-react';
-import { generateWhatsAppLink } from '../lib/inbox-actions';
-import { suggestServiceItems } from '../lib/smart-actions';
+import { generateWhatsAppLink } from '../actions/inbox';
+import { suggestServiceItems } from '../actions/smart';
 
 // Types
 type Client = {
@@ -407,7 +407,7 @@ export default function BookAppointment() {
             suggestServiceItems(vehicle.id)
                 .then(res => {
                     if (res.success) {
-                        setSmartQuote(res);
+                        setSmartQuote(res.data);
                     } else {
                         setSmartQuote(null);
                     }
@@ -471,7 +471,7 @@ export default function BookAppointment() {
 
             if (res.ok) {
                 const data = await res.json();
-                if (data.caseId) (window as any).lastCaseId = data.caseId;
+                if (data.data?.caseId) (window as any).lastCaseId = data.data.caseId;
                 setStep(6);
             } else {
                 const err = await res.json();
@@ -1095,8 +1095,9 @@ export default function BookAppointment() {
                                     const caseId = (window as any).lastCaseId;
                                     if (caseId) {
                                         const res = await generateWhatsAppLink(caseId);
-                                        if (res.success && res.url) {
-                                            window.open(res.url, '_blank');
+                                        if (res.success) {
+                                            const url = res.data?.url;
+                                            if (url) window.open(url, '_blank');
                                         }
                                         router.push(`/admin/inbox/${caseId}`);
                                     } else {

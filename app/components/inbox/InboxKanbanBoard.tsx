@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getInboxKanbanBoard, updateCaseStatus } from '../../lib/inbox-actions';
+import { getInboxKanbanBoard, updateCaseStatus } from '../../actions/inbox';
 import { useRouter } from 'next/navigation';
 import { Loader2, AlertCircle, Clock, CheckCircle2, ArrowRight } from 'lucide-react';
 import Link from 'next/link';

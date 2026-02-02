@@ -9,13 +9,18 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import PendingSalesSlider from '@/app/components/pos/PendingSalesSlider';
 import { ShoppingBag } from 'lucide-react';
 
+import { useSession } from 'next-auth/react';
+import { usePOS } from '@/app/hooks/usePOS';
+
 function POSContent() {
+    const { data: session } = useSession();
     const router = useRouter();
     const [products, setProducts] = useState<any[]>([]);
     const [services, setServices] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [loadingData, setLoadingData] = useState(true);
 
-    const [cart, setCart] = useState<any[]>([]);
+    // Unified POS Logic
+    const pos = usePOS(session?.user?.id ? Number(session.user.id) : 0, 'ADMIN');
 
     // Modals
     const [isServiceModalOpen, setIsServiceModalOpen] = useState(false);
@@ -52,7 +57,7 @@ function POSContent() {
             } catch (e) {
                 console.error(e);
             } finally {
-                setLoading(false);
+                setLoadingData(false);
             }
         }
         fetchData();
@@ -63,100 +68,58 @@ function POSContent() {
             setSelectedServiceForModal(item);
             setIsServiceModalOpen(true);
         } else {
-            addToCart(item);
+            pos.addItem({
+                ...item,
+                quantity: 1,
+                type: item.type || 'PRODUCT'
+            });
         }
     };
 
-    const addToCart = (item: any, serviceData: any = {}) => {
-        setCart(prev => {
-            const existing = prev.find(i => i.id === item.id && i.type === item.type);
-
-            if (existing && item.type === 'PRODUCT') {
-                return prev.map(i => i.uniqueId === existing.uniqueId ? { ...i, quantity: i.quantity + 1, subtotal: (i.quantity + 1) * i.price } : i);
-            }
-
-            return [...prev, {
-                ...item,
-                uniqueId: Math.random().toString(36).substr(2, 9),
-                quantity: 1,
-                subtotal: item.price,
-                ...serviceData // Include client/vehicle info
-            }];
-        });
-    }
-
     const handleServiceConfirm = (data: any) => {
-        addToCart(selectedServiceForModal, data);
+        pos.addItem({
+            ...selectedServiceForModal,
+            quantity: 1,
+            type: 'SERVICE',
+            ...data
+        });
     };
 
     const handleUpdateQuantity = (uniqueId: string, q: number) => {
-        setCart(prev => prev.map(item => {
-            if (item.uniqueId === uniqueId) {
-                return { ...item, quantity: q, subtotal: q * item.price };
-            }
-            return item;
-        }));
+        pos.updateQuantity(uniqueId, q);
     };
 
     const handleUpdatePrice = (uniqueId: string, p: number) => {
-        setCart(prev => prev.map(item => {
-            if (item.uniqueId === uniqueId) {
-                return { ...item, price: p, subtotal: item.quantity * p };
-            }
-            return item;
-        }));
+        pos.updatePrice(uniqueId, p);
     };
 
     const handleRemoveItem = (uniqueId: string) => {
-        setCart(prev => prev.filter(i => i.uniqueId !== uniqueId));
+        pos.removeItem(uniqueId);
     };
 
-    const handleClearCart = () => setCart([]);
+    const handleClearCart = () => pos.clearCart();
     const handleCheckoutClick = () => {
         setIsCheckoutOpen(true);
     };
 
     const handleFinalizeSale = async (payments: any[]) => {
-        const payload = {
-            total: cart.reduce((sum, i) => sum + i.subtotal, 0),
-            paymentMethod: payments.map(p => `${p.method}: ${p.amount}`).join(' | '),
-            items: cart.map(i => ({
-                type: i.type,
-                id: i.id,
-                name: i.name,
-                price: i.price,
-                quantity: i.quantity,
-                clientId: i.clientId,
-                vehicleId: i.vehicleId,
-                notes: i.notes // Make sure notes are passed if captured
-            }))
-        };
+        // Construct payment string
+        const methodStr = payments.map(p => `${p.method}: ${p.amount}`).join(' | ');
 
-        try {
-            const res = await fetch('/api/sales', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
+        const res = await pos.confirmSale(methodStr);
 
-            if (res.ok) {
-                setCart([]);
-                setIsCheckoutOpen(false);
-                alert('Venta Exitosa!');
-            } else {
-                const data = await res.json();
-                alert(`Error al guardar venta: ${data.error || 'Error desconocido'}`);
-            }
-        } catch (e: any) {
-            console.error(e);
-            alert(`Error de conexión: ${e.message}`);
+        if (res.success) {
+            setIsCheckoutOpen(false);
+            alert('Venta Exitosa!');
+        } else {
+            alert(`Error al guardar venta: ${res.error || 'Error desconocido'}`);
         }
     };
 
-    if (loading) return <div className="h-screen flex items-center justify-center font-bold text-slate-500">Cargando POS...</div>;
+    if (loadingData || pos.isLoading) return <div className="h-screen flex items-center justify-center font-bold text-slate-500">Cargando POS...</div>;
 
     const allItems = [...services, ...products];
-    const total = cart.reduce((sum, i) => sum + i.subtotal, 0);
+    const total = pos.items.reduce((sum, i) => sum + i.subtotal, 0);
 
     return (
         <div className="h-[calc(100vh-64px)] w-full bg-slate-100 p-4 box-border overflow-hidden">
@@ -164,7 +127,7 @@ function POSContent() {
                 {/* Left: Cart (4 cols) */}
                 <div className="col-span-12 md:col-span-5 lg:col-span-4 h-full overflow-hidden">
                     <Cart
-                        items={cart}
+                        items={pos.items.map(i => ({ ...i, id: i.productId || 0 })) as any}
                         onUpdateQuantity={handleUpdateQuantity}
                         onUpdatePrice={handleUpdatePrice}
                         onRemoveItem={handleRemoveItem}

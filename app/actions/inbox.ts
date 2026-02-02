@@ -1,6 +1,6 @@
 'use server';
 
-import { prisma } from '../../lib/prisma';
+import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 import {
     LeadCase,
@@ -12,42 +12,61 @@ import {
     CaseStatus,
     LogChannel
 } from '@prisma/client';
-import { parseLeadIntake, StructuredLead } from './gemini';
+import { parseLeadIntake } from '@/lib/gemini'; // Adjusted import
+import { ActionResponse } from './types';
 
-export type ActionResponse<T = any> = {
-    success: boolean;
-    data?: T;
-    error?: string;
-};
-
-// --- CHECKLIST TEMPLATES ---
+// --- CHECKLIST TEMPLATES (Merged from specialized file) ---
 const CHECKLIST_TEMPLATES: Record<ChecklistTemplate, any[]> = {
     [ChecklistTemplate.TYRES]: [
-        { key: 'tyres_need', label: '¿Qué necesita?', inputType: 'SELECT', options: ["Cubierta nueva", "Reparación", "Balanceo", "Alineación", "Auxilio"], isRequired: true, sortOrder: 1 },
-        { key: 'tyres_size', label: 'Medida (ej: 175/70R13)', inputType: 'TEXT', isRequired: false, sortOrder: 2 }, // Conditional logic handled in UI or validation? validation is hard dynamically
+        { key: 'tyres_need', label: 'Necesidad', inputType: 'SELECT', options: ["Cubierta nueva", "Reparación", "Balanceo", "Alineación", "Auxilio"], isRequired: true, sortOrder: 1 },
+        { key: 'tyres_size', label: 'Medida (ej 175/70R13)', inputType: 'TEXT', isRequired: false, sortOrder: 2 },
         { key: 'tyres_qty', label: 'Cantidad', inputType: 'NUMBER', isRequired: true, sortOrder: 3 },
-        { key: 'tyres_brand_pref', label: 'Preferencia de Marca', inputType: 'TEXT', isRequired: false, sortOrder: 4 },
-        { key: 'tyres_urgency', label: 'Urgencia', inputType: 'SELECT', options: ["Hoy", "Esta semana", "Sin apuro"], isRequired: true, sortOrder: 5 },
-        { key: 'vehicle_plate', label: 'Patente', inputType: 'TEXT', isRequired: false, sortOrder: 6 },
+        { key: 'tyres_brand_pref', label: 'Marca preferida', inputType: 'TEXT', isRequired: false, sortOrder: 4 },
+        { key: 'tyres_budget_range', label: 'Rango precio', inputType: 'MONEY', isRequired: false, sortOrder: 5 },
+        { key: 'tyres_urgency', label: 'Urgencia', inputType: 'SELECT', options: ["Hoy", "Esta semana", "Sin apuro"], isRequired: true, sortOrder: 6 },
+        { key: 'tyres_location', label: 'Ubicación (si auxilio)', inputType: 'TEXT', isRequired: false, sortOrder: 7 },
+        { key: 'tyres_issue_desc', label: 'Descripción problema', inputType: 'TEXT', isRequired: false, sortOrder: 8 },
+        { key: 'vehicle_plate', label: 'Patente', inputType: 'TEXT', isRequired: false, sortOrder: 9 },
+        { key: 'vehicle_model', label: 'Modelo vehículo', inputType: 'TEXT', isRequired: false, sortOrder: 10 },
+        { key: 'payment_method', label: 'Forma de pago', inputType: 'SELECT', options: ["Efectivo", "Transferencia", "Débito", "Crédito"], isRequired: false, sortOrder: 11 },
+        { key: 'preferred_time_window', label: 'Turno pref.', inputType: 'SELECT', options: ["Mañana", "Tarde"], isRequired: false, sortOrder: 12 },
+        { key: 'callback_ok', label: 'Llamar?', inputType: 'BOOLEAN', isRequired: false, sortOrder: 13 },
     ],
     [ChecklistTemplate.BATTERY]: [
         { key: 'battery_need', label: 'Necesidad', inputType: 'SELECT', options: ["Compra", "Cambio + instalación", "Auxilio arranque"], isRequired: true, sortOrder: 1 },
         { key: 'vehicle_model', label: 'Vehículo', inputType: 'TEXT', isRequired: true, sortOrder: 2 },
-        { key: 'battery_delivery_old', label: 'Entrega batería vieja?', inputType: 'BOOLEAN', isRequired: true, sortOrder: 3 },
-        { key: 'battery_installation_place', label: 'Lugar Instalación', inputType: 'SELECT', options: ["En local", "A domicilio"], isRequired: true, sortOrder: 4 },
-        { key: 'urgency', label: 'Urgencia', inputType: 'SELECT', options: ["Ahora", "Hoy", "Esta semana"], isRequired: true, sortOrder: 5 },
+        { key: 'battery_current_model', label: 'Batería actual', inputType: 'TEXT', isRequired: false, sortOrder: 3 },
+        { key: 'battery_cca_or_ah', label: 'Amperaje/CCA', inputType: 'TEXT', isRequired: false, sortOrder: 4 },
+        { key: 'battery_delivery_old', label: 'Entrega vieja?', inputType: 'BOOLEAN', isRequired: true, sortOrder: 5 },
+        { key: 'battery_installation_place', label: 'Lugar', inputType: 'SELECT', options: ["En local", "A domicilio"], isRequired: false, sortOrder: 6 },
+        { key: 'battery_location', label: 'Dirección domicilio', inputType: 'TEXT', isRequired: false, sortOrder: 7 },
+        { key: 'battery_symptoms', label: 'Síntomas', inputType: 'TEXT', isRequired: false, sortOrder: 8 },
+        { key: 'urgency', label: 'Urgencia', inputType: 'SELECT', options: ["Ahora", "Hoy", "Esta semana"], isRequired: true, sortOrder: 9 },
+        { key: 'vehicle_plate', label: 'Patente', inputType: 'TEXT', isRequired: false, sortOrder: 10 },
+        { key: 'payment_method', label: 'Pago', inputType: 'SELECT', options: ["Efectivo", "Transferencia", "Débito", "Crédito"], isRequired: false, sortOrder: 11 },
+        { key: 'warranty_interest', label: 'Interés garantía?', inputType: 'BOOLEAN', isRequired: false, sortOrder: 12 },
     ],
     [ChecklistTemplate.OIL_SERVICE]: [
         { key: 'service_type', label: 'Tipo Service', inputType: 'SELECT', options: ["Aceite+filtro", "Aceite+filtros", "Completo"], isRequired: true, sortOrder: 1 },
         { key: 'vehicle_model', label: 'Vehículo', inputType: 'TEXT', isRequired: true, sortOrder: 2 },
-        { key: 'oil_preference', label: 'Aceite preferido', inputType: 'TEXT', isRequired: true, sortOrder: 3 },
-        { key: 'filters_needed', label: 'Filtros', inputType: 'MULTISELECT', options: ["Aceite", "Aire", "Habitáculo", "Combustible"], isRequired: true, sortOrder: 4 },
-        { key: 'urgency', label: 'Urgencia', inputType: 'SELECT', options: ["Mañana", "Tarde", "Semana"], isRequired: true, sortOrder: 5 },
+        { key: 'vehicle_engine', label: 'Motor', inputType: 'TEXT', isRequired: false, sortOrder: 3 },
+        { key: 'vehicle_km', label: 'Kilometraje', inputType: 'NUMBER', isRequired: false, sortOrder: 4 },
+        { key: 'oil_preference', label: 'Aceite pref.', inputType: 'TEXT', isRequired: true, sortOrder: 5 },
+        { key: 'filters_needed', label: 'Filtros', inputType: 'MULTISELECT', options: ["Aceite", "Aire", "Habitáculo", "Combustible"], isRequired: true, sortOrder: 6 },
+        { key: 'service_date_pref', label: 'Fecha pref.', inputType: 'TEXT', isRequired: false, sortOrder: 7 },
+        { key: 'service_time_window', label: 'Turno pref.', inputType: 'SELECT', options: ["Mañana", "Tarde"], isRequired: false, sortOrder: 8 },
+        { key: 'extra_checks', label: 'Revisar extra', inputType: 'TEXT', isRequired: false, sortOrder: 9 },
+        { key: 'vehicle_plate', label: 'Patente', inputType: 'TEXT', isRequired: false, sortOrder: 10 },
+        { key: 'payment_method', label: 'Pago', inputType: 'SELECT', options: ["Efectivo", "Transferencia", "Débito", "Crédito"], isRequired: false, sortOrder: 11 },
+        { key: 'invoice_needed', label: 'Factura', inputType: 'SELECT', options: ["No", "Factura A", "Factura B"], isRequired: false, sortOrder: 12 },
     ],
     [ChecklistTemplate.GENERIC]: [
-        { key: 'need_summary', label: 'Resumen Necesidad', inputType: 'TEXT', isRequired: true, sortOrder: 1 },
-        { key: 'urgency', label: 'Urgencia', inputType: 'SELECT', options: ["Ahora", "Hoy", "Esta semana", "Sin apuro"], isRequired: true, sortOrder: 2 },
-        { key: 'preferred_time_window', label: 'Turno Preferido', inputType: 'SELECT', options: ["Mañana", "Tarde"], isRequired: false, sortOrder: 3 },
+        { key: 'need_summary', label: 'Resumen necesidad', inputType: 'TEXT', isRequired: true, sortOrder: 1 },
+        { key: 'vehicle_model', label: 'Vehículo', inputType: 'TEXT', isRequired: false, sortOrder: 2 },
+        { key: 'vehicle_plate', label: 'Patente', inputType: 'TEXT', isRequired: false, sortOrder: 3 },
+        { key: 'urgency', label: 'Urgencia', inputType: 'SELECT', options: ["Ahora", "Hoy", "Esta semana", "Sin apuro"], isRequired: true, sortOrder: 4 },
+        { key: 'preferred_time_window', label: 'Turno pref.', inputType: 'SELECT', options: ["Mañana", "Tarde"], isRequired: false, sortOrder: 5 },
+        { key: 'payment_method', label: 'Pago', inputType: 'SELECT', options: ["Efectivo", "Transferencia", "Débito", "Crédito"], isRequired: false, sortOrder: 6 },
     ]
 };
 
@@ -119,7 +138,7 @@ export async function createLeadCase(input: {
         revalidatePath('/admin/inbox');
         return { success: true, data: newCase };
 
-    } catch (error) {
+    } catch (error: any) {
         console.error('Error creating LeadCase:', error);
         return { success: false, error: 'Failed to create case' };
     }
@@ -128,7 +147,7 @@ export async function createLeadCase(input: {
 /**
  * Uses Gemini to parse raw intake text and auto-populate case data
  */
-export async function processLeadWithAI(caseId: string, rawText: string) {
+export async function processLeadWithAI(caseId: string, rawText: string): Promise<ActionResponse> {
     try {
         // 1. Call Gemini to parse
         const aiRes = await parseLeadIntake(rawText);
@@ -186,7 +205,7 @@ export async function processLeadWithAI(caseId: string, rawText: string) {
     }
 }
 
-export async function updateChecklistItem(itemId: string, value: any, isDone: boolean) {
+export async function updateChecklistItem(itemId: string, value: any, isDone: boolean): Promise<ActionResponse> {
     try {
         await prisma.caseChecklistItem.update({
             where: { id: itemId },
@@ -203,7 +222,7 @@ export async function updateChecklistItem(itemId: string, value: any, isDone: bo
     }
 }
 
-export async function addCaseLog(caseId: string, authorUserId: number, message: string, channel: LogChannel) {
+export async function addCaseLog(caseId: string, authorUserId: number, message: string, channel: LogChannel): Promise<ActionResponse> {
     try {
         const log = await prisma.caseLog.create({
             data: {
@@ -227,7 +246,7 @@ export async function addCaseLog(caseId: string, authorUserId: number, message: 
     }
 }
 
-export async function updateCaseStatus(caseId: string, status: CaseStatus) {
+export async function updateCaseStatus(caseId: string, status: CaseStatus): Promise<ActionResponse> {
     try {
         await prisma.leadCase.update({
             where: { id: caseId },
@@ -240,7 +259,7 @@ export async function updateCaseStatus(caseId: string, status: CaseStatus) {
     }
 }
 
-export async function assignClientToCase(caseId: string, clientId: number, vehicleId?: number) {
+export async function assignClientToCase(caseId: string, clientId: number, vehicleId?: number): Promise<ActionResponse> {
     try {
         await prisma.leadCase.update({
             where: { id: caseId },
@@ -257,7 +276,7 @@ export async function assignClientToCase(caseId: string, clientId: number, vehic
     }
 }
 
-export async function getInboxCases() {
+export async function getInboxCases(): Promise<ActionResponse> {
     try {
         const cases = await prisma.leadCase.findMany({
             where: {
@@ -277,9 +296,10 @@ export async function getInboxCases() {
         return { success: false, error: 'Failed to fetch' };
     }
 }
+
 // --- CONVERSION & UTILS ---
 
-export async function getServicesList() {
+export async function getServicesList(): Promise<ActionResponse> {
     try {
         const services = await prisma.service.findMany({
             where: { active: true },
@@ -296,7 +316,7 @@ export async function convertCaseToAppointment(input: {
     date: Date;
     serviceId: number;
     notes?: string;
-}) {
+}): Promise<ActionResponse> {
     try {
         const { caseId, date, serviceId, notes } = input;
 
@@ -347,7 +367,7 @@ export async function convertCaseToAppointment(input: {
     }
 }
 
-export async function generateWhatsAppLink(caseId: string) {
+export async function generateWhatsAppLink(caseId: string): Promise<ActionResponse> {
     try {
         const leadCase = await prisma.leadCase.findUnique({
             where: { id: caseId },
@@ -406,7 +426,7 @@ export async function generateWhatsAppLink(caseId: string) {
         const url = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
 
         revalidatePath(`/admin/inbox/${caseId}`);
-        return { success: true, url };
+        return { success: true, data: { url } };
 
     } catch (error) {
         return { success: false, error: 'Failed' };
@@ -415,7 +435,7 @@ export async function generateWhatsAppLink(caseId: string) {
 
 // --- QUICK ACTIONS FOR MODAL ---
 
-export async function searchClients(query: string) {
+export async function searchClients(query: string): Promise<ActionResponse> {
     if (query.length < 2) return { success: true, data: [] };
     try {
         const clients = await prisma.client.findMany({
@@ -435,7 +455,7 @@ export async function searchClients(query: string) {
     }
 }
 
-export async function getClientVehicles(clientId: number) {
+export async function getClientVehicles(clientId: number): Promise<ActionResponse> {
     try {
         const vehicles = await prisma.vehicle.findMany({
             where: { clientId }
@@ -446,7 +466,7 @@ export async function getClientVehicles(clientId: number) {
     }
 }
 
-export async function createQuickClient(name: string, phone: string) {
+export async function createQuickClient(name: string, phone: string): Promise<ActionResponse> {
     try {
         const client = await prisma.client.create({
             data: { name, phone }
@@ -457,7 +477,7 @@ export async function createQuickClient(name: string, phone: string) {
     }
 }
 
-export async function createQuickVehicle(clientId: number, brand: string, model: string, plate: string) {
+export async function createQuickVehicle(clientId: number, brand: string, model: string, plate: string): Promise<ActionResponse> {
     try {
         const vehicle = await prisma.vehicle.create({
             data: { clientId, brand, model, plate, type: 'CAR' }
@@ -468,7 +488,7 @@ export async function createQuickVehicle(clientId: number, brand: string, model:
     }
 }
 
-export async function getInboxKanbanBoard() {
+export async function getInboxKanbanBoard(): Promise<ActionResponse> {
     try {
         const cases = await prisma.leadCase.findMany({
             where: {
@@ -491,7 +511,7 @@ export async function getInboxKanbanBoard() {
 
 // --- QUOTE BUILDER ACTIONS ---
 
-export async function getQuote(caseId: string) {
+export async function getQuote(caseId: string): Promise<ActionResponse> {
     try {
         const quote = await prisma.quote.findUnique({
             where: { leadCaseId: caseId },
@@ -508,7 +528,7 @@ export async function getQuote(caseId: string) {
     }
 }
 
-export async function createOrUpdateQuote(caseId: string, items: any[], discount: number = 0) {
+export async function createOrUpdateQuote(caseId: string, items: any[], discount: number = 0): Promise<ActionResponse> {
     try {
         // Calculate totals
         const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
@@ -565,7 +585,7 @@ export async function createOrUpdateQuote(caseId: string, items: any[], discount
     }
 }
 
-export async function searchProductsForQuote(query: string) {
+export async function searchProductsForQuote(query: string): Promise<ActionResponse> {
     try {
         if (query.length < 2) return { success: true, data: [] };
 
@@ -602,7 +622,7 @@ export async function searchProductsForQuote(query: string) {
     }
 }
 
-export async function getInboxStats(year: number, month: number) {
+export async function getInboxStats(year: number, month: number): Promise<ActionResponse> {
     try {
         const startDate = new Date(year, month - 1, 1);
         const endDate = new Date(year, month, 0, 23, 59, 59);

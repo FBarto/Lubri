@@ -22,6 +22,7 @@ model Client {
   workOrders   WorkOrder[]
   sales        Sale[]
   leadCases    LeadCase[]
+  pendingSales PendingSale[]
 }
 
 model Vehicle {
@@ -50,6 +51,7 @@ model Vehicle {
   lastServiceDate     DateTime?
   lastServiceMileage  Int?
   predictedNextService DateTime? // The "Golden Date"
+  pendingSales PendingSale[]
 }
 
 model Service {
@@ -131,6 +133,7 @@ model WorkOrder {
   approvalSentAt DateTime?
 
   serviceDetails Json?    // Structured data: oil, filters, checklist
+  pendingSale  PendingSale[]
 }
 
 model WhatsAppMessage {
@@ -177,6 +180,7 @@ model Product {
   active      Boolean  @default(true)
   
   saleItems   SaleItem[]
+  pendingItems PendingSaleItem[]
 }
 
 model Sale {
@@ -195,6 +199,7 @@ model Sale {
   user          User?    @relation(fields: [userId], references: [id])
 
   status        String   @default("COMPLETED") // PENDING (Sent to Caja), COMPLETED (Paid), CANCELLED
+  pendingSale   PendingSale?
 }
 
 model SaleItem {
@@ -232,6 +237,7 @@ model User {
   assignedCases LeadCase[]
   createdLogs   CaseLog[]
   notifications Notification[]
+  pendingSales  PendingSale[]
 }
 
 model AuditLog {
@@ -456,4 +462,84 @@ model Notification {
   isRead       Boolean  @default(false)
   
   createdAt    DateTime @default(now())
+}
+
+// --- PENDING SALE / DRAFT ARCHITECTURE ---
+
+enum PendingSaleStatus {
+  DRAFT
+  CONFIRMING
+  CONFIRMED
+  CANCELLED
+}
+
+enum PendingSaleChannel {
+  POS
+  EMPLOYEE
+  ADMIN
+}
+
+model PendingSale {
+  id            Int                @id @default(autoincrement())
+  status        PendingSaleStatus  @default(DRAFT)
+
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  
+  createdById   Int
+  createdBy     User               @relation(fields: [createdById], references: [id])
+
+  channel       PendingSaleChannel @default(POS)
+  
+  workOrderId   Int?
+  workOrder     WorkOrder?         @relation(fields: [workOrderId], references: [id])
+  
+  clientId      Int?
+  client        Client?            @relation(fields: [clientId], references: [id])
+  
+  vehicleId     Int?
+  vehicle       Vehicle?           @relation(fields: [vehicleId], references: [id])
+
+  notes         String?
+  currency      String             @default("ARS")
+
+  saleId        Int?               @unique
+  sale          Sale?              @relation(fields: [saleId], references: [id])
+
+  items         PendingSaleItem[]
+
+  version       Int                @default(1)
+
+  @@index([status])
+  @@index([createdById, status])
+  @@index([clientId])
+}
+
+model PendingSaleItem {
+  id            Int          @id @default(autoincrement())
+  pendingSaleId Int
+  pendingSale   PendingSale  @relation(fields: [pendingSaleId], references: [id], onDelete: Cascade)
+
+  productId     Int?
+  product       Product?     @relation(fields: [productId], references: [id])
+
+  nameSnapshot  String
+  skuSnapshot   String?
+  unitSnapshot  String? 
+
+  quantity      Decimal      @db.Decimal(10,2) // Precision is key
+  unitPrice     Decimal      @db.Decimal(12,2)
+  discount      Decimal?     @db.Decimal(12,2)
+  subtotal      Decimal      @db.Decimal(14,2)
+
+  isUncataloged Boolean      @default(false)
+  
+  // To link back if this item came from a specific WorkOrder detail (optional but good for trace)
+  sourceMetadata Json?
+
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@index([pendingSaleId])
+  @@index([productId])
 }

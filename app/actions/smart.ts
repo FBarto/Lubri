@@ -1,6 +1,10 @@
 'use server';
 
 import { prisma } from '../../lib/prisma';
+// import { getLastServiceItems } from './maintenance'; // Dynamic import used in original, keeping it dynamic or static?
+// Dynamic import was likely used to avoid circular dependency or just lazy loading. 
+// "maintenance" imports "gemini" etc. 
+// Let's keep the logic but point to the right file.
 
 export type SearchResult = {
     id: string | number;
@@ -158,13 +162,13 @@ export async function suggestServiceItems(vehicleId: number) {
                 items[i] = applySmartQuantity(item);
             }
 
-            return { success: true, method: 'LEARNED', items };
+            return { success: true, data: { method: 'LEARNED', items } };
         }
 
         // STRATEGY 2: HISTORY (The "Habit")
         // What did we put in this car last time?
         // We import dynamically to avoid circular deps if any, though likely fine.
-        const { getLastServiceItems } = await import('./maintenance-actions');
+        const { getLastServiceItems } = await import('./maintenance');
         const lastService = await getLastServiceItems(vehicleId);
 
         if (lastService.success && lastService.data && lastService.data.items.length > 0) {
@@ -172,7 +176,7 @@ export async function suggestServiceItems(vehicleId: number) {
             const items = lastService.data.items.map((item: any) => applySmartQuantity(item));
             // Filter for Oil/Filters only? Or return whole service?
             // Usually we want to replicate the maintenance.
-            return { success: true, method: 'HISTORY', items };
+            return { success: true, data: { method: 'HISTORY', items } };
         }
 
         // STRATEGY 3: COLLECTIVE INTELLIGENCE (The "Crowd")
@@ -180,7 +184,7 @@ export async function suggestServiceItems(vehicleId: number) {
         const insights = await getVehicleInsights(vehicle.brand || '', vehicle.model || '');
 
         if (insights && insights.topProducts.length > 0) {
-            const items = await Promise.all(insights.topProducts.map(async (p) => {
+            const items = await Promise.all(insights.topProducts.map(async (p: any) => {
                 // product: { name: 'Shell 10w40', count: 10, type: 'PRODUCT' }
                 // We need to find the real product to get price
                 const realProduct = await prisma.product.findFirst({
@@ -198,7 +202,7 @@ export async function suggestServiceItems(vehicleId: number) {
                 return applySmartQuantity(rawItem);
             }));
 
-            return { success: true, method: 'CROWD', items };
+            return { success: true, data: { method: 'CROWD', items } };
         }
 
         return { success: false, error: 'No se encontraron datos suficientes para sugerir.' };

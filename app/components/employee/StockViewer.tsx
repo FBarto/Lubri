@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Search, AlertTriangle, CheckCircle, Edit2, Save, X, TrendingDown, Clock } from 'lucide-react';
-import { updateProductMinStock, getStockStats } from '../../lib/business-actions';
+import { updateProductMinStock, getStockStats } from '../../actions/business';
 
 export default function StockViewer() {
     const [products, setProducts] = useState<any[]>([]);

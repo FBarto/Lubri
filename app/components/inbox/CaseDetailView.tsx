@@ -193,10 +193,10 @@ export default function CaseDetailView({ leadCase, currentUserId }: CaseDetailPr
     const handleWhatsApp = async () => {
         setIsSending(true);
         const res = await generateWhatsAppLink(leadCase.id);
-        if (res.success && res.url) {
-            window.open(res.url, '_blank');
+        if (res.success && res.data?.url) {
+            window.open(res.data.url, '_blank');
         } else {
-            alert('Error generando link: ' + res.error);
+            alert('Error generando link: ' + (res.error || 'Unknown error'));
         }
         setIsSending(false);
     };

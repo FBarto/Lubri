@@ -44,7 +44,7 @@ export async function GET(request: Request) {
     });
 }
 
-import { createVehicle } from '@/app/lib/booking-actions';
+import { createVehicle } from '@/app/actions/booking';
 
 export async function POST(request: Request) {
     try {
@@ -64,7 +64,7 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: result.error }, { status });
         }
 
-        return NextResponse.json(result.vehicle, { status: 201 });
+        return NextResponse.json(result.data, { status: 201 });
     } catch (error: any) {
         return NextResponse.json({ error: error.message }, { status: 500 });
     }

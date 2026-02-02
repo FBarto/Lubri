@@ -201,9 +201,9 @@ export default function ServiceModal({ isOpen, onClose, onConfirm, service, init
                 brand: '',
                 model: ''
             });
-            if (res.success) {
-                currentClient = res.client as Client;
-                currentVehicle = res.vehicle as Vehicle;
+            if (res.success && res.data) {
+                currentClient = res.data.client as Client;
+                currentVehicle = res.data.vehicle as Vehicle;
             } else {
                 alert("Error al registrar cliente: " + res.error);
                 setIsProcessing(false);
@@ -215,8 +215,8 @@ export default function ServiceModal({ isOpen, onClose, onConfirm, service, init
         const noClientFound = !currentClient && !isRegistering && (phoneSearch === "Consumidor Final" || !phoneSearch);
         if (noClientFound) {
             const res = await getConsumidorFinal();
-            if (res.success) {
-                currentClient = res.client as Client;
+            if (res.success && res.data) {
+                currentClient = res.data as Client;
             }
         }
 

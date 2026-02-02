@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { processSale } from '@/app/lib/business-actions';
+import { processSale } from '../../actions/business';
 
 export async function POST(request: NextRequest) {
     try {
@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
         });
 
         if (result.success) {
-            return NextResponse.json(result.sale, { status: 201 });
+            return NextResponse.json(result.data, { status: 201 });
         } else {
             return NextResponse.json({ error: result.error }, { status: 400 });
         }

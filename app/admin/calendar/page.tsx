@@ -17,7 +17,7 @@ import {
 } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Clock, Plus, Check, X } from 'lucide-react';
-import { createAppointment } from '@/app/lib/booking-actions';
+import { createAppointment } from '@/app/actions/booking';
 
 interface Appointment {
     id: number;
@@ -318,8 +318,8 @@ function CalendarContent() {
                                             key={i}
                                             onClick={() => setSelectedSlot(slot)}
                                             className={`py-2 px-1 text-xs font-bold rounded-lg border transition-all ${selectedSlot?.getTime() === slot.getTime()
-                                                    ? 'bg-blue-600 border-blue-600 text-white shadow-lg'
-                                                    : 'bg-white text-slate-600 border-slate-200 hover:border-blue-300'
+                                                ? 'bg-blue-600 border-blue-600 text-white shadow-lg'
+                                                : 'bg-white text-slate-600 border-slate-200 hover:border-blue-300'
                                                 }`}
                                         >
                                             {format(slot, 'HH:mm')}

@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { ShoppingCart, Wrench, Package, ArrowDownToLine, Calendar, Inbox, FilePlus, TrendingUp, Users } from 'lucide-react';
 import EmployeeLayout from '../components/employee/EmployeeLayout';
+import { useSession } from 'next-auth/react';
+import { usePOS } from '../hooks/usePOS';
 
 import RestrictedPOS from '../components/employee/RestrictedPOS';
 import ServicesWizard from '../components/employee/ServicesWizard';
@@ -15,20 +17,22 @@ import EmployeeDashboard from '../components/employee/EmployeeDashboard';
 import EmployeeClientList from '../components/employee/EmployeeClientList';
 import EmployeeCheckout from '../components/employee/EmployeeCheckout';
 
+
 export default function EmployeePage() {
+    const { data: session } = useSession();
     const [activeTab, setActiveTab] = useState<'DASHBOARD' | 'VENTA' | 'SERVICIOS' | 'STOCK' | 'INGRESAR' | 'TURNOS' | 'TALLER' | 'INBOX' | 'COTIZAR' | 'CLIENTES' | 'COBRAR'>('TALLER');
-    const [cart, setCart] = useState<any[]>([]);
+
+    // Centralized POS Logic (Persisted Draft)
+    const pos = usePOS(session?.user?.id ? Number(session.user.id) : 0, 'EMPLOYEE');
 
     // Shared Client Context for Actions
     const [selectedClientForAction, setSelectedClientForAction] = useState<any>(null);
 
     const handleAddFromWizard = (newItem: any) => {
-        setCart(prev => [...prev, {
+        pos.addItem({
             ...newItem,
-            uniqueId: Math.random().toString(36).substr(2, 9),
-            quantity: 1,
-            subtotal: newItem.price // Assuming wizard passes ready-to-sell items
-        }]);
+            type: newItem.type || 'PRODUCT'
+        });
     };
 
     return (
@@ -65,7 +69,7 @@ export default function EmployeePage() {
                     <ShoppingCart className="w-5 h-5" />
                     <span className="flex items-center gap-2">
                         COMPRA
-                        {cart.length > 0 && <span className="bg-white text-blue-600 px-1.5 py-0.5 rounded-md text-xs">{cart.length}</span>}
+                        {pos.items.length > 0 && <span className="bg-white text-blue-600 px-1.5 py-0.5 rounded-md text-xs">{pos.items.length}</span>}
                     </span>
                 </button>
                 <button
@@ -108,8 +112,14 @@ export default function EmployeePage() {
 
                 {activeTab === 'VENTA' && (
                     <RestrictedPOS
-                        cart={cart}
-                        setCart={setCart}
+                        items={pos.items}
+                        onAddItem={pos.addItem}
+                        onUpdateQuantity={pos.updateQuantity}
+                        onUpdatePrice={pos.updatePrice}
+                        onRemoveItem={pos.removeItem}
+                        onClearCart={pos.clearCart}
+                        onConfirmSale={pos.confirmSale}
+                        isLoading={pos.isLoading}
                         initialClient={selectedClientForAction}
                     />
                 )}
@@ -138,12 +148,10 @@ export default function EmployeePage() {
                             const baseItem = {
                                 type: 'SERVICE',
                                 id: wo.service.id,
+                                productId: undefined,
                                 name: wo.service.name + ' - ' + wo.vehicle.plate,
                                 price: wo.service.price,
                                 quantity: 1,
-                                vehicleId: wo.vehicleId,
-                                clientId: wo.clientId,
-                                workOrderId: wo.id,
                                 uniqueId: Math.random().toString(36).substr(2, 9),
                                 subtotal: wo.service.price
                             };
@@ -151,16 +159,21 @@ export default function EmployeePage() {
                             // 2. Convert Extra Items (from serviceDetails)
                             const extraItems = (wo.serviceDetails as any)?.items?.map((item: any) => ({
                                 type: 'PRODUCT',
-                                id: item.productId,
+                                productId: item.productId,
                                 name: item.name,
                                 price: item.unitPrice,
                                 quantity: item.quantity,
                                 uniqueId: Math.random().toString(36).substr(2, 9),
-                                subtotal: item.quantity * item.unitPrice,
-                                workOrderId: wo.id
+                                subtotal: item.quantity * item.unitPrice
                             })) || [];
 
-                            setCart([baseItem, ...extraItems]);
+                            // Bulk Update via usePOS
+                            const allItems = [baseItem, ...extraItems].map(i => ({
+                                ...i,
+                                type: i.type as 'PRODUCT' | 'SERVICE'
+                            }));
+
+                            pos.replaceItems(allItems);
                             setActiveTab('VENTA');
                         }} />
                     </div>
