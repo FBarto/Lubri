@@ -1,6 +1,6 @@
 
 import { PrismaClient } from '@prisma/client';
-import { getClientDataByToken } from '../app/lib/portal-actions';
+import { getClientDataByToken } from '../app/actions/portal';
 
 const prisma = new PrismaClient();
 

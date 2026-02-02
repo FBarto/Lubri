@@ -1,6 +1,6 @@
 
 import { performance } from 'perf_hooks';
-import { getClientDataByToken } from '../app/lib/portal-actions';
+import { getClientDataByToken } from '../app/actions/portal';
 import { prisma } from '../lib/prisma';
 
 async function main() {

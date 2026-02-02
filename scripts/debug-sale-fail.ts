@@ -1,6 +1,6 @@
 
 import { PrismaClient } from '@prisma/client';
-import { processSale } from '../app/lib/business-actions';
+import { processSale } from '../app/actions/business';
 
 const prisma = new PrismaClient();
 
