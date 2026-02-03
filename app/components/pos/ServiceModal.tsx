@@ -166,10 +166,18 @@ export default function ServiceModal({ isOpen, onClose, onConfirm, service, init
         }
     };
 
-    const searchProduct = async (val: string) => {
+    // Search State
+    const [activeSearchField, setActiveSearchField] = useState<string | null>(null);
+
+    const searchProduct = async (val: string, contextCategory?: string) => {
         if (val.length > 2) {
             try {
-                const res = await fetch(`/api/products?search=${val}&category=ACEITE`);
+                // If context provided, maybe prefer it? Current backend uses single search term.
+                // We will rely on the user typing or generic search. 
+                // Alternatively, we could update backend to support category filter, but for now strict search is fine.
+                // If contextCategory is 'ACEITE', we might prioritize?
+                // Let's just search by val.
+                const res = await fetch(`/api/products?search=${val}`);
                 const data = await res.json();
                 setProductResults(Array.isArray(data.data) ? data.data : (Array.isArray(data) ? data : []));
             } catch (e) {
@@ -444,17 +452,20 @@ export default function ServiceModal({ isOpen, onClose, onConfirm, service, init
                                             value={serviceDetails.oil.brand}
                                             onChange={e => {
                                                 setServiceDetails({ ...serviceDetails, oil: { ...serviceDetails.oil, brand: e.target.value } });
-                                                searchProduct(e.target.value);
+                                                setActiveSearchField('oil');
+                                                searchProduct(e.target.value, 'ACEITE');
                                             }}
+                                            onFocus={() => setActiveSearchField('oil')}
                                         />
-                                        {productResults.length > 0 && (
-                                            <ul className="absolute z-30 w-full bg-white border border-slate-200 rounded-xl mt-1 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95">
+                                        {activeSearchField === 'oil' && productResults.length > 0 && (
+                                            <ul className="absolute z-30 w-full bg-white border border-slate-200 rounded-xl mt-1 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 max-h-40 overflow-y-auto">
                                                 {productResults.map(p => (
                                                     <li
                                                         key={p.id}
                                                         onClick={() => {
                                                             setServiceDetails({ ...serviceDetails, oil: { ...serviceDetails.oil, brand: `${p.name} [${p.code || 'S/C'}]` } });
                                                             setProductResults([]);
+                                                            setActiveSearchField(null);
                                                         }}
                                                         className="p-3 hover:bg-slate-50 cursor-pointer text-xs font-black border-b last:border-0 flex justify-between items-center group"
                                                     >
@@ -478,26 +489,74 @@ export default function ServiceModal({ isOpen, onClose, onConfirm, service, init
                             {/* Filters */}
                             <div className="grid grid-cols-2 gap-4">
                                 {(['air', 'oil', 'fuel', 'cabin'] as const).map(f => (
-                                    <div key={f} className="space-y-2">
+                                    <div key={f} className="space-y-2 relative">
                                         <label className={`flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer ${serviceDetails.filters[f] ? 'bg-blue-50 border-blue-200' : 'bg-white border-slate-200 group'}`}>
                                             <input
                                                 type="checkbox"
                                                 className="w-5 h-5 rounded text-blue-600 focus:ring-0"
                                                 checked={serviceDetails.filters[f]}
-                                                onChange={e => setServiceDetails({ ...serviceDetails, filters: { ...serviceDetails.filters, [f]: e.target.checked } })}
+                                                onChange={e => {
+                                                    const checked = e.target.checked;
+                                                    setServiceDetails(prev => ({
+                                                        ...prev,
+                                                        filters: { ...prev.filters, [f]: checked }
+                                                    }));
+                                                    if (!checked) {
+                                                        // Clear detail if unchecked
+                                                        setServiceDetails(prev => ({
+                                                            ...prev,
+                                                            filterDetails: { ...prev.filterDetails, [f]: '' }
+                                                        }));
+                                                    }
+                                                }}
                                             />
                                             <span className="text-[10px] font-black uppercase text-slate-700">
                                                 {f === 'air' ? 'Fil. Aire' : f === 'oil' ? 'Fil. Aceite' : f === 'fuel' ? 'Combustible' : 'Habitáculo'}
                                             </span>
                                         </label>
+
                                         {serviceDetails.filters[f] && (
-                                            <input
-                                                type="text"
-                                                placeholder="Marca / Código"
-                                                className="w-full p-2 bg-white rounded-lg border border-slate-200 text-[10px] font-bold focus:border-red-600 outline-none transition-all placeholder:font-normal"
-                                                value={serviceDetails.filterDetails[f]}
-                                                onChange={e => setServiceDetails({ ...serviceDetails, filterDetails: { ...serviceDetails.filterDetails, [f]: e.target.value } })}
-                                            />
+                                            <div className="relative">
+                                                <input
+                                                    type="text"
+                                                    placeholder="Buscar Código / Marca"
+                                                    className="w-full p-2 bg-white rounded-lg border border-slate-200 text-[10px] font-bold focus:border-red-600 outline-none transition-all placeholder:font-normal uppercase"
+                                                    value={serviceDetails.filterDetails[f]}
+                                                    onChange={e => {
+                                                        const val = e.target.value;
+                                                        setServiceDetails(prev => ({
+                                                            ...prev,
+                                                            filterDetails: { ...prev.filterDetails, [f]: val }
+                                                        }));
+                                                        // Trigger search
+                                                        setActiveSearchField(`filter_${f}`);
+                                                        searchProduct(val, 'FILTRO');
+                                                    }}
+                                                    onFocus={() => setActiveSearchField(`filter_${f}`)}
+                                                />
+                                                {/* Results Dropdown for specific filter field */}
+                                                {activeSearchField === `filter_${f}` && productResults.length > 0 && (
+                                                    <ul className="absolute z-40 left-0 w-full bg-white border border-slate-200 rounded-lg mt-1 shadow-xl overflow-hidden animate-in fade-in zoom-in-95 max-h-40 overflow-y-auto">
+                                                        {productResults.map(p => (
+                                                            <li
+                                                                key={p.id}
+                                                                onClick={() => {
+                                                                    setServiceDetails(prev => ({
+                                                                        ...prev,
+                                                                        filterDetails: { ...prev.filterDetails, [f]: `${p.name} [${p.code || 'S/C'}]` }
+                                                                    }));
+                                                                    setProductResults([]);
+                                                                    setActiveSearchField(null);
+                                                                }}
+                                                                className="p-2 hover:bg-slate-50 cursor-pointer text-[9px] font-black border-b last:border-0 flex justify-between items-center group"
+                                                            >
+                                                                <span className="truncate max-w-[70%]">{p.name}</span>
+                                                                <span className="text-[8px] bg-slate-100 text-slate-400 px-1 py-0.5 rounded opacity-70 group-hover:bg-red-50 group-hover:text-red-600 transition-colors uppercase font-black">{p.code || 'S/C'}</span>
+                                                            </li>
+                                                        ))}
+                                                    </ul>
+                                                )}
+                                            </div>
                                         )}
                                     </div>
                                 ))}

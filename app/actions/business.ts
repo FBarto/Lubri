@@ -96,8 +96,12 @@ export async function createWorkOrder(data: WorkOrderInput): Promise<ActionRespo
             );
         }
 
-        // Sync to Firestore
-        SyncService.syncWorkOrder(wo);
+        // Sync to Firestore (Non-blocking)
+        try {
+            SyncService.syncWorkOrder(wo);
+        } catch (syncError) {
+            console.warn('SyncService skipped (Firebase not configured or failed).', syncError);
+        }
 
         safeRevalidate('/admin/dashboard');
         // Also revalidate employee views?

@@ -34,7 +34,9 @@ export default function PortalClientView({ data }: { data: PortalData }) {
             {/* Header / Nav */}
             <header className="px-6 py-6 flex justify-between items-center bg-gradient-to-b from-black/50 to-transparent backdrop-blur-sm sticky top-0 z-20">
                 <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-[#171717] flex items-center justify-center border border-white/5 shadow-lg shadow-black/50">
+                    {/* Logo Placeholder - User requested logo placement */}
+                    <div className="w-10 h-10 rounded-xl bg-[#171717] flex items-center justify-center border border-white/5 shadow-lg shadow-black/50 overflow-hidden">
+                        {/* <img src="/logo.png" alt="Logo" className="w-full h-full object-cover" /> */}
                         <Car size={20} className="text-[#E20613]" />
                     </div>
                     <div>
@@ -161,37 +163,30 @@ export default function PortalClientView({ data }: { data: PortalData }) {
                         </div>
 
                         <div className="space-y-3">
-                            {/* Only show warnings or critical items first */}
-                            {vehicle.maintenanceStatus?.filters?.filter((i: any) => i.status !== 'OK').length > 0 ? (
-                                vehicle.maintenanceStatus.filters
-                                    .filter((i: any) => i.status !== 'OK')
-                                    .map((item: any, idx: number) => (
-                                        <div key={idx} className="bg-[#1F1F1F] border border-[#E20613]/30 p-4 rounded-2xl flex items-center justify-between shadow-[0_4px_20px_-10px_rgba(226,6,19,0.2)]">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 rounded-full bg-[#E20613]/10 flex items-center justify-center text-[#E20613] animate-pulse">
-                                                    <AlertTriangle size={18} />
-                                                </div>
-                                                <div>
-                                                    <p className="font-bold text-sm text-white">{item.label}</p>
-                                                    <p className="text-[10px] text-[#E20613] font-bold uppercase tracking-wide">Atención Requerida</p>
-                                                </div>
-                                            </div>
-                                            <ChevronRight size={18} className="text-neutral-600" />
-                                        </div>
-                                    ))
-                            ) : (
-                                <div className="bg-[#171717] border border-white/5 p-4 rounded-2xl flex items-center justify-between">
+                            {/* Filters Section - Show ALL filters with status */}
+                            {vehicle.maintenanceStatus?.filters?.map((item: any, idx: number) => (
+                                <div key={idx} className={`border p-4 rounded-2xl flex items-center justify-between shadow-sm transition-all ${item.status === 'OK'
+                                    ? 'bg-[#171717] border-emerald-500/20 shadow-[0_4px_20px_-10px_rgba(16,185,129,0.1)]'
+                                    : 'bg-[#1F1F1F] border-[#E20613]/30 shadow-[0_4px_20px_-10px_rgba(226,6,19,0.2)]'
+                                    }`}>
                                     <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500">
-                                            <CheckCircle2 size={18} />
+                                        <div className={`w-10 h-10 rounded-full flex items-center justify-center animate-pulse ${item.status === 'OK'
+                                            ? 'bg-emerald-500/10 text-emerald-500'
+                                            : 'bg-[#E20613]/10 text-[#E20613]'
+                                            }`}>
+                                            {item.status === 'OK' ? <CheckCircle2 size={18} /> : <AlertTriangle size={18} />}
                                         </div>
                                         <div>
-                                            <p className="font-bold text-sm text-white">Sistemas Nominales</p>
-                                            <p className="text-[10px] text-emerald-500 font-bold uppercase tracking-wide">Todo en orden</p>
+                                            <p className={`font-bold text-sm ${item.status === 'OK' ? 'text-white' : 'text-white'}`}>{item.label}</p>
+                                            <p className={`text-[10px] font-bold uppercase tracking-wide ${item.status === 'OK' ? 'text-emerald-500' : 'text-[#E20613]'
+                                                }`}>
+                                                {item.status === 'OK' ? 'Cambiado / OK' : 'Atención Requerida'}
+                                            </p>
                                         </div>
                                     </div>
+                                    <ChevronRight size={18} className="text-neutral-600" />
                                 </div>
-                            )}
+                            ))}
 
                             {/* Show 1 or 2 normal items just to populate (Fluids) */}
                             {vehicle.maintenanceStatus?.fluids?.slice(0, 2).map((item: any, idx: number) => (
