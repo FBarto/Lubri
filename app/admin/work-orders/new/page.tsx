@@ -136,6 +136,34 @@ function NewWorkOrderForm() {
         }
     };
 
+    const resetForm = () => {
+        setFormData(prev => ({
+            ...prev,
+            vehiclePlate: '',
+            vehicleId: '',
+            clientId: '',
+            clientName: '',
+            clientPhone: '',
+            vehicleBrand: '',
+            vehicleModel: '',
+            mileage: '',
+            notes: '',
+            serviceDetails: {
+                oil: { brand: '', liters: prev.serviceDetails.oil.liters, type: prev.serviceDetails.oil.type },
+                filters: { air: false, oil: false, fuel: false, cabin: false },
+                filterDetails: { air: '', oil: '', fuel: '', cabin: '' },
+                fluids: { coolant: true, brakes: true, gearbox: true, differential: true, hydraulic: true },
+                additives: []
+            }
+        }));
+        setIsNewVehicle(false);
+        setProductResults([]);
+        setClientResults([]);
+        setLastSavedOrder(null);
+        setActiveSearchField(null);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
     const handlePlateSearch = async (plate: string) => {
         if (plate.length < 6) return;
         setSearchingPlate(true);
@@ -280,26 +308,7 @@ function NewWorkOrderForm() {
                 });
 
                 if (isMassLoad) {
-                    setFormData(prev => ({
-                        ...prev,
-                        vehiclePlate: '',
-                        vehicleId: '',
-                        clientId: '',
-                        clientName: '',
-                        clientPhone: '',
-                        vehicleBrand: '',
-                        vehicleModel: '',
-                        mileage: '',
-                        notes: '',
-                        serviceDetails: { // Reset details but keep structure
-                            oil: { brand: '', liters: prev.serviceDetails.oil.liters, type: prev.serviceDetails.oil.type },
-                            filters: { air: false, oil: false, fuel: false, cabin: false },
-                            filterDetails: { air: '', oil: '', fuel: '', cabin: '' },
-                            fluids: { coolant: true, brakes: true, gearbox: true, differential: true, hydraulic: true },
-                            additives: []
-                        }
-                    }));
-                    setIsNewVehicle(false);
+                    resetForm();
 
                     if (shouldShare) {
                         const carName = [formData.vehicleBrand, formData.vehicleModel].filter(Boolean).join(' ') || 'vehículo';
@@ -323,8 +332,9 @@ function NewWorkOrderForm() {
                             const encodedMessage = encodeURIComponent(message);
                             window.open(`https://wa.me/${formData.clientPhone.replace(/\D/g, '')}?text=${encodedMessage}`, '_blank');
                         }
+                        resetForm();
                     }
-                    // Continue showing success banner
+                    // Continue showing success banner/modal if not sharing or just let the reset handle it if necessary
                 }
             } else {
                 const err = await res.json();
@@ -429,7 +439,7 @@ function NewWorkOrderForm() {
 
                                 <button
                                     type="button"
-                                    onClick={() => setLastSavedOrder(null)}
+                                    onClick={resetForm}
                                     className="w-full bg-slate-900 text-white p-5 rounded-2xl font-black flex items-center justify-center gap-3 hover:bg-black transition-all shadow-xl shadow-slate-900/10 active:scale-95 uppercase tracking-widest text-sm"
                                 >
                                     Cargar Siguiente 📄
