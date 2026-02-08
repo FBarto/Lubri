@@ -2,6 +2,7 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { createQuickClient } from '@/app/actions/business';
 
 function NewWorkOrderForm() {
     const router = useRouter();
@@ -12,6 +13,7 @@ function NewWorkOrderForm() {
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState('');
     const [searchingPlate, setSearchingPlate] = useState(false);
+    const [isNewVehicle, setIsNewVehicle] = useState(false);
     const [availableServices, setAvailableServices] = useState<any[]>([]);
     const [isMassLoad, setIsMassLoad] = useState(false);
     const [lastSavedOrder, setLastSavedOrder] = useState<any>(null);
@@ -26,7 +28,10 @@ function NewWorkOrderForm() {
         mileage: '',
         notes: '',
         clientName: '',
+        clientPhone: '',
         vehiclePlate: '',
+        vehicleBrand: '',
+        vehicleModel: '',
         serviceName: '',
         date: new Date().toISOString().split('T')[0], // Default to today
         serviceDetails: {
@@ -107,11 +112,25 @@ function NewWorkOrderForm() {
                     vehicleId: vehicle.id,
                     clientId: vehicle.clientId,
                     clientName: vehicle.client.name,
+                    clientPhone: vehicle.client.phone || '',
                     vehiclePlate: vehicle.plate,
+                    vehicleBrand: vehicle.brand || '',
+                    vehicleModel: vehicle.model || '',
                     mileage: vehicle.mileage || ''
                 }));
+                setIsNewVehicle(false);
             } else {
-                setError('Vehículo no encontrado. Verificá la patente.');
+                setIsNewVehicle(true);
+                setFormData(prev => ({
+                    ...prev,
+                    clientId: '',
+                    vehicleId: '',
+                    clientName: '',
+                    clientPhone: '',
+                    vehicleBrand: '',
+                    vehicleModel: ''
+                }));
+                setError('Vehículo no encontrado. Podés registrarlo ahora.');
             }
         } catch (e) {
             console.error(e);
@@ -134,16 +153,21 @@ function NewWorkOrderForm() {
                     mileage: data.vehicle.mileage || '',
                     notes: '',
                     clientName: data.client.name,
+                    clientPhone: data.client.phone || '', // Added
                     vehiclePlate: data.vehicle.plate,
+                    vehicleBrand: data.vehicle.brand || '', // Added
+                    vehicleModel: data.vehicle.model || '', // Added
                     serviceName: data.service.name,
                     date: new Date().toISOString().split('T')[0],
                     serviceDetails: data.serviceDetails || {
                         oil: { brand: '', liters: '', type: 'SINTETICO' },
                         filters: { air: false, oil: false, fuel: false, cabin: false },
                         filterDetails: { air: '', oil: '', fuel: '', cabin: '' },
-                        battery: { voltage: '' }
+                        fluids: { coolant: true, brakes: true, gearbox: true, differential: true, hydraulic: true }, // Updated
+                        additives: []
                     }
                 });
+                setIsNewVehicle(false); // Ensure reset
             }
         } catch (e) {
             console.error(e);
@@ -156,20 +180,44 @@ function NewWorkOrderForm() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setSubmitting(true);
+        setError('');
         try {
+            let currentClientId = formData.clientId;
+            let currentVehicleId = formData.vehicleId;
+
+            // Handle New Vehicle Registration
+            if (isNewVehicle) {
+                const registration = await createQuickClient({
+                    name: formData.clientName,
+                    phone: formData.clientPhone,
+                    plate: formData.vehiclePlate,
+                    brand: formData.vehicleBrand,
+                    model: formData.vehicleModel
+                });
+
+                if (registration.success) {
+                    currentClientId = registration.data.clientId.toString();
+                    currentVehicleId = registration.data.vehicleId.toString();
+                } else {
+                    setError('Error al registrar cliente: ' + (registration.error || 'Desconocido'));
+                    setSubmitting(false);
+                    return;
+                }
+            }
+
             const res = await fetch('/api/work-orders', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    clientId: formData.clientId,
-                    vehicleId: formData.vehicleId,
+                    clientId: currentClientId,
+                    vehicleId: currentVehicleId,
                     serviceId: formData.serviceId,
                     price: formData.price,
                     mileage: formData.mileage,
                     notes: formData.notes,
                     date: formData.date,
-                    serviceDetails: formData.serviceDetails, // Pass the details!
-                    appointmentId: appointmentId // Link it!
+                    serviceDetails: formData.serviceDetails,
+                    appointmentId: appointmentId
                 })
             });
 
@@ -314,7 +362,7 @@ function NewWorkOrderForm() {
                 )}
 
                 {/* Read Only Context / Results */}
-                {(appointmentId || formData.clientId) && (
+                {(appointmentId || (formData.clientId && !isNewVehicle)) && (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-100">
                         <div>
                             <label className="block text-xs font-bold uppercase text-slate-400">Cliente</label>
@@ -323,6 +371,61 @@ function NewWorkOrderForm() {
                         <div>
                             <label className="block text-xs font-bold uppercase text-slate-400">Vehículo</label>
                             <p className="font-bold text-slate-900">{formData.vehiclePlate}</p>
+                        </div>
+                    </div>
+                )}
+
+                {/* New Vehicle / Registration Fields */}
+                {isNewVehicle && (
+                    <div className="space-y-4 p-6 bg-blue-50/50 rounded-[2rem] border border-blue-200 animate-in slide-in-from-top-4 duration-300">
+                        <div className="flex items-center gap-2 text-blue-800 font-extrabold text-xs uppercase tracking-widest mb-2">
+                            <span className="w-2 h-2 bg-blue-600 rounded-full animate-pulse" />
+                            Registrar Nuevo Cliente y Vehículo
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-1">
+                                <label className="text-[10px] font-black uppercase text-slate-500 ml-1">Nombre del Cliente</label>
+                                <input
+                                    type="text"
+                                    placeholder="Nombre Completo"
+                                    required
+                                    className="w-full p-4 rounded-xl border border-slate-200 text-sm font-bold bg-white outline-none focus:ring-2 focus:ring-blue-500 transition-all placeholder:text-slate-300"
+                                    value={formData.clientName}
+                                    onChange={e => setFormData({ ...formData, clientName: e.target.value })}
+                                />
+                            </div>
+                            <div className="space-y-1">
+                                <label className="text-[10px] font-black uppercase text-slate-500 ml-1">Teléfono (WhatsApp)</label>
+                                <input
+                                    type="text"
+                                    placeholder="Ej: 3511234567"
+                                    className="w-full p-4 rounded-xl border border-slate-200 text-sm font-bold bg-white outline-none focus:ring-2 focus:ring-blue-500 transition-all placeholder:text-slate-300"
+                                    value={formData.clientPhone}
+                                    onChange={e => setFormData({ ...formData, clientPhone: e.target.value })}
+                                />
+                            </div>
+                            <div className="space-y-1">
+                                <label className="text-[10px] font-black uppercase text-slate-500 ml-1">Marca del Vehículo</label>
+                                <input
+                                    type="text"
+                                    placeholder="Ej: Toyota"
+                                    required
+                                    className="w-full p-4 rounded-xl border border-slate-200 text-sm font-bold bg-white outline-none focus:ring-2 focus:ring-blue-500 transition-all placeholder:text-slate-300"
+                                    value={formData.vehicleBrand}
+                                    onChange={e => setFormData({ ...formData, vehicleBrand: e.target.value })}
+                                />
+                            </div>
+                            <div className="space-y-1">
+                                <label className="text-[10px] font-black uppercase text-slate-500 ml-1">Modelo / Año</label>
+                                <input
+                                    type="text"
+                                    placeholder="Ej: Hilux 2022"
+                                    required
+                                    className="w-full p-4 rounded-xl border border-slate-200 text-sm font-bold bg-white outline-none focus:ring-2 focus:ring-blue-500 transition-all placeholder:text-slate-300"
+                                    value={formData.vehicleModel}
+                                    onChange={e => setFormData({ ...formData, vehicleModel: e.target.value })}
+                                />
+                            </div>
                         </div>
                     </div>
                 )}
