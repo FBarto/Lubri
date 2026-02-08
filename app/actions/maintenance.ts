@@ -66,42 +66,56 @@ export async function getVehicleMaintenanceHistory(vehicleId: number): Promise<A
                     // Extra specific logic for details from serviceDetails (Historical)
                     let detail = foundItem?.description || null;
                     let extractedLiters = null;
-                    let isValidMatch = true; // Assume valid unless proven otherwise (e.g. detailed boolean check fails)
+
+                    // VALIDITY CHECK: 
+                    // 1. Explicitly Billed Item found? -> VALID
+                    // 2. Checklist Checked? -> VALID
+                    // 3. Detail Text Filled (e.g. "203")? -> VALID
+                    let isValidMatch = !!foundItem;
 
                     if (wo.serviceDetails) {
                         const sd = wo.serviceDetails as any;
 
-                        // Strict Checks for Filter/Fluid Booleans to avoid False Positives on JSON keywords
-                        if (key === 'oil_filter') {
-                            if (sd.filters && sd.filters.oil === false) isValidMatch = false;
-                            else if (sd.filters?.oil) detail = sd.filterDetails?.oil || sd.filters.oilCode || (typeof sd.filters.oil === 'string' ? sd.filters.oil : 'Reemplazado');
-                        }
-                        else if (key === 'air_filter') {
-                            if (sd.filters && sd.filters.air === false) isValidMatch = false;
-                            else if (sd.filters?.air) detail = sd.filterDetails?.air || sd.filters.airCode || (typeof sd.filters.air === 'string' ? sd.filters.air : 'Reemplazado');
-                        }
-                        else if (key === 'fuel_filter') {
-                            if (sd.filters && sd.filters.fuel === false) isValidMatch = false;
-                            else if (sd.filters?.fuel) detail = sd.filterDetails?.fuel || sd.filters.fuelCode || (typeof sd.filters.fuel === 'string' ? sd.filters.fuel : 'Reemplazado');
-                        }
-                        else if (key === 'cabin_filter') {
-                            if (sd.filters && sd.filters.cabin === false) isValidMatch = false;
-                            else if (sd.filters?.cabin) detail = sd.filterDetails?.cabin || sd.filters.cabinCode || (typeof sd.filters.cabin === 'string' ? sd.filters.cabin : 'Reemplazado');
-                        }
-
-                        // Engine Oil Logic
-                        else if (key === 'engine_oil') {
-                            if (sd.oil?.type) {
-                                detail = sd.oil.type; // e.g. "SINTETICO"
-                                // Try to append Brand if available
-                                if (sd.oil.brand) detail = `${sd.oil.brand} ${detail}`;
-                                extractedLiters = sd.oil.liters || extractCapacity(sd.oil.type);
+                        // Detail Extraction Logic
+                        // Engine Oil
+                        if (key === 'engine_oil') {
+                            if (sd.oil?.type || sd.oil?.brand) {
+                                const parts = [];
+                                if (sd.oil.brand) parts.push(sd.oil.brand);
+                                if (sd.oil.type) parts.push(sd.oil.type);
+                                if (parts.length > 0) {
+                                    detail = parts.join(' ');
+                                    // If we have details, it's valid even if not billed (e.g. historical data)
+                                    isValidMatch = true;
+                                }
+                                extractedLiters = sd.oil.liters || (sd.oil.type ? extractCapacity(sd.oil.type) : null);
                             }
                         }
+                        // Filters
+                        else if (key === 'oil_filter') {
+                            const txt = sd.filterDetails?.oil || sd.filters?.oilCode;
+                            if (txt && txt.length > 1) { detail = txt; isValidMatch = true; }
+                            if (sd.filters?.oil === true) isValidMatch = true;
+                        }
+                        else if (key === 'air_filter') {
+                            const txt = sd.filterDetails?.air || sd.filters?.airCode;
+                            if (txt && txt.length > 1) { detail = txt; isValidMatch = true; }
+                            if (sd.filters?.air === true) isValidMatch = true;
+                        }
+                        else if (key === 'fuel_filter') {
+                            const txt = sd.filterDetails?.fuel || sd.filters?.fuelCode;
+                            if (txt && txt.length > 1) { detail = txt; isValidMatch = true; }
+                            if (sd.filters?.fuel === true) isValidMatch = true;
+                        }
+                        else if (key === 'cabin_filter') {
+                            const txt = sd.filterDetails?.cabin || sd.filters?.cabinCode;
+                            if (txt && txt.length > 1) { detail = txt; isValidMatch = true; }
+                            if (sd.filters?.cabin === true) isValidMatch = true;
+                        }
 
-                        else if (key === 'gearbox_oil' && sd.fluids?.gearbox) detail = (typeof sd.fluids.gearbox === 'string' ? sd.fluids.gearbox : 'Revisado');
-                        else if (key === 'coolant' && sd.fluids?.coolant) detail = (typeof sd.fluids.coolant === 'string' ? sd.fluids.coolant : 'Revisado');
-                        else if (key === 'brake_fluid' && sd.fluids?.brakes) detail = (typeof sd.fluids.brakes === 'string' ? sd.fluids.brakes : 'Revisado');
+                        else if (key === 'gearbox_oil' && sd.fluids?.gearbox) { detail = (typeof sd.fluids.gearbox === 'string' ? sd.fluids.gearbox : 'Revisado'); isValidMatch = true; }
+                        else if (key === 'coolant' && sd.fluids?.coolant) { detail = (typeof sd.fluids.coolant === 'string' ? sd.fluids.coolant : 'Revisado'); isValidMatch = true; }
+                        else if (key === 'brake_fluid' && sd.fluids?.brakes) { detail = (typeof sd.fluids.brakes === 'string' ? sd.fluids.brakes : 'Revisado'); isValidMatch = true; }
                     }
 
                     if (isValidMatch) {
