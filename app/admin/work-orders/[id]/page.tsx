@@ -7,7 +7,8 @@ import {
     ChevronLeft, Calendar, Clock, CheckCircle, AlertCircle, Share2,
     Printer, Car, User, Phone, FileText, Wrench, Package, Zap
 } from 'lucide-react';
-import { WhatsAppService } from '@/app/lib/whatsapp/service';
+import { generatePortalLinkForVehicle } from '@/app/actions/portal';
+import WhatsAppEditorModal from '@/app/components/whatsapp/WhatsAppEditorModal';
 
 interface WorkOrderDetailProps {
     params: Promise<{ id: string }>;
@@ -21,6 +22,46 @@ export default function WorkOrderDetailPage({ params }: WorkOrderDetailProps) {
     const [workOrder, setWorkOrder] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [whatsappPreviewModal, setWhatsappPreviewModal] = useState(false);
+    const [waMessage, setWaMessage] = useState('');
+    const [preparingWA, setPreparingWA] = useState(false);
+
+    const handleSendWhatsApp = async () => {
+        if (!workOrder) return;
+        setPreparingWA(true);
+        try {
+            const resLink = await generatePortalLinkForVehicle(workOrder.vehicleId);
+            if (resLink.success && resLink.data?.url) {
+                const origin = window.location.origin;
+                const fullLink = `${origin}${resLink.data.url}`;
+
+                const carName = [workOrder.vehicle.brand, workOrder.vehicle.model].filter(Boolean).join(' ') || 'vehículo';
+
+                const message = `¡Hola ${workOrder.client.name}! 👋 Te paso la Tarjeta de Salud Digital de tu ${carName} para que lleves el control de tus services en FB Lubricentro 🛠️.\n\nAcá tenés el link: ${fullLink}\n\nGuardalo para tu próximo service. ¡Te esperamos! 🚗`;
+
+                setWaMessage(message);
+                setWhatsappPreviewModal(true);
+            } else {
+                alert('Error al generar el link: ' + resLink.error);
+            }
+        } catch (e) {
+            console.error(e);
+            alert('Error al preparar el mensaje de WhatsApp.');
+        } finally {
+            setPreparingWA(false);
+        }
+    };
+
+    const handleFinalWAShare = () => {
+        if (!workOrder) return;
+        const encodedMsg = encodeURIComponent(waMessage);
+        const phone = workOrder.client.phone;
+        const cleanPhone = phone.replace(/\D/g, '');
+        const waLink = `https://wa.me/${cleanPhone}?text=${encodedMsg}`;
+
+        window.open(waLink, '_blank');
+        setWhatsappPreviewModal(false);
+    };
 
     useEffect(() => {
         const fetchOrder = async () => {
@@ -72,10 +113,16 @@ export default function WorkOrderDetailPage({ params }: WorkOrderDetailProps) {
                     </p>
                 </div>
                 <div className="ml-auto flex gap-2">
+                    <button
+                        onClick={handleSendWhatsApp}
+                        disabled={preparingWA}
+                        className="flex items-center gap-2 px-4 py-2 bg-emerald-600 border border-emerald-500 rounded-lg font-bold text-white hover:bg-emerald-700 shadow-sm disabled:opacity-50"
+                    >
+                        <Share2 size={18} /> {preparingWA ? 'Preparando...' : 'Tarjeta Digital'}
+                    </button>
                     <button className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg font-bold text-slate-600 hover:bg-slate-50 shadow-sm">
                         <Printer size={18} /> Imprimir
                     </button>
-                    {/* Placeholder for future specific actions */}
                 </div>
             </div>
 
@@ -255,6 +302,15 @@ export default function WorkOrderDetailPage({ params }: WorkOrderDetailProps) {
 
                 </div>
             </div>
+
+            {/* WhatsApp Preview & Editor Modal */}
+            <WhatsAppEditorModal
+                isOpen={whatsappPreviewModal}
+                onClose={() => setWhatsappPreviewModal(false)}
+                message={waMessage}
+                onMessageChange={setWaMessage}
+                onSend={handleFinalWAShare}
+            />
         </div>
     );
 }

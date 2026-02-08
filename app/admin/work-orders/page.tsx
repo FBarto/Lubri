@@ -96,7 +96,7 @@ function WorkOrdersContent() {
 
                 const carName = [wo.vehicle.brand, wo.vehicle.model].filter(Boolean).join(' ') || 'vehículo';
 
-                const message = `¡Hola ${wo.client.name}! 👋 Te paso la Libreta Digital de tu ${carName} para que lleves el control de tus services en FB Lubricentro 🛠️.\n\nAcá tenés el link: ${fullLink}\n\nGuardalo para tu próximo service. ¡Te esperamos! 🚗`;
+                const message = `¡Hola ${wo.client.name}! 👋 Te paso la Tarjeta de Salud Digital de tu ${carName} para que lleves el control de tus services en FB Lubricentro 🛠️.\n\nAcá tenés el link: ${fullLink}\n\nGuardalo para tu próximo service. ¡Te esperamos! 🚗`;
 
                 setWaMessage(message);
                 setWhatsappPreviewModal(true);
@@ -284,7 +284,7 @@ function WorkOrdersContent() {
                                                                 disabled={preparingWA}
                                                                 className="flex items-center gap-2 text-sm font-bold text-emerald-600 hover:bg-emerald-50 px-4 py-2 rounded-lg transition-colors disabled:opacity-50"
                                                             >
-                                                                <Share2 size={16} /> {preparingWA && targetOrder?.id === wo.id ? 'Preparando...' : 'Enviar Comprobante (WhatsApp)'}
+                                                                <Share2 size={16} /> {preparingWA && targetOrder?.id === wo.id ? 'Preparando...' : 'Enviar Tarjeta de Salud'}
                                                             </button>
                                                             <button className="flex items-center gap-2 text-sm font-bold text-slate-600 hover:bg-slate-100 px-4 py-2 rounded-lg transition-colors">
                                                                 <Printer size={16} /> Imprimir Orden

@@ -12,8 +12,9 @@ export default function PublicServiceBook({ data }: { data: any }) {
                 <div className="w-12 h-12 bg-[#171717] border border-white/10 rounded-2xl flex items-center justify-center mb-4 shadow-lg">
                     <Car className="text-[#E20613]" size={24} />
                 </div>
-                <h1 className="text-3xl font-black uppercase tracking-tight mb-2">Libreta de Salud</h1>
-                <p className="text-neutral-400 text-sm font-medium">Historial técnico y mantenimiento predictivo.</p>
+                <h1 className="text-3xl font-black uppercase tracking-tight mb-1 leading-none">Tarjeta de Salud</h1>
+                <h2 className="text-xl font-bold uppercase italic text-[#E20613] mb-2 tracking-tighter">Libreta Digital</h2>
+                <p className="text-neutral-500 text-[10px] font-black uppercase tracking-[0.2em]">Engineered by LubriGarage</p>
             </div>
 
             {/* Content */}
@@ -75,14 +76,14 @@ export default function PublicServiceBook({ data }: { data: any }) {
                                                 <div
                                                     key={item.key}
                                                     className={`relative p-4 rounded-2xl flex items-center gap-4 border transition-all duration-300 ${item.status === 'OK' ? 'bg-[#171717] border-white/5' :
-                                                            item.status === 'WARNING' ? 'bg-[#1F1F1F] border-[#E20613]/40 shadow-[0_0_15px_rgba(226,6,19,0.1)]' :
-                                                                'bg-[#171717] border-white/5 opacity-60'
+                                                        item.status === 'WARNING' ? 'bg-[#1F1F1F] border-[#E20613]/40 shadow-[0_0_15px_rgba(226,6,19,0.1)]' :
+                                                            'bg-[#171717] border-white/5 opacity-60'
                                                         }`}
                                                 >
                                                     {/* Icon Status */}
                                                     <div className={`shrink-0 w-10 h-10 rounded-xl flex items-center justify-center border ${item.status === 'OK' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500' :
-                                                            item.status === 'WARNING' ? 'bg-[#E20613]/10 border-[#E20613]/20 text-[#E20613]' :
-                                                                'bg-white/5 border-white/10 text-neutral-500'
+                                                        item.status === 'WARNING' ? 'bg-[#E20613]/10 border-[#E20613]/20 text-[#E20613]' :
+                                                            'bg-white/5 border-white/10 text-neutral-500'
                                                         }`}>
                                                         {item.status === 'OK' ? <CheckCircle size={18} /> : <AlertTriangle size={18} />}
                                                     </div>
