@@ -11,6 +11,11 @@ function NewWorkOrderForm() {
     const [loading, setLoading] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState('');
+    const [searchingPlate, setSearchingPlate] = useState(false);
+    const [availableServices, setAvailableServices] = useState<any[]>([]);
+    const [isMassLoad, setIsMassLoad] = useState(false);
+    const [lastSavedOrder, setLastSavedOrder] = useState<any>(null);
+    const [sendingWhatsApp, setSendingWhatsApp] = useState(false);
 
     // Form Data
     const [formData, setFormData] = useState({
@@ -27,10 +32,47 @@ function NewWorkOrderForm() {
     });
 
     useEffect(() => {
+        fetchServices();
         if (appointmentId) {
             loadAppointment(appointmentId);
         }
     }, [appointmentId]);
+
+    const fetchServices = async () => {
+        try {
+            const res = await fetch('/api/services');
+            const data = await res.json();
+            if (Array.isArray(data)) setAvailableServices(data);
+        } catch (e) {
+            console.error('Error fetching services', e);
+        }
+    };
+
+    const handlePlateSearch = async (plate: string) => {
+        if (plate.length < 6) return;
+        setSearchingPlate(true);
+        setError('');
+        try {
+            const res = await fetch(`/api/vehicles/by-plate?plate=${plate}`);
+            if (res.ok) {
+                const vehicle = await res.json();
+                setFormData(prev => ({
+                    ...prev,
+                    vehicleId: vehicle.id,
+                    clientId: vehicle.clientId,
+                    clientName: vehicle.client.name,
+                    vehiclePlate: vehicle.plate,
+                    mileage: vehicle.mileage || ''
+                }));
+            } else {
+                setError('Vehículo no encontrado. Verificá la patente.');
+            }
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setSearchingPlate(false);
+        }
+    };
 
     const loadAppointment = async (id: string) => {
         setLoading(true);
@@ -79,8 +121,23 @@ function NewWorkOrderForm() {
             });
 
             if (res.ok) {
-                router.push('/admin/dashboard'); // Or to work-orders list
-                router.refresh();
+                if (isMassLoad) {
+                    // Success feedback and reset for next entry
+                    alert(`¡Orden de ${formData.vehiclePlate} guardada con éxito!`);
+                    setFormData(prev => ({
+                        ...prev,
+                        vehiclePlate: '',
+                        vehicleId: '',
+                        clientId: '',
+                        clientName: '',
+                        mileage: '',
+                        notes: ''
+                        // Keep Date and Service for consecutive same-type entries
+                    }));
+                } else {
+                    router.push('/admin/dashboard');
+                    router.refresh();
+                }
             } else {
                 const err = await res.json();
                 setError(err.error || 'Error al guardar');
@@ -92,29 +149,142 @@ function NewWorkOrderForm() {
         }
     };
 
+    const handleSendWhatsApp = async () => {
+        if (!lastSavedOrder?.id) return;
+        setSendingWhatsApp(true);
+        try {
+            const res = await fetch(`/api/wa/send-book`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    workOrderId: lastSavedOrder.id,
+                    phone: lastSavedOrder.clientPhone
+                })
+            });
+            if (res.ok) {
+                alert('Libreta enviada por WhatsApp');
+                setLastSavedOrder(null);
+            }
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setSendingWhatsApp(false);
+        }
+    };
+
     if (loading) return <div className="p-10 text-center">Cargando datos...</div>;
 
     return (
         <div className="max-w-2xl mx-auto">
             <h1 className="text-3xl font-extrabold text-slate-900 mb-8">Iniciar Servicio 🛠️</h1>
 
+            {/* Success Banner for Mass Load */}
+            {lastSavedOrder && (
+                <div className="bg-emerald-50 border border-emerald-200 p-6 rounded-3xl mb-8 flex flex-col md:flex-row items-center justify-between gap-4 animate-in fade-in zoom-in duration-300">
+                    <div>
+                        <p className="font-black text-emerald-800 text-lg">¡Guardado con éxito! ✅</p>
+                        <p className="text-emerald-600 text-sm font-medium">Orden registrada para {lastSavedOrder.plate}</p>
+                    </div>
+                    <div className="flex gap-2">
+                        <button
+                            onClick={handleSendWhatsApp}
+                            className="bg-emerald-600 text-white px-6 py-3 rounded-2xl font-bold flex items-center gap-2 hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-500/20"
+                            disabled={sendingWhatsApp}
+                        >
+                            <svg className="w-5 h-5 fill-current" viewBox="0 0 448 512"><path d="M380.9 97.1C339 55.1 283.2 32 223.9 32c-122.4 0-222 99.6-222 222 0 39.1 10.2 77.3 29.6 111L0 480l117.7-30.9c32.4 17.7 68.9 27 106.1 27h.1c122.3 0 224.1-99.6 224.1-222 0-59.3-25.2-115-67.1-157zm-157 341.6c-33.2 0-65.7-8.9-94-25.7l-6.7-4-69.8 18.3L72 359.2l-4.4-7c-18.5-29.4-28.2-63.3-28.2-98.2 0-101.7 82.8-184.5 184.6-184.5 49.3 0 95.6 19.2 130.4 54.1 34.8 34.9 56.2 81.2 56.1 130.5 0 101.8-84.9 184.6-186.6 184.6zm101.2-138.2c-5.5-2.8-32.8-16.2-37.9-18-5.1-1.9-8.8-2.8-12.5 2.8-3.7 5.6-14.3 18-17.6 21.8-3.2 3.7-6.5 4.2-12 1.4-5.5-2.8-23.2-8.5-44.2-27.1-16.4-14.6-27.4-32.6-30.6-38.1-3.2-5.6-.3-8.6 2.5-11.3 2.5-2.5 5.5-6.5 8.3-9.7 2.8-3.3 3.7-5.6 5.5-9.2 1.8-3.7.9-6.9-.5-9.7-1.4-2.8-12.5-30.1-17.1-41.2-4.5-10.8-9.1-9.3-12.5-9.5-3.2-.2-6.9-.2-10.6-.2-3.7 0-9.7 1.4-14.8 6.9-5.1 5.6-19.4 19-19.4 46.3 0 27.3 19.9 53.7 22.6 57.4 2.8 3.7 39.1 59.7 94.8 83.8 13.2 5.8 23.5 9.2 31.5 11.8 13.3 4.2 25.4 3.6 35 2.2 10.7-1.5 32.8-13.4 37.4-26.4 4.6-13 4.6-24.1 3.2-26.4-1.3-2.5-5-3.9-10.5-6.6z" /></svg>
+                            {sendingWhatsApp ? 'Enviando...' : 'Enviar Libreta'}
+                        </button>
+                        <button
+                            onClick={() => setLastSavedOrder(null)}
+                            className="bg-white text-slate-500 px-6 py-3 rounded-2xl font-bold border border-slate-200 hover:bg-slate-50 transition-all"
+                        >
+                            Siguiente Paper 📄
+                        </button>
+                    </div>
+                </div>
+            )}
+
             <form onSubmit={handleSubmit} className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 space-y-6">
                 {error && <div className="p-3 bg-red-50 text-red-600 rounded-lg text-sm">{error}</div>}
 
-                {/* Read Only Context */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                {/* Mass Load Toggle */}
+                <div className="flex items-center justify-between p-4 bg-blue-50 rounded-2xl border border-blue-100 mb-6">
                     <div>
-                        <label className="block text-xs font-bold uppercase text-slate-400">Cliente</label>
-                        <p className="font-bold text-slate-900">{formData.clientName}</p>
+                        <p className="font-bold text-blue-900 text-sm">Modo Carga Masiva ⚡</p>
+                        <p className="text-xs text-blue-700">Activalo para cargar muchos papeles seguidos sin salir de la página.</p>
                     </div>
-                    <div>
-                        <label className="block text-xs font-bold uppercase text-slate-400">Vehículo</label>
-                        <p className="font-bold text-slate-900">{formData.vehiclePlate}</p>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                            type="checkbox"
+                            checked={isMassLoad}
+                            onChange={(e) => setIsMassLoad(e.target.checked)}
+                            className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    </label>
+                </div>
+
+                {/* Plate Search (Optional if not appointment) */}
+                {!appointmentId && (
+                    <div className="space-y-2">
+                        <label className="block text-sm font-bold text-slate-700">Buscar por Patente</label>
+                        <div className="flex gap-2">
+                            <input
+                                type="text"
+                                placeholder="Ej: AA123BB"
+                                className="flex-1 p-4 rounded-xl border border-slate-200 text-lg font-bold uppercase focus:ring-2 focus:ring-blue-500 outline-none"
+                                value={formData.vehiclePlate}
+                                onChange={(e) => setFormData({ ...formData, vehiclePlate: e.target.value.toUpperCase() })}
+                                onBlur={(e) => handlePlateSearch(e.target.value)}
+                            />
+                            <button
+                                type="button"
+                                onClick={() => handlePlateSearch(formData.vehiclePlate)}
+                                className="bg-slate-900 text-white px-6 rounded-xl font-bold hover:bg-black transition-colors"
+                                disabled={searchingPlate}
+                            >
+                                {searchingPlate ? '...' : 'Buscar'}
+                            </button>
+                        </div>
                     </div>
-                    <div className="md:col-span-2">
-                        <label className="block text-xs font-bold uppercase text-slate-400">Servicio Base</label>
-                        <p className="font-bold text-slate-900">{formData.serviceName}</p>
+                )}
+
+                {/* Read Only Context / Results */}
+                {(appointmentId || formData.clientId) && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                        <div>
+                            <label className="block text-xs font-bold uppercase text-slate-400">Cliente</label>
+                            <p className="font-bold text-slate-900">{formData.clientName}</p>
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold uppercase text-slate-400">Vehículo</label>
+                            <p className="font-bold text-slate-900">{formData.vehiclePlate}</p>
+                        </div>
                     </div>
+                )}
+
+                {/* Service Selection */}
+                <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-2">Servicio Realizado</label>
+                    <select
+                        value={formData.serviceId}
+                        onChange={(e) => {
+                            const s = availableServices.find(x => x.id === parseInt(e.target.value));
+                            setFormData({
+                                ...formData,
+                                serviceId: e.target.value,
+                                serviceName: s?.name || '',
+                                price: s?.price || formData.price
+                            });
+                        }}
+                        className="w-full p-4 rounded-xl border border-slate-200 text-lg font-medium focus:ring-2 focus:ring-blue-500 outline-none bg-white"
+                        required
+                    >
+                        <option value="">Selecciona un servicio...</option>
+                        {availableServices.map(s => (
+                            <option key={s.id} value={s.id}>{s.name} - ${s.price}</option>
+                        ))}
+                    </select>
                 </div>
 
                 {/* Editable Fields */}
