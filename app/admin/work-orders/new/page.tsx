@@ -268,13 +268,13 @@ function NewWorkOrderForm() {
             if (res.ok) {
                 const newOrder = await res.json();
 
-                // Set last saved order for the banner (ALWAYS show it)
+                // Set last saved order for the banner
                 setLastSavedOrder({
                     id: newOrder.id,
                     vehicleId: currentVehicleId,
                     plate: formData.vehiclePlate,
                     clientName: formData.clientName,
-                    clientPhone: isNewVehicle ? formData.clientPhone : (formData.clientId ? (await (await fetch(`/api/vehicles/${formData.vehicleId}`)).json()).client.phone : ''),
+                    clientPhone: formData.clientPhone || '', // Use the phone already in state
                     vehicleBrand: formData.vehicleBrand,
                     vehicleModel: formData.vehicleModel
                 });
