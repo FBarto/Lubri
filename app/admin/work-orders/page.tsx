@@ -90,9 +90,18 @@ function WorkOrdersContent() {
 
     return (
         <div className="fade-in max-w-7xl mx-auto p-6">
-            <header className="mb-8">
-                <h1 className="text-3xl font-black text-slate-900 mb-2">Historial de Servicios</h1>
-                <p className="text-slate-500">Gestión y auditoría de trabajos realizados.</p>
+            <header className="mb-8 flex justify-between items-end">
+                <div>
+                    <h1 className="text-3xl font-black text-slate-900 mb-2">Historial de Servicios</h1>
+                    <p className="text-slate-500">Gestión y auditoría de trabajos realizados.</p>
+                </div>
+                <Link
+                    href="/admin/work-orders/new"
+                    className="bg-slate-900 text-white px-6 py-3 rounded-2xl font-black flex items-center gap-2 hover:bg-red-600 transition-all shadow-lg hover:shadow-red-600/20 active:scale-95 uppercase tracking-widest text-sm"
+                >
+                    <FileText size={18} />
+                    <span>Nueva Orden</span>
+                </Link>
             </header>
 
             {/* --- CONTROLS --- */}
