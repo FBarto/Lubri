@@ -873,16 +873,60 @@ function NewWorkOrderForm() {
                     <p className="text-xs text-slate-400 mt-1">Podés ajustar el precio si hubo adicionales o descuentos.</p>
                 </div>
 
-                {/* Date (Historical Entry) */}
-                <div>
-                    <label className="block text-sm font-bold text-slate-700 mb-2">Fecha del Servicio</label>
-                    <input
-                        type="date"
-                        value={formData.date}
-                        onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                        className="w-full p-4 rounded-xl border border-slate-200 text-lg font-medium focus:ring-2 focus:ring-blue-500 outline-none"
-                    />
-                    <p className="text-xs text-slate-400 mt-1">Dejar hoy para servicio actual, o cambiar para cargar historial viejo.</p>
+                {/* Date Selection */}
+                <div className="space-y-3">
+                    <label className="block text-sm font-bold text-slate-700 mb-2 flex justify-between items-center">
+                        <span>Fecha del Servicio</span>
+                        <span className="text-[10px] bg-blue-100 text-blue-600 px-2 py-0.5 rounded font-black uppercase">Obligatorio</span>
+                    </label>
+
+                    {/* Quick Date Shortcuts */}
+                    <div className="flex flex-wrap gap-2 mb-2">
+                        {[
+                            { label: 'Hoy', days: 0 },
+                            { label: 'Ayer', days: 1 },
+                            { label: 'Hace 2 días', days: 2 },
+                            { label: 'Mes Pasado', type: 'month' }
+                        ].map((btn) => {
+                            const today = new Date();
+                            let targetDate: Date;
+                            if (btn.type === 'month') {
+                                targetDate = new Date(today.getFullYear(), today.getMonth() - 1, today.getDate());
+                            } else {
+                                targetDate = new Date(today);
+                                targetDate.setDate(today.getDate() - (btn.days as number));
+                            }
+                            const dateStr = targetDate.toISOString().split('T')[0];
+                            const isActive = formData.date === dateStr;
+
+                            return (
+                                <button
+                                    key={btn.label}
+                                    type="button"
+                                    onClick={() => setFormData({ ...formData, date: dateStr })}
+                                    className={`px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider border transition-all active:scale-95 ${isActive
+                                            ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-500/30'
+                                            : 'bg-white border-slate-200 text-slate-500 hover:border-blue-400 hover:text-blue-600'
+                                        }`}
+                                >
+                                    {btn.label}
+                                </button>
+                            );
+                        })}
+                    </div>
+
+                    <div className="relative group">
+                        <input
+                            type="date"
+                            value={formData.date}
+                            onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                            className="w-full p-4 rounded-xl border border-slate-200 text-lg font-medium focus:ring-2 focus:ring-blue-500 outline-none pr-12 transition-all group-hover:border-slate-300"
+                        />
+                        <div className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none group-hover:text-blue-500 transition-colors">
+                            <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                        </div>
+                    </div>
+                    <p className="text-[10px] font-bold text-slate-400 italic">Dejar hoy para servicio actual, o cambiar para cargar historial viejo.</p>
                 </div>
 
                 {/* Notes */}
