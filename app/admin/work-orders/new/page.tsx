@@ -159,7 +159,7 @@ function NewWorkOrderForm() {
         setIsNewVehicle(false);
         setProductResults([]);
         setClientResults([]);
-        setLastSavedOrder(null);
+        // setLastSavedOrder(null); // Keep last order for success banner
         setActiveSearchField(null);
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };

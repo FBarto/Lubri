@@ -3,6 +3,8 @@ import { getClientDataByToken } from '@/app/actions/portal';
 import PortalClientView from '../../components/portal/PortalClientView';
 import { notFound } from 'next/navigation';
 
+export const dynamic = 'force-dynamic';
+
 interface PageProps {
     params: Promise<{
         token: string;
