@@ -172,6 +172,35 @@ function NewWorkOrderForm() {
             const res = await fetch(`/api/vehicles/by-plate?plate=${plate}`);
             if (res.ok) {
                 const vehicle = await res.json();
+
+                // Autofill logic from last service
+                let lastServiceDetails = {};
+                if (vehicle.workOrders && vehicle.workOrders.length > 0) {
+                    const lastWO = vehicle.workOrders[0];
+                    if (lastWO.serviceDetails) {
+                        const ls = lastWO.serviceDetails;
+                        // Map last service details to current form structure
+                        // We reset booleans to false (as they need to be checked again for new service)
+                        // But we KEEP the types/brands to save typing
+                        lastServiceDetails = {
+                            oil: {
+                                brand: ls.oil?.brand || '',
+                                liters: ls.oil?.liters || '',
+                                type: ls.oil?.type || 'SINTETICO'
+                            },
+                            filters: { air: false, oil: false, fuel: false, cabin: false }, // Reset checks
+                            filterDetails: {
+                                air: ls.filterDetails?.air || '',
+                                oil: ls.filterDetails?.oil || '',
+                                fuel: ls.filterDetails?.fuel || '',
+                                cabin: ls.filterDetails?.cabin || ''
+                            },
+                            fluids: { coolant: true, brakes: true, gearbox: true, differential: true, hydraulic: true },
+                            additives: []
+                        };
+                    }
+                }
+
                 setFormData(prev => ({
                     ...prev,
                     vehicleId: vehicle.id,
@@ -181,7 +210,11 @@ function NewWorkOrderForm() {
                     vehiclePlate: vehicle.plate,
                     vehicleBrand: vehicle.brand || '',
                     vehicleModel: vehicle.model || '',
-                    mileage: vehicle.mileage || ''
+                    mileage: vehicle.mileage || '',
+                    serviceDetails: {
+                        ...prev.serviceDetails,
+                        ...lastServiceDetails
+                    }
                 }));
                 setIsNewVehicle(false);
             } else {
