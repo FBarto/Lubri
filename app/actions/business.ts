@@ -512,6 +512,7 @@ export async function createLegacyWorkOrder(input: {
                 const filters = input.serviceDetails.filters || {};
                 const fluids = input.serviceDetails.fluids || {};
                 const oil = input.serviceDetails.oil || {};
+                const additives = input.serviceDetails.additives || [];
 
                 // Construct Message
                 let message = `Hola ${vehicle.client.name},
@@ -526,7 +527,7 @@ export async function createLegacyWorkOrder(input: {
 💧 Revisión de fluido hidráulico ${fluids.hydraulic ? 'SI' : 'NO'}
 ❄️ Control y reposición de líquido refrigerante ${fluids.coolant ? 'SI' : 'NO'}
 🛑 Control y reposición de líquido de frenos ${fluids.brakes ? 'SI' : 'NO'}
-📍 Kilometraje actual: ${input.mileage}
+${additives.length > 0 ? `🧪 Aditivos agregados: ${additives.map((a: any) => a.name).join(', ')}\n` : ''}📍 Kilometraje actual: ${input.mileage}
 🔄 Próximo cambio de aceite: ${input.nextServiceMileage || (input.mileage + 10000)}
 
 Si tiene alguna duda o necesita más información, no dude en contactarnos.
