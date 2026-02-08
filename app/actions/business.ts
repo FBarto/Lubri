@@ -6,6 +6,7 @@ import { revalidatePath } from 'next/cache';
 import { SyncService } from '../../lib/syncService';
 import { safeRevalidate } from '../lib/server-utils';
 import { generatePortalLinkForVehicle } from './portal';
+import { updateVehicleProjections } from './maintenance';
 import { WhatsAppService } from '../lib/whatsapp/service';
 import { ActionResponse } from './types';
 
@@ -125,6 +126,8 @@ export async function processSale(data: ProcessSaleInput): Promise<ActionRespons
     const total = items.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
 
     try {
+        const workOrderIdsToUpdate: number[] = [];
+
         // Use transaction to ensure data integrity
         const sale = await prisma.$transaction(async (tx) => {
             // 1. Create Sale
@@ -173,16 +176,37 @@ export async function processSale(data: ProcessSaleInput): Promise<ActionRespons
                         where: { id: item.workOrderId },
                         data: {
                             saleId: newSale.id,
-                            ...(status === 'COMPLETED' ? { finishedAt: new Date() } : {}),
+                            ...(status === 'COMPLETED' ? {
+                                finishedAt: new Date(),
+                                status: 'COMPLETED'  // Fix: Explicitly complete the WO
+                            } : {}),
                         },
                     });
+                    if (status === 'COMPLETED') {
+                        workOrderIdsToUpdate.push(item.workOrderId);
+                    }
                 }
             }
 
             return newSale;
         });
 
-        // 3. Log Activity
+        // 3. Post-Transaction: Update Vehicle Projections (Non-blocking usually, but we await to ensure data consistency for instant view)
+        if (workOrderIdsToUpdate.length > 0) {
+            // Fetch WOs to get vehicleId and mileage
+            const wos = await prisma.workOrder.findMany({
+                where: { id: { in: workOrderIdsToUpdate } },
+                select: { vehicleId: true, mileage: true }
+            });
+
+            for (const wo of wos) {
+                if (wo.vehicleId && wo.mileage) {
+                    await updateVehicleProjections(wo.vehicleId, wo.mileage);
+                }
+            }
+        }
+
+        // 4. Log Activity
         await logActivity(
             userId,
             status === 'PENDING' ? 'CREATE_PENDING' : 'CHECKOUT',
@@ -208,6 +232,8 @@ export async function processSale(data: ProcessSaleInput): Promise<ActionRespons
  */
 export async function finalizePendingSale(saleId: number, paymentMethod: string, userId: number, sendWhatsApp: boolean = false): Promise<ActionResponse> {
     try {
+        const workOrderIdsToUpdate: number[] = [];
+
         const result = await prisma.$transaction(async (tx) => {
             const sale = await tx.sale.findUnique({
                 where: { id: saleId },
@@ -243,13 +269,30 @@ export async function finalizePendingSale(saleId: number, paymentMethod: string,
                 if (item.workOrderId) {
                     await tx.workOrder.update({
                         where: { id: item.workOrderId },
-                        data: { finishedAt: new Date() }
+                        data: {
+                            finishedAt: new Date(),
+                            status: 'COMPLETED' // Fix: Explicitly complete
+                        }
                     });
+                    workOrderIdsToUpdate.push(item.workOrderId);
                 }
             }
 
             return updatedSale;
         });
+
+        // 2b. Update Vehicle Projections
+        if (workOrderIdsToUpdate.length > 0) {
+            const wos = await prisma.workOrder.findMany({
+                where: { id: { in: workOrderIdsToUpdate } },
+                select: { vehicleId: true, mileage: true }
+            });
+            for (const wo of wos) {
+                if (wo.vehicleId && wo.mileage) {
+                    await updateVehicleProjections(wo.vehicleId, wo.mileage);
+                }
+            }
+        }
 
         // 3. Send WhatsApp if requested
         if (sendWhatsApp) {
