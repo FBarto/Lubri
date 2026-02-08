@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
     ChevronLeft, Calendar, Clock, CheckCircle, AlertCircle, Share2,
-    Printer, Car, User, Phone, FileText, Wrench, Package
+    Printer, Car, User, Phone, FileText, Wrench, Package, Zap
 } from 'lucide-react';
 import { WhatsAppService } from '@/app/lib/whatsapp/service';
 
@@ -127,9 +127,9 @@ export default function WorkOrderDetailPage({ params }: WorkOrderDetailProps) {
                             <h2 className="text-xl font-bold text-slate-900">{service.name}</h2>
                         </div>
 
-                        {/* Items JSON Parsing */}
-                        {serviceDetails && serviceDetails.items && Array.isArray(serviceDetails.items) && serviceDetails.items.length > 0 ? (
-                            <div className="space-y-3">
+                        {/* Items JSON Parsing (Wizard Style) */}
+                        {serviceDetails && serviceDetails.items && Array.isArray(serviceDetails.items) && serviceDetails.items.length > 0 && (
+                            <div className="space-y-3 mb-6">
                                 <h4 className="font-bold text-sm text-slate-700 border-b border-slate-100 pb-2">Ítems Utilizados</h4>
                                 {serviceDetails.items.map((item: any, idx: number) => (
                                     <div key={idx} className="flex justify-between items-center py-2">
@@ -148,11 +148,59 @@ export default function WorkOrderDetailPage({ params }: WorkOrderDetailProps) {
                                     </div>
                                 ))}
                             </div>
-                        ) : (
-                            <div className="p-4 bg-slate-50 rounded-lg text-center text-slate-400 italic text-sm">
-                                No hay ítems detallados guardados en esta orden.
+                        )}
+
+                        {/* Speed-Load Tech Info (Oil/Filters) */}
+                        {serviceDetails && serviceDetails.oil && (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50 p-6 rounded-2xl border border-slate-100 mb-6">
+                                {/* Oil */}
+                                <div className="space-y-2">
+                                    <h4 className="text-[10px] font-black uppercase text-slate-400">Aceite de Motor</h4>
+                                    <p className="text-sm font-bold text-slate-900">{serviceDetails.oil.brand || 'No especificado'}</p>
+                                    <div className="flex gap-2">
+                                        <span className="text-[10px] bg-white border border-slate-200 px-2 py-0.5 rounded font-bold uppercase">{serviceDetails.oil.type}</span>
+                                        <span className="text-[10px] bg-white border border-slate-200 px-2 py-0.5 rounded font-bold uppercase">{serviceDetails.oil.liters}L</span>
+                                    </div>
+                                </div>
+
+                                {/* Battery */}
+                                {serviceDetails.battery?.voltage && (
+                                    <div className="space-y-2">
+                                        <h4 className="text-[10px] font-black uppercase text-slate-400">Batería</h4>
+                                        <p className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                                            <Zap size={14} className="text-blue-500" /> {serviceDetails.battery.voltage} V
+                                        </p>
+                                    </div>
+                                )}
+
+                                {/* Filters */}
+                                <div className="md:col-span-2 space-y-3 pt-3 border-t border-slate-200/50">
+                                    <h4 className="text-[10px] font-black uppercase text-slate-400">Filtros Cambiados</h4>
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                        {(['air', 'oil', 'fuel', 'cabin'] as const).map(f => (
+                                            <div key={f} className={`p-3 rounded-xl border flex flex-col gap-1 ${serviceDetails.filters?.[f] ? 'bg-emerald-50 border-emerald-100' : 'bg-white border-slate-100 opacity-40'}`}>
+                                                <div className="flex items-center gap-2">
+                                                    {serviceDetails.filters?.[f] ? <CheckCircle size={12} className="text-emerald-500" /> : <AlertCircle size={12} className="text-slate-300" />}
+                                                    <span className="text-[10px] font-black uppercase text-slate-600">
+                                                        {f === 'air' ? 'Aire' : f === 'oil' ? 'Aceite' : f === 'fuel' ? 'Combustible' : 'Habitáculo'}
+                                                    </span>
+                                                </div>
+                                                {serviceDetails.filters?.[f] && serviceDetails.filterDetails?.[f] && (
+                                                    <p className="text-[9px] font-bold text-slate-500 truncate">{serviceDetails.filterDetails[f]}</p>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
                             </div>
                         )}
+
+                        {!serviceDetails || (!serviceDetails.items && !serviceDetails.oil) ? (
+                            <div className="p-4 bg-slate-50 rounded-lg text-center text-slate-400 italic text-sm">
+                                No hay detalles técnicos adicionales en esta orden.
+                            </div>
+                        ) : null}
+
 
                         {/* Notes */}
                         {workOrder.notes && (

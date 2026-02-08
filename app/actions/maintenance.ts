@@ -76,10 +76,20 @@ export async function getVehicleMaintenanceHistory(vehicleId: number): Promise<A
                         }
                         // Handle Filters (which might be boolean true/false in Legacy Data)
                         // If boolean true, try to find the code (e.g. oilCode) or default to 'Reemplazado'
-                        if (key === 'oil_filter' && sd.filters?.oil) detail = sd.filters.oilCode || (typeof sd.filters.oil === 'string' ? sd.filters.oil : 'Reemplazado');
-                        if (key === 'air_filter' && sd.filters?.air) detail = sd.filters.airCode || (typeof sd.filters.air === 'string' ? sd.filters.air : 'Reemplazado');
-                        if (key === 'fuel_filter' && sd.filters?.fuel) detail = sd.filters.fuelCode || (typeof sd.filters.fuel === 'string' ? sd.filters.fuel : 'Reemplazado');
-                        if (key === 'cabin_filter' && sd.filters?.cabin) detail = sd.filters.cabinCode || (typeof sd.filters.cabin === 'string' ? sd.filters.cabin : 'Reemplazado');
+                        // Handle Filters
+                        // Support both legacy (oilCode) and new (filterDetails.oil) structures
+                        if (key === 'oil_filter' && sd.filters?.oil) {
+                            detail = sd.filterDetails?.oil || sd.filters.oilCode || (typeof sd.filters.oil === 'string' ? sd.filters.oil : 'Reemplazado');
+                        }
+                        if (key === 'air_filter' && sd.filters?.air) {
+                            detail = sd.filterDetails?.air || sd.filters.airCode || (typeof sd.filters.air === 'string' ? sd.filters.air : 'Reemplazado');
+                        }
+                        if (key === 'fuel_filter' && sd.filters?.fuel) {
+                            detail = sd.filterDetails?.fuel || sd.filters.fuelCode || (typeof sd.filters.fuel === 'string' ? sd.filters.fuel : 'Reemplazado');
+                        }
+                        if (key === 'cabin_filter' && sd.filters?.cabin) {
+                            detail = sd.filterDetails?.cabin || sd.filters.cabinCode || (typeof sd.filters.cabin === 'string' ? sd.filters.cabin : 'Reemplazado');
+                        }
 
                         if (key === 'gearbox_oil' && sd.fluids?.gearbox) detail = (typeof sd.fluids.gearbox === 'string' ? sd.fluids.gearbox : 'Revisado');
                     }
