@@ -605,12 +605,20 @@ export async function getDuplicatePlates(): Promise<ActionResponse> {
 /**
  * Quick client and vehicle creation for ServiceModal
  */
-export async function createQuickClient(data: { name: string; phone: string; plate?: string; brand?: string; model?: string }): Promise<ActionResponse> {
+export async function createQuickClient(data: { name: string; phone: string; plate?: string; brand?: string; model?: string; clientId?: number }): Promise<ActionResponse> {
     try {
-        // Find existing client or create
-        let client = await prisma.client.findFirst({
-            where: { phone: data.phone }
-        });
+        let client = null;
+
+        if (data.clientId) {
+            client = await prisma.client.findUnique({ where: { id: Number(data.clientId) } });
+        }
+
+        if (!client) {
+            // Find existing client or create by phone if no ID provided
+            client = await prisma.client.findFirst({
+                where: { phone: data.phone }
+            });
+        }
 
         if (!client) {
             client = await prisma.client.create({

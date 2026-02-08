@@ -45,6 +45,7 @@ function NewWorkOrderForm() {
 
 
     const [productResults, setProductResults] = useState<any[]>([]);
+    const [clientResults, setClientResults] = useState<any[]>([]);
     const [activeSearchField, setActiveSearchField] = useState<string | null>(null);
 
     const searchProduct = async (val: string) => {
@@ -59,6 +60,21 @@ function NewWorkOrderForm() {
             }
         } else {
             setProductResults([]);
+        }
+    };
+
+    const searchClient = async (val: string) => {
+        if (val.length > 2) {
+            try {
+                const res = await fetch(`/api/clients?search=${val}`);
+                const data = await res.json();
+                setClientResults(Array.isArray(data.data) ? data.data : (Array.isArray(data) ? data : []));
+            } catch (e) {
+                console.error("Error searching client", e);
+                setClientResults([]);
+            }
+        } else {
+            setClientResults([]);
         }
     };
 
@@ -192,7 +208,8 @@ function NewWorkOrderForm() {
                     phone: formData.clientPhone,
                     plate: formData.vehiclePlate,
                     brand: formData.vehicleBrand,
-                    model: formData.vehicleModel
+                    model: formData.vehicleModel,
+                    clientId: formData.clientId ? Number(formData.clientId) : undefined
                 });
 
                 if (registration.success && registration.data.client && registration.data.vehicle) {
@@ -422,15 +439,52 @@ function NewWorkOrderForm() {
                             Registrar Nuevo Cliente y Vehículo
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-1 relative order-first md:col-span-2">
+                                <label className="text-[10px] font-black uppercase text-slate-500 ml-1">Elegir Cliente Existente (Opcional)</label>
+                                <input
+                                    type="text"
+                                    placeholder="Buscar por Nombre o Teléfono..."
+                                    className="w-full p-4 rounded-xl border border-slate-200 text-sm font-bold bg-white outline-none focus:ring-2 focus:ring-blue-500 transition-all placeholder:text-slate-300"
+                                    onChange={e => {
+                                        setActiveSearchField('client');
+                                        searchClient(e.target.value);
+                                    }}
+                                    onFocus={() => setActiveSearchField('client')}
+                                />
+                                {activeSearchField === 'client' && clientResults.length > 0 && (
+                                    <ul className="absolute z-30 w-full bg-white border border-slate-200 rounded-xl mt-1 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 max-h-40 overflow-y-auto">
+                                        {clientResults.map(c => (
+                                            <li
+                                                key={c.id}
+                                                onClick={() => {
+                                                    setFormData(prev => ({
+                                                        ...prev,
+                                                        clientId: c.id.toString(),
+                                                        clientName: c.name,
+                                                        clientPhone: c.phone
+                                                    }));
+                                                    setClientResults([]);
+                                                    setActiveSearchField(null);
+                                                }}
+                                                className="p-3 hover:bg-slate-50 cursor-pointer text-xs font-black border-b last:border-0 flex justify-between items-center group"
+                                            >
+                                                <span>{c.name}</span>
+                                                <span className="text-[8px] bg-slate-100 text-slate-400 px-2 py-1 rounded-md transition-colors uppercase font-black">{c.phone}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                )}
+                            </div>
+
                             <div className="space-y-1">
                                 <label className="text-[10px] font-black uppercase text-slate-500 ml-1">Nombre del Cliente</label>
                                 <input
                                     type="text"
                                     placeholder="Nombre Completo"
                                     required
-                                    className="w-full p-4 rounded-xl border border-slate-200 text-sm font-bold bg-white outline-none focus:ring-2 focus:ring-blue-500 transition-all placeholder:text-slate-300"
+                                    className={`w-full p-4 rounded-xl border border-slate-200 text-sm font-bold bg-white outline-none focus:ring-2 focus:ring-blue-500 transition-all placeholder:text-slate-300 ${formData.clientId ? 'bg-slate-50 text-slate-400' : ''}`}
                                     value={formData.clientName}
-                                    onChange={e => setFormData({ ...formData, clientName: e.target.value })}
+                                    onChange={e => setFormData({ ...formData, clientName: e.target.value, clientId: '' })}
                                 />
                             </div>
                             <div className="space-y-1">
@@ -438,9 +492,9 @@ function NewWorkOrderForm() {
                                 <input
                                     type="text"
                                     placeholder="Ej: 3511234567"
-                                    className="w-full p-4 rounded-xl border border-slate-200 text-sm font-bold bg-white outline-none focus:ring-2 focus:ring-blue-500 transition-all placeholder:text-slate-300"
+                                    className={`w-full p-4 rounded-xl border border-slate-200 text-sm font-bold bg-white outline-none focus:ring-2 focus:ring-blue-500 transition-all placeholder:text-slate-300 ${formData.clientId ? 'bg-slate-50 text-slate-400' : ''}`}
                                     value={formData.clientPhone}
-                                    onChange={e => setFormData({ ...formData, clientPhone: e.target.value })}
+                                    onChange={e => setFormData({ ...formData, clientPhone: e.target.value, clientId: '' })}
                                 />
                             </div>
                             <div className="space-y-1">
