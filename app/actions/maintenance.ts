@@ -92,6 +92,9 @@ export async function getVehicleMaintenanceHistory(vehicleId: number): Promise<A
                         }
 
                         if (key === 'gearbox_oil' && sd.fluids?.gearbox) detail = (typeof sd.fluids.gearbox === 'string' ? sd.fluids.gearbox : 'Revisado');
+                        if (key === 'coolant' && sd.fluids?.coolant) detail = (typeof sd.fluids.coolant === 'string' ? sd.fluids.coolant : 'Revisado');
+                        if (key === 'brake_fluid' && sd.fluids?.brakes) detail = (typeof sd.fluids.brakes === 'string' ? sd.fluids.brakes : 'Revisado');
+                        // hydraulic and differential aren't explicitly in the portal gauges yet, but we track them
                     }
 
                     return {

@@ -33,7 +33,8 @@ function NewWorkOrderForm() {
             oil: { brand: '', liters: '', type: 'SINTETICO' },
             filters: { air: false, oil: false, fuel: false, cabin: false },
             filterDetails: { air: '', oil: '', fuel: '', cabin: '' },
-            battery: { voltage: '' }
+            fluids: { coolant: true, brakes: true, gearbox: true, differential: true, hydraulic: true },
+            additives: [] as any[]
         }
     });
 
@@ -193,7 +194,8 @@ function NewWorkOrderForm() {
                             oil: { brand: '', liters: prev.serviceDetails.oil.liters, type: prev.serviceDetails.oil.type },
                             filters: { air: false, oil: false, fuel: false, cabin: false },
                             filterDetails: { air: '', oil: '', fuel: '', cabin: '' },
-                            battery: { voltage: '' }
+                            fluids: { coolant: true, brakes: true, gearbox: true, differential: true, hydraulic: true },
+                            additives: []
                         }
                     }));
                 } else {
@@ -512,22 +514,106 @@ function NewWorkOrderForm() {
                     </div>
 
 
-                    {/* Battery Section */}
-                    <div>
-                        <label className="block text-xs font-black uppercase text-slate-500 mb-2">Batería (Voltios)</label>
-                        <input
-                            type="text"
-                            placeholder="Ej: 12.6"
-                            className="w-full p-3 rounded-xl border border-slate-200 text-sm font-bold bg-white"
-                            value={formData.serviceDetails.battery.voltage}
-                            onChange={e => setFormData({
-                                ...formData,
-                                serviceDetails: {
-                                    ...formData.serviceDetails,
-                                    battery: { voltage: e.target.value }
-                                }
-                            })}
-                        />
+                    {/* Fluids Section */}
+                    <div className="space-y-4">
+                        <label className="block text-xs font-black uppercase text-slate-500">Líquidos (Revisado y a Nivel)</label>
+                        <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+                            {([
+                                { key: 'coolant', label: 'Refrig.' },
+                                { key: 'brakes', label: 'Frenos' },
+                                { key: 'gearbox', label: 'Caja' },
+                                { key: 'differential', label: 'Diferenc.' },
+                                { key: 'hydraulic', label: 'Hidrául.' }
+                            ] as const).map(f => (
+                                <label key={f.key} className={`flex flex-col items-center justify-center p-2 rounded-xl border transition-all cursor-pointer ${formData.serviceDetails.fluids[f.key] ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-white border-slate-200 text-slate-400'}`}>
+                                    <input
+                                        type="checkbox"
+                                        className="hidden"
+                                        checked={formData.serviceDetails.fluids[f.key]}
+                                        onChange={e => setFormData({
+                                            ...formData,
+                                            serviceDetails: {
+                                                ...formData.serviceDetails,
+                                                fluids: { ...formData.serviceDetails.fluids, [f.key]: e.target.checked }
+                                            }
+                                        })}
+                                    />
+                                    <span className="text-[10px] font-black uppercase mb-1">{f.label}</span>
+                                    {formData.serviceDetails.fluids[f.key] ? (
+                                        <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                                    ) : (
+                                        <div className="w-[14px] h-[14px] rounded-full border-2 border-slate-200" />
+                                    )}
+                                </label>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Additives Section */}
+                    <div className="space-y-4">
+                        <label className="block text-xs font-black uppercase text-slate-500">Aditivos (Generan Mayor Ticket)</label>
+                        <div className="relative">
+                            <input
+                                type="text"
+                                placeholder="Buscar aditivo para agregar..."
+                                className="w-full p-3 rounded-xl border border-slate-200 text-sm font-bold bg-white outline-none focus:ring-2 focus:ring-blue-500"
+                                onChange={e => {
+                                    setActiveSearchField('additive');
+                                    searchProduct(e.target.value);
+                                }}
+                                onFocus={() => setActiveSearchField('additive')}
+                            />
+                            {activeSearchField === 'additive' && productResults.length > 0 && (
+                                <ul className="absolute z-30 w-full bg-white border border-slate-200 rounded-xl mt-1 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 max-h-40 overflow-y-auto">
+                                    {productResults.map(p => (
+                                        <li
+                                            key={p.id}
+                                            onClick={() => {
+                                                if (!formData.serviceDetails.additives.find((a: any) => a.id === p.id)) {
+                                                    setFormData(prev => ({
+                                                        ...prev,
+                                                        serviceDetails: {
+                                                            ...prev.serviceDetails,
+                                                            additives: [...prev.serviceDetails.additives, { id: p.id, name: p.name, code: p.code, price: p.price }]
+                                                        }
+                                                    }));
+                                                }
+                                                setProductResults([]);
+                                                setActiveSearchField(null);
+                                            }}
+                                            className="p-3 hover:bg-slate-50 cursor-pointer text-xs font-black border-b last:border-0 flex justify-between items-center group"
+                                        >
+                                            <span>{p.name} {p.price ? `- $${p.price}` : ''}</span>
+                                            <span className="text-[8px] bg-slate-100 text-slate-400 px-2 py-1 rounded-md transition-colors uppercase font-black">{p.code || 'S/C'}</span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
+                        </div>
+
+                        {/* List of additives */}
+                        {formData.serviceDetails.additives.length > 0 && (
+                            <div className="flex flex-wrap gap-2">
+                                {formData.serviceDetails.additives.map((a: any) => (
+                                    <div key={a.id} className="bg-blue-600 text-white px-3 py-1 rounded-full text-[10px] font-black flex items-center gap-2 animate-in zoom-in-90 tracking-widest uppercase shadow-lg shadow-blue-500/20">
+                                        <span>{a.name}</span>
+                                        <button
+                                            type="button"
+                                            onClick={() => setFormData(prev => ({
+                                                ...prev,
+                                                serviceDetails: {
+                                                    ...prev.serviceDetails,
+                                                    additives: prev.serviceDetails.additives.filter((item: any) => item.id !== a.id)
+                                                }
+                                            }))}
+                                            className="p-1 hover:bg-black/20 rounded-full"
+                                        >
+                                            <svg width="10" height="10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 </div>
 

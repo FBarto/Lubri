@@ -163,13 +163,31 @@ export default function WorkOrderDetailPage({ params }: WorkOrderDetailProps) {
                                     </div>
                                 </div>
 
-                                {/* Battery */}
-                                {serviceDetails.battery?.voltage && (
+                                {/* Fluids */}
+                                {serviceDetails.fluids && (
                                     <div className="space-y-2">
-                                        <h4 className="text-[10px] font-black uppercase text-slate-400">Batería</h4>
-                                        <p className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                                            <Zap size={14} className="text-blue-500" /> {serviceDetails.battery.voltage} V
-                                        </p>
+                                        <h4 className="text-[10px] font-black uppercase text-slate-400">Líquidos Revisados</h4>
+                                        <div className="flex flex-wrap gap-1">
+                                            {Object.entries(serviceDetails.fluids).map(([key, value]) => value ? (
+                                                <span key={key} className="text-[9px] bg-emerald-500 text-white px-2 py-0.5 rounded font-bold uppercase">
+                                                    {key === 'coolant' ? 'Refrig.' : key === 'brakes' ? 'Frenos' : key === 'gearbox' ? 'Caja' : key === 'differential' ? 'Diferenc.' : 'Hidrául.'}
+                                                </span>
+                                            ) : null)}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Additives */}
+                                {serviceDetails.additives && serviceDetails.additives.length > 0 && (
+                                    <div className="md:col-span-2 space-y-2 pt-3 border-t border-slate-200/50">
+                                        <h4 className="text-[10px] font-black uppercase text-slate-400">Aditivos Agregados</h4>
+                                        <div className="flex flex-wrap gap-2">
+                                            {serviceDetails.additives.map((a: any) => (
+                                                <div key={a.id} className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-[10px] font-black flex items-center gap-2 border border-blue-100 uppercase">
+                                                    <Package size={10} /> {a.name}
+                                                </div>
+                                            ))}
+                                        </div>
                                     </div>
                                 )}
 
