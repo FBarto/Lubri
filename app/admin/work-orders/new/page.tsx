@@ -37,6 +37,26 @@ function NewWorkOrderForm() {
         }
     });
 
+
+    const [productResults, setProductResults] = useState<any[]>([]);
+    const [activeSearchField, setActiveSearchField] = useState<string | null>(null);
+
+    const searchProduct = async (val: string) => {
+        if (val.length > 2) {
+            try {
+                const res = await fetch(`/api/products?search=${val}`);
+                const data = await res.json();
+                setProductResults(Array.isArray(data.data) ? data.data : (Array.isArray(data) ? data : []));
+            } catch (e) {
+                console.error("Error searching product", e);
+                setProductResults([]);
+            }
+        } else {
+            setProductResults([]);
+        }
+    };
+
+
     useEffect(() => {
         fetchServices();
         if (appointmentId) {
@@ -339,25 +359,56 @@ function NewWorkOrderForm() {
                     {/* Oil Section */}
                     <div className="space-y-4">
                         <label className="block text-xs font-black uppercase text-slate-500">Aceite de Motor</label>
-                        <div className="grid grid-cols-2 gap-3">
-                            <input
-                                type="text"
-                                placeholder="Marca / Viscosidad (Ej: Shell 10W40)"
-                                className="w-full p-3 rounded-xl border border-slate-200 text-sm font-bold bg-white"
-                                value={formData.serviceDetails.oil.brand}
-                                onChange={e => setFormData({
-                                    ...formData,
-                                    serviceDetails: {
-                                        ...formData.serviceDetails,
-                                        oil: { ...formData.serviceDetails.oil, brand: e.target.value }
-                                    }
-                                })}
-                            />
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 relative">
+                            <div className="relative">
+                                <input
+                                    type="text"
+                                    placeholder="Marca / Viscosidad (Ej: Shell 10W40)"
+                                    className="w-full p-3 rounded-xl border border-slate-200 text-sm font-bold bg-white outline-none focus:ring-2 focus:ring-blue-500"
+                                    value={formData.serviceDetails.oil.brand}
+                                    onChange={e => {
+                                        setFormData({
+                                            ...formData,
+                                            serviceDetails: {
+                                                ...formData.serviceDetails,
+                                                oil: { ...formData.serviceDetails.oil, brand: e.target.value }
+                                            }
+                                        });
+                                        setActiveSearchField('oil');
+                                        searchProduct(e.target.value);
+                                    }}
+                                    onFocus={() => setActiveSearchField('oil')}
+                                />
+                                {activeSearchField === 'oil' && productResults.length > 0 && (
+                                    <ul className="absolute z-30 w-full bg-white border border-slate-200 rounded-xl mt-1 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 max-h-40 overflow-y-auto">
+                                        {productResults.map(p => (
+                                            <li
+                                                key={p.id}
+                                                onClick={() => {
+                                                    setFormData(prev => ({
+                                                        ...prev,
+                                                        serviceDetails: {
+                                                            ...prev.serviceDetails,
+                                                            oil: { ...prev.serviceDetails.oil, brand: `${p.name} [${p.code || 'S/C'}]` }
+                                                        }
+                                                    }));
+                                                    setProductResults([]);
+                                                    setActiveSearchField(null);
+                                                }}
+                                                className="p-3 hover:bg-slate-50 cursor-pointer text-xs font-black border-b last:border-0 flex justify-between items-center group"
+                                            >
+                                                <span>{p.name}</span>
+                                                <span className="text-[8px] bg-slate-100 text-slate-400 px-2 py-1 rounded-md transition-colors uppercase font-black">{p.code || 'S/C'}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                )}
+                            </div>
                             <div className="flex gap-2">
                                 <input
                                     type="text"
                                     placeholder="Litros"
-                                    className="w-20 p-3 rounded-xl border border-slate-200 text-sm font-bold bg-white"
+                                    className="w-20 p-3 rounded-xl border border-slate-200 text-sm font-bold bg-white outline-none focus:ring-2 focus:ring-blue-500"
                                     value={formData.serviceDetails.oil.liters}
                                     onChange={e => setFormData({
                                         ...formData,
@@ -368,7 +419,7 @@ function NewWorkOrderForm() {
                                     })}
                                 />
                                 <select
-                                    className="flex-1 p-3 rounded-xl border border-slate-200 text-sm font-bold bg-white"
+                                    className="flex-1 p-3 rounded-xl border border-slate-200 text-sm font-bold bg-white outline-none focus:ring-2 focus:ring-blue-500"
                                     value={formData.serviceDetails.oil.type}
                                     onChange={e => setFormData({
                                         ...formData,
@@ -391,8 +442,8 @@ function NewWorkOrderForm() {
                         <label className="block text-xs font-black uppercase text-slate-500">Filtros Cambiados</label>
                         <div className="grid grid-cols-2 gap-3">
                             {(['air', 'oil', 'fuel', 'cabin'] as const).map(f => (
-                                <div key={f} className="space-y-2">
-                                    <label className={`flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer ${formData.serviceDetails.filters[f] ? 'bg-blue-50 border-blue-200' : 'bg-white border-slate-200'}`}>
+                                <div key={f} className="space-y-2 relative">
+                                    <label className={`flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer ${formData.serviceDetails.filters[f] ? 'bg-blue-50 border-blue-200' : 'bg-white border-slate-200 text-slate-400 outline-none focus:ring-2 focus:ring-blue-500'}`}>
                                         <input
                                             type="checkbox"
                                             className="w-5 h-5 rounded text-blue-600 focus:ring-0"
@@ -410,24 +461,56 @@ function NewWorkOrderForm() {
                                         </span>
                                     </label>
                                     {formData.serviceDetails.filters[f] && (
-                                        <input
-                                            type="text"
-                                            placeholder="Código/Marca"
-                                            className="w-full p-2 bg-white rounded-lg border border-slate-200 text-[10px] font-bold uppercase"
-                                            value={formData.serviceDetails.filterDetails[f]}
-                                            onChange={e => setFormData({
-                                                ...formData,
-                                                serviceDetails: {
-                                                    ...formData.serviceDetails,
-                                                    filterDetails: { ...formData.serviceDetails.filterDetails, [f]: e.target.value }
-                                                }
-                                            })}
-                                        />
+                                        <div className="relative">
+                                            <input
+                                                type="text"
+                                                placeholder="Código/Marca"
+                                                className="w-full p-2 bg-white rounded-lg border border-slate-200 text-[10px] font-bold uppercase outline-none focus:ring-2 focus:ring-blue-500"
+                                                value={formData.serviceDetails.filterDetails[f]}
+                                                onChange={e => {
+                                                    setFormData({
+                                                        ...formData,
+                                                        serviceDetails: {
+                                                            ...formData.serviceDetails,
+                                                            filterDetails: { ...formData.serviceDetails.filterDetails, [f]: e.target.value }
+                                                        }
+                                                    });
+                                                    setActiveSearchField(`filter_${f}`);
+                                                    searchProduct(e.target.value);
+                                                }}
+                                                onFocus={() => setActiveSearchField(`filter_${f}`)}
+                                            />
+                                            {activeSearchField === `filter_${f}` && productResults.length > 0 && (
+                                                <ul className="absolute z-40 left-0 w-full bg-white border border-slate-200 rounded-lg mt-1 shadow-xl overflow-hidden animate-in fade-in zoom-in-95 max-h-40 overflow-y-auto">
+                                                    {productResults.map(p => (
+                                                        <li
+                                                            key={p.id}
+                                                            onClick={() => {
+                                                                setFormData(prev => ({
+                                                                    ...prev,
+                                                                    serviceDetails: {
+                                                                        ...prev.serviceDetails,
+                                                                        filterDetails: { ...prev.serviceDetails.filterDetails, [f]: `${p.name} [${p.code || 'S/C'}]` }
+                                                                    }
+                                                                }));
+                                                                setProductResults([]);
+                                                                setActiveSearchField(null);
+                                                            }}
+                                                            className="p-2 hover:bg-slate-50 cursor-pointer text-[9px] font-black border-b last:border-0 flex justify-between items-center group"
+                                                        >
+                                                            <span className="truncate max-w-[70%]">{p.name}</span>
+                                                            <span className="text-[8px] bg-slate-100 text-slate-400 px-1 py-0.5 rounded transition-colors uppercase font-black">{p.code || 'S/C'}</span>
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            )}
+                                        </div>
                                     )}
                                 </div>
                             ))}
                         </div>
                     </div>
+
 
                     {/* Battery Section */}
                     <div>
