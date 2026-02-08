@@ -4,6 +4,8 @@ import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createQuickClient, sendWorkOrderWhatsApp } from '@/app/actions/business';
 import { generatePortalLinkForVehicle } from '@/app/actions/portal';
+import { updateWorkOrderMaintenanceDetails, getVehicleMaintenanceHistory } from '@/app/actions/maintenance';
+import PreviewHealthCardModal from '@/app/components/admin/work-orders/PreviewHealthCardModal';
 import WhatsAppEditorModal from '@/app/components/whatsapp/WhatsAppEditorModal';
 
 function NewWorkOrderForm() {
@@ -20,6 +22,7 @@ function NewWorkOrderForm() {
     const [isMassLoad, setIsMassLoad] = useState(false);
     const [lastSavedOrder, setLastSavedOrder] = useState<any>(null);
     const [sendingWhatsApp, setSendingWhatsApp] = useState(false);
+    const [previewModalOpen, setPreviewModalOpen] = useState(false);
     const [whatsappPreviewModal, setWhatsappPreviewModal] = useState(false);
     const [waMessage, setWaMessage] = useState('');
 
@@ -493,8 +496,19 @@ function NewWorkOrderForm() {
                                 REVISAR DETALLE TÉCNICO
                             </a>
 
+
                             {/* Actions */}
                             <div className="space-y-3">
+                                {/* NEW: Preview/Edit Button */}
+                                <button
+                                    type="button"
+                                    onClick={() => setPreviewModalOpen(true)}
+                                    className="w-full border-2 border-slate-900 text-slate-900 p-3 rounded-2xl font-black flex items-center justify-center gap-2 hover:bg-slate-50 transition-all uppercase tracking-widest text-xs"
+                                >
+                                    <span className="material-symbols-outlined text-lg">edit_note</span>
+                                    VER / EDITAR TARJETA 📝
+                                </button>
+
                                 <button
                                     type="button"
                                     onClick={handleSendWhatsApp}
@@ -538,6 +552,23 @@ function NewWorkOrderForm() {
                 onMessageChange={setWaMessage}
                 onSend={handleFinalWAShare}
             />
+
+            {/* Health Card Preview Modal */}
+            {lastSavedOrder && previewModalOpen && (
+                <PreviewHealthCardModal
+                    isOpen={previewModalOpen}
+                    onClose={() => setPreviewModalOpen(false)}
+                    vehicleId={Number(lastSavedOrder.vehicleId)}
+                    vehiclePlate={lastSavedOrder.plate}
+                    workOrderId={lastSavedOrder.id}
+                    clientName={lastSavedOrder.clientName}
+                    updateAction={updateWorkOrderMaintenanceDetails}
+                    fetchAction={getVehicleMaintenanceHistory}
+                    onSave={() => {
+                        // Optional: Show toast or just close
+                    }}
+                />
+            )}
 
             <form onSubmit={handleSubmit} className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 space-y-6">
                 {error && <div className="p-3 bg-red-50 text-red-600 rounded-lg text-sm">{error}</div>}

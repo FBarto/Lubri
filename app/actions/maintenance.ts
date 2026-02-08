@@ -649,3 +649,84 @@ export async function suggestServiceEstimate(vehicleId: number, preset: 'BASIC' 
         return { success: false, error: 'Estimate generation failed' };
     }
 }
+
+/**
+ * Updates the service details of a work order to manually override maintenance status.
+ * Used by the PreviewHealthCardModal.
+ */
+export async function updateWorkOrderMaintenanceDetails(workOrderId: number, items: { key: string, status: string, detail: string }[]): Promise<ActionResponse> {
+    try {
+        const wo = await prisma.workOrder.findUnique({
+            where: { id: workOrderId }
+        });
+
+        if (!wo) return { success: false, error: 'Work Order not found' };
+
+        const currentDetails = (wo.serviceDetails as any) || {};
+        const newDetails = {
+            ...currentDetails,
+            filters: { ...(currentDetails.filters || {}) },
+            filterDetails: { ...(currentDetails.filterDetails || {}) },
+            fluids: { ...(currentDetails.fluids || {}) }
+        };
+
+        // Map items to serviceDetails structure
+        for (const item of items) {
+            // Check Filters
+            if (['oil_filter', 'air_filter', 'fuel_filter', 'cabin_filter'].includes(item.key)) {
+                const mapKey = item.key.replace('_filter', ''); // oil_filter -> oil
+                if (item.status === 'OK') {
+                    newDetails.filters[mapKey] = true;
+                    if (item.detail) newDetails.filterDetails[mapKey] = item.detail;
+                } else {
+                    // If manually set to REVISAR, we effectively uncheck it? 
+                    // Or we just don't force it to true. existing logic handles false as unchecked.
+                    // But if it WAS true, we should set it to false.
+                    newDetails.filters[mapKey] = false;
+                }
+            }
+            // Check Fluids
+            else if (['gearbox_oil', 'coolant', 'brake_fluid', 'power_steering'].includes(item.key)) { // power_steering key in maintenance-data is hydraulic?
+                // keys in Maintenance Data: gearbox_oil, coolant, brake_fluid, power_steering
+                // keys in serviceDetails.fluids: gearbox, coolant, brakes, hydraulic, differential
+
+                let fluidKey = '';
+                if (item.key === 'gearbox_oil') fluidKey = 'gearbox';
+                else if (item.key === 'coolant') fluidKey = 'coolant';
+                else if (item.key === 'brake_fluid') fluidKey = 'brakes';
+                else if (item.key === 'power_steering') fluidKey = 'hydraulic';
+
+                if (fluidKey) {
+                    if (item.status === 'OK') {
+                        newDetails.fluids[fluidKey] = item.detail || 'Revisado';
+                    } else {
+                        newDetails.fluids[fluidKey] = false; // Or just don't set it/ set false
+                    }
+                }
+            }
+            // Engine Oil
+            else if (item.key === 'engine_oil') {
+                // If OK, we expect oil data. If text provided, maybe put in brand?
+                if (item.status === 'OK') {
+                    if (item.detail && (!newDetails.oil?.brand)) {
+                        newDetails.oil = { ...newDetails.oil, brand: item.detail };
+                    }
+                }
+            }
+        }
+
+        await prisma.workOrder.update({
+            where: { id: workOrderId },
+            data: {
+                serviceDetails: newDetails
+            }
+        });
+
+        revalidatePath('/portal');
+        return { success: true };
+
+    } catch (error) {
+        console.error("Error updating maintenance details:", error);
+        return { success: false, error: 'Failed to update details' };
+    }
+}
