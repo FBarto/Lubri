@@ -7,7 +7,7 @@ import {
     ChevronLeft, Calendar, Clock, CheckCircle, AlertCircle, Share2,
     Printer, Car, User, Phone, FileText, Wrench, Package
 } from 'lucide-react';
-import { WhatsAppService } from '@/lib/whatsapp/service';
+import { WhatsAppService } from '@/app/lib/whatsapp/service';
 
 interface WorkOrderDetailProps {
     params: Promise<{ id: string }>;
