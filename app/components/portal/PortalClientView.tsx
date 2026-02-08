@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Car, Calendar, History, Activity, AlertTriangle, Zap, Droplets, CheckCircle2, ChevronRight, Plus } from 'lucide-react';
+/* eslint-disable @next/next/no-img-element */
 
 interface PortalData {
     name: string;
@@ -24,238 +24,211 @@ export default function PortalClientView({ data }: { data: PortalData }) {
 
     const oilLife = calculateLife(vehicle?.lastServiceMileage, vehicle?.mileage);
 
-    // Simulate Battery Voltage (Mock for "Live" Telemetry vibe)
-    // In a real app, this would come from the last check or a connected device
-    const batteryVoltage = vehicle?.maintenanceStatus?.batteryVoltage || "12.6";
+    const handleOpenWhatsApp = (action: string, detail?: string) => {
+        const phone = '5493512597960'; // FB Lubricentro Phone (replace with env var if needed)
+        let message = '';
+        if (action === 'technical_sheet') {
+            message = `Hola! 👋 Necesito la ficha técnica del servicio *${detail}* para mi vehículo ${vehicle.plate}.`;
+        } else if (action === 'emergency') {
+            message = `🆘 *URGENCIA MECÁNICA* \nHola, necesito ayuda con mi vehículo ${vehicle.brand} ${vehicle.model} (${vehicle.plate}).`;
+        } else if (action === 'appointment') {
+            message = `Hola! Quiero agendar un nuevo turno para mi ${vehicle.brand} ${vehicle.model}.`;
+        }
+
+        window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
+    };
 
     return (
-        <div className="flex flex-col h-full bg-[#0A0A0A] text-white min-h-screen font-sans selection:bg-[#E20613] selection:text-white">
+        <div className="font-sans text-slate-900 dark:text-slate-100 min-h-screen bg-[#f8f6f6] dark:bg-[#120909]">
+            <style jsx global>{`
+                @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&display=swap');
+                @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0');
+                
+                body {
+                    font-family: 'Manrope', sans-serif;
+                }
+                
+                .glass-card {
+                    background: rgba(235, 64, 55, 0.05);
+                    backdrop-filter: blur(12px);
+                    border: 1px solid rgba(235, 64, 55, 0.1);
+                }
+                .timeline-line {
+                    width: 2px;
+                    background: linear-gradient(180deg, #eb4037 0%, rgba(235, 64, 55, 0) 100%);
+                }
+                .material-symbols-outlined {
+                    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+                }
+            `}</style>
 
-            {/* Header / Nav */}
-            <header className="px-6 py-6 flex justify-between items-center bg-gradient-to-b from-black/50 to-transparent backdrop-blur-sm sticky top-0 z-20">
-                <div className="flex items-center gap-3">
-                    {/* Logo Placeholder - User requested logo placement */}
-                    <div className="w-10 h-10 rounded-xl bg-[#171717] flex items-center justify-center border border-white/5 shadow-lg shadow-black/50 overflow-hidden">
-                        {/* <img src="/logo.png" alt="Logo" className="w-full h-full object-cover" /> */}
-                        <Car size={20} className="text-[#E20613]" />
+            {/* Top Navigation Bar */}
+            <nav className="sticky top-0 z-50 bg-[#120909]/80 backdrop-blur-md border-b border-[#eb4037]/10">
+                <div className="flex items-center p-4 justify-between max-w-md mx-auto">
+                    <div className="text-white flex items-center justify-center rounded-full hover:bg-white/10 transition-colors w-10 h-10">
+                        {/* <span className="material-symbols-outlined">arrow_back_ios_new</span> */}
+                        {/* Replaced back button with Logo Icon since this is root for client */}
+                        <span className="material-symbols-outlined">verified_user</span>
                     </div>
-                    <div>
-                        <h1 className="text-sm font-bold tracking-widest uppercase text-neutral-400">Lubri<span className="text-[#E20613]">Garage</span></h1>
-                        <p className="text-xs font-medium text-neutral-600">Telemetry System v2.0</p>
+                    <div className="flex-1 text-center">
+                        <h1 className="text-white text-sm font-bold uppercase tracking-widest">FB Service Ledger</h1>
+                        <p className="text-[#eb4037] text-[10px] font-bold">PROFESSIONAL REPORT</p>
+                    </div>
+                    <div className="flex items-center justify-end w-10 h-10">
+                        <button className="text-white hover:bg-white/10 p-2 rounded-full transition-colors">
+                            <span className="material-symbols-outlined">settings</span>
+                        </button>
                     </div>
                 </div>
-                <div className="w-8 h-8 rounded-full bg-[#171717] border border-white/5 flex items-center justify-center">
-                    <div className="w-2 h-2 bg-[#E20613] rounded-full animate-pulse shadow-[0_0_8px_#E20613]" />
-                </div>
-            </header>
+            </nav>
 
-            <div className="flex-1 overflow-y-auto pb-24 px-6 space-y-8">
-
-                {/* Vehicle Module (Card) */}
-                {vehicle ? (
-                    <section className="relative group">
-                        <div className="absolute inset-0 bg-gradient-to-br from-[#E20613]/20 via-transparent to-transparent blur-3xl rounded-full opacity-20 -translate-y-10 pointer-events-none" />
-
-                        <div className="bg-[#171717]/80 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl relative overflow-hidden">
-                            {/* Vehicle Switcher (if multiple) */}
-                            {data.vehicles.length > 1 && (
-                                <div className="flex gap-2 mb-4 overflow-x-auto no-scrollbar">
-                                    {data.vehicles.map((v, idx) => (
-                                        <button
-                                            key={v.id}
-                                            onClick={() => setSelectedVehicleIndex(idx)}
-                                            className={`w-2 h-2 rounded-full transition-all ${idx === selectedVehicleIndex ? 'bg-[#E20613] w-6' : 'bg-neutral-600'}`}
-                                        />
-                                    ))}
-                                </div>
-                            )}
-
-                            <div className="flex justify-between items-start mb-6">
-                                <div>
-                                    <h2 className="text-3xl font-black uppercase italic tracking-tighter leading-none mb-1 text-white">
-                                        {vehicle.model?.split(' ')[0] || 'Unknown'}
-                                    </h2>
-                                    <p className="text-neutral-400 font-bold uppercase tracking-widest text-xs">
-                                        {vehicle.brand || 'Brand'} • {vehicle.year || '2023'}
-                                    </p>
-                                </div>
-                                <div className="px-3 py-1 rounded-full bg-black/40 border border-white/5 backdrop-blur-md">
-                                    <span className="font-mono font-bold text-[#E20613] text-sm tabular-nums">
-                                        {vehicle.plate}
-                                    </span>
-                                </div>
+            <main className="max-w-md mx-auto pb-24">
+                {/* Vehicle Summary Header */}
+                <header className="p-6 bg-gradient-to-b from-[#eb4037]/10 to-transparent">
+                    <div className="flex items-center gap-6">
+                        <div className="relative shrink-0">
+                            {/* Vehicle Image Placeholder - Dynamic or Standard Brand Logo/Image */}
+                            <div className="bg-center bg-no-repeat bg-cover rounded-xl w-24 h-24 ring-2 ring-[#eb4037]/20 bg-slate-800 flex items-center justify-center overflow-hidden">
+                                <span className="material-symbols-outlined text-4xl text-white/20">directions_car</span>
                             </div>
-
-                            {/* Mileage / Life Bar */}
-                            <div className="space-y-2">
-                                <div className="flex justify-between text-[10px] uppercase font-bold tracking-wider text-neutral-500">
-                                    <span>Vida Útil Servicio</span>
-                                    <span>{vehicle.mileage?.toLocaleString() || 0} km</span>
-                                </div>
-                                <div className="h-2 bg-black/50 rounded-full overflow-hidden border border-white/5">
-                                    <div
-                                        className="h-full bg-gradient-to-r from-[#E20613] to-orange-500 rounded-full transition-all duration-1000 shadow-[0_0_15px_rgba(226,6,19,0.5)]"
-                                        style={{ width: `${oilLife}%` }}
-                                    />
-                                </div>
-                            </div>
-
-                            {/* Decorational Icon */}
-                            <div className="absolute -right-4 top-1/2 -translate-y-1/2 opacity-5 pointer-events-none text-white">
-                                <Car size={180} />
+                            <div className="absolute -bottom-2 -right-2 bg-[#eb4037] text-white text-[10px] font-bold px-2 py-1 rounded shadow-lg uppercase">
+                                Active
                             </div>
                         </div>
-                    </section>
-                ) : (
-                    <div className="text-center py-10 text-neutral-500">
-                        <p>No hay vehículos registrados.</p>
-                    </div>
-                )}
-
-                {/* Telemetry (Gauges) */}
-                {vehicle && (
-                    <section className="grid grid-cols-2 gap-4">
-                        {/* Oil Gauge */}
-                        <div className="bg-[#171717]/60 backdrop-blur-md border border-white/5 rounded-[2rem] p-5 flex flex-col items-center justify-center relative overflow-hidden group">
-                            <div className="relative w-24 h-24 flex items-center justify-center mb-3">
-                                <svg className="w-full h-full transform -rotate-90">
-                                    <circle cx="48" cy="48" r="40" stroke="#333" strokeWidth="6" fill="transparent" />
-                                    <circle
-                                        cx="48" cy="48" r="40" stroke={oilLife < 20 ? '#E20613' : oilLife < 50 ? '#F59E0B' : '#10B981'} strokeWidth="6" fill="transparent"
-                                        strokeDasharray={251.2}
-                                        strokeDashoffset={251.2 - (251.2 * oilLife) / 100}
-                                        strokeLinecap="round"
-                                        className="transition-all duration-1000 ease-out"
-                                    />
-                                </svg>
-                                <Droplets className={`absolute ${oilLife < 20 ? 'text-[#E20613]' : 'text-neutral-500'}`} size={24} />
+                        <div className="flex flex-col min-w-0">
+                            <h2 className="text-white text-2xl font-extrabold leading-tight truncate">
+                                {vehicle?.brand} {vehicle?.model}
+                            </h2>
+                            <div className="flex items-center gap-2 mt-1">
+                                <span className="bg-white/10 text-slate-300 text-xs font-mono px-2 py-0.5 rounded border border-white/5 tracking-wider uppercase">
+                                    {vehicle?.plate}
+                                </span>
                             </div>
-                            <h3 className="text-xs font-bold uppercase tracking-widest text-neutral-400">Aceite</h3>
-                            <p className="text-lg font-black">{oilLife}%</p>
-                        </div>
-
-                        {/* Battery Gauge */}
-                        <div className="bg-[#171717]/60 backdrop-blur-md border border-white/5 rounded-[2rem] p-5 flex flex-col items-start justify-between relative overflow-hidden">
-                            <div className="mb-2 p-2 bg-black/30 rounded-lg border border-white/5 text-[#E20613]">
-                                <Zap size={20} />
+                            <div className="flex items-center gap-1.5 mt-2 text-[#eb4037]/80">
+                                <span className="material-symbols-outlined text-sm">speed</span>
+                                <p className="text-sm font-bold tracking-tight">
+                                    {vehicle?.mileage?.toLocaleString() || '---'} KM
+                                </p>
                             </div>
-                            <div>
-                                <div className="flex items-baseline gap-1">
-                                    <span className="text-3xl font-black tracking-tight">{batteryVoltage}</span>
-                                    <span className="text-xs font-bold text-neutral-500">v</span>
-                                </div>
-                                <h3 className="text-xs font-bold uppercase tracking-widest text-neutral-400 mt-1">Batería</h3>
-                            </div>
-                            {/* Fake voltage graph line */}
-                            <div className="absolute right-0 bottom-4 w-1/2 h-8 opacity-20">
-                                <Activity className="w-full h-full text-[#E20613]" />
-                            </div>
-                        </div>
-                    </section>
-                )}
-
-                {/* Pending Tasks (Priority) */}
-                {vehicle && (
-                    <section>
-                        <div className="flex items-center gap-2 mb-4">
-                            <div className="w-1 h-4 bg-[#E20613] rounded-full" />
-                            <h3 className="text-sm font-bold uppercase tracking-widest text-neutral-300">Diagnóstico Activo</h3>
-                        </div>
-
-                        <div className="space-y-3">
-                            {/* Filters Section - Show ALL filters with status */}
-                            {vehicle.maintenanceStatus?.filters?.map((item: any, idx: number) => (
-                                <div key={idx} className={`border p-4 rounded-2xl flex items-center justify-between shadow-sm transition-all ${item.status === 'OK'
-                                    ? 'bg-[#171717] border-emerald-500/20 shadow-[0_4px_20px_-10px_rgba(16,185,129,0.1)]'
-                                    : 'bg-[#1F1F1F] border-[#E20613]/30 shadow-[0_4px_20px_-10px_rgba(226,6,19,0.2)]'
-                                    }`}>
-                                    <div className="flex items-center gap-3">
-                                        <div className={`w-10 h-10 rounded-full flex items-center justify-center animate-pulse ${item.status === 'OK'
-                                            ? 'bg-emerald-500/10 text-emerald-500'
-                                            : 'bg-[#E20613]/10 text-[#E20613]'
-                                            }`}>
-                                            {item.status === 'OK' ? <CheckCircle2 size={18} /> : <AlertTriangle size={18} />}
-                                        </div>
-                                        <div>
-                                            <p className={`font-bold text-sm ${item.status === 'OK' ? 'text-white' : 'text-white'}`}>{item.label}</p>
-                                            <p className={`text-[10px] font-bold uppercase tracking-wide ${item.status === 'OK' ? 'text-emerald-500' : 'text-[#E20613]'
-                                                }`}>
-                                                {item.status === 'OK' ? 'Cambiado / OK' : 'Atención Requerida'}
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <ChevronRight size={18} className="text-neutral-600" />
-                                </div>
-                            ))}
-
-                            {/* Show 1 or 2 normal items just to populate (Fluids) */}
-                            {vehicle.maintenanceStatus?.fluids?.slice(0, 2).map((item: any, idx: number) => (
-                                <div key={idx} className="bg-[#171717] border border-white/5 p-4 rounded-2xl flex items-center justify-between">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-neutral-400">
-                                            <CheckCircle2 size={18} />
-                                        </div>
-                                        <div>
-                                            <p className="font-bold text-sm text-neutral-300">{item.label}</p>
-                                            <p className="text-[10px] text-neutral-500 font-bold uppercase tracking-wide">Operativo</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </section>
-                )}
-
-                {/* Recent History Teaser */}
-                <section>
-                    <div className="flex items-center justify-between mb-4 mt-4">
-                        <div className="flex items-center gap-2">
-                            <div className="w-1 h-4 bg-neutral-600 rounded-full" />
-                            <h3 className="text-sm font-bold uppercase tracking-widest text-neutral-400">Historial Reciente</h3>
                         </div>
                     </div>
-                    {data.workOrders.length > 0 ? (
-                        data.workOrders.slice(0, 2).map((wo) => (
-                            <div key={wo.id} className="bg-[#171717] border border-white/5 p-5 rounded-2xl mb-3 last:mb-0">
-                                <div className="flex justify-between items-start mb-2">
-                                    <div>
-                                        <p className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest mb-1">
-                                            {new Date(wo.date).toLocaleDateString()}
-                                        </p>
-                                        <h4 className="font-bold text-white text-base">{wo.serviceName}</h4>
-                                    </div>
-                                    <span className={`px-2 py-1 rounded bg-white/5 text-[10px] font-bold uppercase ${wo.status.includes('COMPLETED') ? 'text-emerald-500' : 'text-neutral-400'}`}>
-                                        {wo.status === 'COMPLETED' ? 'Finalizado' : wo.status}
-                                    </span>
-                                </div>
+                </header>
+
+                {/* Health Diagnostic Section */}
+                <section className="px-6 mb-8">
+                    <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-white text-lg font-bold tracking-tight">Diagnóstico de Salud</h3>
+                        <span className="text-[#eb4037]/60 text-[10px] font-bold uppercase">Technical Checkup</span>
+                    </div>
+                    <div className="grid grid-cols-1 gap-3">
+                        {/* Oil Status */}
+                        <div className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/5">
+                            <div className="flex items-center gap-3">
+                                <span className="material-symbols-outlined text-slate-400">oil_barrel</span>
+                                <p className="text-sm font-medium text-white">Aceite de Motor</p>
                             </div>
-                        ))
-                    ) : (
-                        <div className="p-4 text-center text-neutral-600 text-sm">Sin historial reciente</div>
-                    )}
+                            <span className={`px-3 py-1 rounded-full text-[10px] font-bold border ${oilLife > 20 ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 'bg-[#eb4037]/10 text-[#eb4037] border-[#eb4037]/20'}`}>
+                                {oilLife > 20 ? 'OK' : 'CAMBIO'}
+                            </span>
+                        </div>
+
+                        {/* Filters Status - Dynamic */}
+                        {vehicle?.maintenanceStatus?.filters?.map((f: any, idx: number) => (
+                            <div key={idx} className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/5">
+                                <div className="flex items-center gap-3">
+                                    <span className="material-symbols-outlined text-slate-400">filter_alt</span>
+                                    <p className="text-sm font-medium text-white truncate max-w-[150px]">{f.label}</p>
+                                </div>
+                                <span className={`px-3 py-1 rounded-full text-[10px] font-bold border ${f.status === 'OK' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 'bg-[#eb4037]/10 text-[#eb4037] border-[#eb4037]/20'}`}>
+                                    {f.status === 'OK' ? 'OK' : 'REVISAR'}
+                                </span>
+                            </div>
+                        ))}
+                    </div>
                 </section>
 
+                {/* Service History Timeline */}
+                <section className="px-6 relative">
+                    <div className="flex items-center justify-between mb-6">
+                        <h3 className="text-white text-lg font-bold tracking-tight">Historial de Servicios</h3>
+                        <span className="material-symbols-outlined text-white/40">history</span>
+                    </div>
+                    <div className="relative pl-8">
+                        {/* Timeline Line */}
+                        <div className="absolute left-2.5 top-2 bottom-0 timeline-line opacity-30"></div>
+
+                        {data.workOrders.length > 0 ? (
+                            data.workOrders.map((wo: any, index: number) => (
+                                <div key={wo.id} className="relative mb-8 last:mb-0">
+                                    <div className={`absolute -left-[27px] top-1.5 size-4 rounded-full border-4 border-[#120909] ${index === 0 ? 'bg-[#eb4037] shadow-[0_0_10px_rgba(235,64,55,0.5)]' : 'bg-slate-700'}`}></div>
+                                    <div className={`p-5 rounded-xl ${index === 0 ? 'glass-card' : 'bg-white/[0.02] border border-white/5'}`}>
+                                        <div className="flex justify-between items-start mb-2">
+                                            <div>
+                                                <h4 className={`font-bold text-base ${index === 0 ? 'text-white' : 'text-white/80'}`}>
+                                                    {wo.serviceName}
+                                                </h4>
+                                                <p className="text-slate-400 text-xs">
+                                                    {new Date(wo.date).toLocaleDateString()}
+                                                </p>
+                                            </div>
+                                            <span className={`font-mono text-xs font-bold ${index === 0 ? 'text-[#eb4037]' : 'text-slate-500'}`}>
+                                                #{wo.id}
+                                            </span>
+                                        </div>
+                                        <p className="text-slate-300 text-sm mb-4 leading-relaxed line-clamp-2">
+                                            {wo.serviceDetails?.notes || 'Servicio de mantenimiento técnico especializado.'}
+                                        </p>
+                                        <button
+                                            onClick={() => handleOpenWhatsApp('technical_sheet', `#${wo.id} - ${wo.serviceName}`)}
+                                            className={`w-full flex items-center justify-center gap-2 border text-[11px] font-bold py-2.5 rounded transition-all uppercase tracking-widest ${index === 0 ? 'border-[#eb4037]/40 text-[#eb4037] hover:bg-[#eb4037]/10' : 'border-white/10 text-white/40 hover:bg-white/5'}`}
+                                        >
+                                            <span className="material-symbols-outlined text-sm">description</span>
+                                            SOLICITAR FICHA TÉCNICA
+                                        </button>
+                                    </div>
+                                </div>
+                            ))
+                        ) : (
+                            <div className="text-center py-8">
+                                <p className="text-slate-500 text-sm">Sin historial registrado.</p>
+                            </div>
+                        )}
+                    </div>
+                </section>
+            </main>
+
+            {/* Floating Emergency Button */}
+            <div className="fixed bottom-24 right-6 z-50">
+                <button
+                    onClick={() => handleOpenWhatsApp('emergency')}
+                    className="group relative flex items-center justify-center bg-[#eb4037] text-white w-14 h-14 rounded-full shadow-[0_0_20px_rgba(235,64,55,0.4)] active:scale-95 transition-transform overflow-hidden"
+                >
+                    <div className="absolute inset-0 bg-white/20 opacity-0 group-active:opacity-100 transition-opacity"></div>
+                    <span className="material-symbols-outlined text-2xl">emergency_home</span>
+                </button>
             </div>
 
-            {/* Bottom Nav (Floating) */}
-            <div className="fixed bottom-6 left-6 right-6 z-30">
-                <div className="bg-[#171717]/90 backdrop-blur-xl border border-white/10 rounded-2xl p-2 flex items-center justify-between shadow-2xl">
-                    <button className="p-3 rounded-xl hover:bg-white/5 text-neutral-400 hover:text-white transition-colors">
-                        <History size={20} />
-                    </button>
-
-                    {/* Main CTA: Quick Charge / Book */}
-                    <button className="flex items-center gap-2 bg-[#E20613] hover:bg-red-600 text-white px-6 py-3 rounded-xl shadow-[0_0_20px_rgba(226,6,19,0.4)] transition-all transform hover:scale-105 active:scale-95 group">
-                        <Plus size={20} className="group-hover:rotate-90 transition-transform" />
-                        <span className="font-bold text-xs uppercase tracking-widest">Agendar Service</span>
-                    </button>
-
-                    <button className="p-3 rounded-xl hover:bg-white/5 text-neutral-400 hover:text-white transition-colors">
-                        <Calendar size={20} />
-                    </button>
+            {/* Tab Bar Simulation */}
+            <div className="fixed bottom-0 w-full max-w-md left-1/2 -translate-x-1/2 bg-[#120909]/90 backdrop-blur-xl border-t border-white/5 px-8 py-3 flex justify-between items-center z-40">
+                <div className="flex flex-col items-center gap-1 text-[#eb4037]">
+                    <span className="material-symbols-outlined text-2xl">dashboard_customize</span>
+                    <span className="text-[9px] font-bold uppercase tracking-tighter">Panel</span>
+                </div>
+                <div
+                    onClick={() => handleOpenWhatsApp('appointment')}
+                    className="flex flex-col items-center gap-1 text-slate-500 cursor-pointer hover:text-slate-300 transition-colors"
+                >
+                    <span className="material-symbols-outlined text-2xl">calendar_today</span>
+                    <span className="text-[9px] font-bold uppercase tracking-tighter">Turnos</span>
+                </div>
+                <div
+                    onClick={() => handleOpenWhatsApp('technical_sheet', 'GENERAL')}
+                    className="flex flex-col items-center gap-1 text-slate-500 cursor-pointer hover:text-slate-300 transition-colors"
+                >
+                    <span className="material-symbols-outlined text-2xl">person</span>
+                    <span className="text-[9px] font-bold uppercase tracking-tighter">Perfil</span>
                 </div>
             </div>
-
         </div>
     );
 }
