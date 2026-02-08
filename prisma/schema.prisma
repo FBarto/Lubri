@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -11,253 +8,360 @@ datasource db {
 }
 
 model Client {
-  id        Int      @id @default(autoincrement())
-  name      String
-  phone     String   @unique
-  legacyId  String?  @unique
-  createdAt DateTime @default(now())
-  
-  vehicles     Vehicle[]
+  id           Int           @id @default(autoincrement())
+  name         String
+  phone        String        @unique
+  legacyId     String?       @unique
+  createdAt    DateTime      @default(now())
   appointments Appointment[]
-  workOrders   WorkOrder[]
-  sales        Sale[]
   leadCases    LeadCase[]
   pendingSales PendingSale[]
+  sales        Sale[]
+  vehicles     Vehicle[]
+  workOrders   WorkOrder[]
 }
 
 model Vehicle {
-  id        Int      @id @default(autoincrement())
-  plate     String   @unique
-  brand     String?
-  model     String?
-  type      String?
-  year      Int?
-  notes     String?
-  mileage   Int?
-  
-  clientId  Int
-  client    Client   @relation(fields: [clientId], references: [id])
-  
-  appointments Appointment[]
-  workOrders   WorkOrder[]
-  leadCases    LeadCase[]
-  
-  
-  
-  specifications Json?   // Learned preferences: oil type, filters, etc.
-  
-  // Predictive Maintenance Fields
-  averageDailyKm      Float?    @default(0)
-  lastServiceDate     DateTime?
-  lastServiceMileage  Int?
-  predictedNextService DateTime? // The "Golden Date"
-  pendingSales PendingSale[]
+  id                   Int           @id @default(autoincrement())
+  plate                String        @unique
+  brand                String?
+  model                String?
+  type                 String?
+  year                 Int?
+  notes                String?
+  mileage              Int?
+  clientId             Int
+  specifications       Json?
+  averageDailyKm       Float?        @default(0)
+  lastServiceDate      DateTime?
+  lastServiceMileage   Int?
+  predictedNextService DateTime?
+  appointments         Appointment[]
+  leadCases            LeadCase[]
+  pendingSales         PendingSale[]
+  client               Client        @relation(fields: [clientId], references: [id])
+  workOrders           WorkOrder[]
 }
 
 model Service {
-  id          Int     @id @default(autoincrement())
-  name        String
-  category    String
-  duration    Int     // in minutes
-  price       Float
-  active      Boolean @default(true)
-  
+  id           Int           @id @default(autoincrement())
+  name         String
+  category     String
+  duration     Int
+  price        Float
+  active       Boolean       @default(true)
   appointments Appointment[]
   workOrders   WorkOrder[]
 }
 
 model Appointment {
-  id        Int      @id @default(autoincrement())
-  date      DateTime // Start time
-  status    AppointmentStatus @default(REQUESTED)
-  
-  calendarEventId String?
-  reminderAt      DateTime?
-  reminderSentAt  DateTime?
-
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt @default(now())
-
-  notes     String?
-  
-  clientId  Int
-  client    Client   @relation(fields: [clientId], references: [id])
-  
-  vehicleId Int
-  vehicle   Vehicle  @relation(fields: [vehicleId], references: [id])
-  
-  serviceId Int
-  service   Service  @relation(fields: [serviceId], references: [id])
-  
-  workOrder WorkOrder?
-
+  id               Int               @id @default(autoincrement())
+  date             DateTime
+  status           AppointmentStatus @default(REQUESTED)
+  calendarEventId  String?
+  reminderAt       DateTime?
+  reminderSentAt   DateTime?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @default(now()) @updatedAt
+  notes            String?
+  clientId         Int
+  vehicleId        Int
+  serviceId        Int
+  leadCaseId       String?           @unique
+  client           Client            @relation(fields: [clientId], references: [id])
+  leadCase         LeadCase?         @relation(fields: [leadCaseId], references: [id])
+  service          Service           @relation(fields: [serviceId], references: [id])
+  vehicle          Vehicle           @relation(fields: [vehicleId], references: [id])
   whatsappMessages WhatsAppMessage[]
   whatsappTokens   WhatsAppToken[]
-  
-  leadCaseId    String?   @unique
-  leadCase      LeadCase? @relation(fields: [leadCaseId], references: [id])
+  workOrder        WorkOrder?
 }
 
 model WorkOrder {
-  id            Int      @id @default(autoincrement())
-  status        WorkOrderStatus @default(PENDING)
-  date          DateTime @default(now()) // Started at
-  finishedAt    DateTime?
-  mileage       Int?
-  price         Float
-  notes         String?
-  
-  appointmentId Int?     @unique
-  appointment   Appointment? @relation(fields: [appointmentId], references: [id])
-  
-  clientId      Int
-  client        Client   @relation(fields: [clientId], references: [id])
-  
-  vehicleId     Int
-  vehicle       Vehicle  @relation(fields: [vehicleId], references: [id])
-  
-  serviceId     Int
-  service       Service  @relation(fields: [serviceId], references: [id])
-
-  saleId        Int?     
-  sale          Sale?    @relation(fields: [saleId], references: [id])
-  
-  saleItems     SaleItem[]
-  attachments   WorkOrderAttachment[]
-
-  userId        Int?
-  user          User?    @relation(fields: [userId], references: [id])
-
-  approvalStatus String   @default("IDLE") // IDLE, PENDING, APPROVED, REJECTED
-  approvalToken  String?  @unique
+  id             Int                   @id @default(autoincrement())
+  status         WorkOrderStatus       @default(PENDING)
+  date           DateTime              @default(now())
+  finishedAt     DateTime?
+  mileage        Int?
+  price          Float
+  notes          String?
+  appointmentId  Int?                  @unique
+  clientId       Int
+  vehicleId      Int
+  serviceId      Int
+  saleId         Int?
+  userId         Int?
+  approvalStatus String                @default("IDLE")
+  approvalToken  String?               @unique
   approvalSentAt DateTime?
-
-  serviceDetails Json?    // Structured data: oil, filters, checklist
-  pendingSale  PendingSale[]
+  serviceDetails Json?
+  pendingSale    PendingSale[]
+  saleItems      SaleItem[]
+  appointment    Appointment?          @relation(fields: [appointmentId], references: [id])
+  client         Client                @relation(fields: [clientId], references: [id])
+  sale           Sale?                 @relation(fields: [saleId], references: [id])
+  service        Service               @relation(fields: [serviceId], references: [id])
+  user           User?                 @relation(fields: [userId], references: [id])
+  vehicle        Vehicle               @relation(fields: [vehicleId], references: [id])
+  attachments    WorkOrderAttachment[]
 }
 
 model WhatsAppMessage {
-  id            Int      @id @default(autoincrement())
+  id            Int         @id @default(autoincrement())
   phone         String
-  template      String   // CONFIRMATION, REMINDER_24H, REMINDER_2H
-  variables     String?  // JSON with custom data
-  status        String   @default("PENDING") // PENDING, SENT, FAILED
+  template      String
+  variables     String?
+  status        String      @default("PENDING")
   scheduledAt   DateTime
   sentAt        DateTime?
   error         String?
-  
   appointmentId Int
+  createdAt     DateTime    @default(now())
   appointment   Appointment @relation(fields: [appointmentId], references: [id])
-  
-  createdAt     DateTime @default(now())
 }
 
 model WhatsAppToken {
-  id            Int      @id @default(autoincrement())
-  token         String   @unique
-  action        String   // CONFIRM, CANCEL
+  id            Int         @id @default(autoincrement())
+  token         String      @unique
+  action        String
   expiresAt     DateTime
   usedAt        DateTime?
-  
   appointmentId Int
+  createdAt     DateTime    @default(now())
   appointment   Appointment @relation(fields: [appointmentId], references: [id])
-  
-  createdAt     DateTime @default(now())
 }
 
 model Product {
-  id          Int      @id @default(autoincrement())
-  name        String
-  code        String?  @unique
-  barcode     String?
-  category    String
-  price       Float
-  cost        Float    @default(0) // Precio compra
-  markup      Float    @default(0) // % Ganancia
-  supplier    String?  // Proveedor
-  stock       Float    @default(0)
-  minStock    Float    @default(0)
-  active      Boolean  @default(true)
-  
-  saleItems   SaleItem[]
+  id           Int               @id @default(autoincrement())
+  name         String
+  code         String?           @unique
+  barcode      String?
+  category     String
+  price        Float
+  stock        Float             @default(0)
+  minStock     Float             @default(0)
+  active       Boolean           @default(true)
+  cost         Float             @default(0)
+  markup       Float             @default(0)
+  supplier     String?
   pendingItems PendingSaleItem[]
+  saleItems    SaleItem[]
 }
 
 model Sale {
-  id            Int      @id @default(autoincrement())
-  date          DateTime @default(now())
+  id            Int          @id @default(autoincrement())
+  date          DateTime     @default(now())
   total         Float
   paymentMethod String?
-  
   clientId      Int?
-  client        Client?  @relation(fields: [clientId], references: [id])
-
+  userId        Int?
+  status        String       @default("COMPLETED")
+  pendingSale   PendingSale?
+  client        Client?      @relation(fields: [clientId], references: [id])
+  user          User?        @relation(fields: [userId], references: [id])
   items         SaleItem[]
   workOrders    WorkOrder[]
-
-  userId        Int?
-  user          User?    @relation(fields: [userId], references: [id])
-
-  status        String   @default("COMPLETED") // PENDING (Sent to Caja), COMPLETED (Paid), CANCELLED
-  pendingSale   PendingSale?
 }
 
 model SaleItem {
-  id          Int      @id @default(autoincrement())
+  id          Int        @id @default(autoincrement())
   saleId      Int
-  sale        Sale     @relation(fields: [saleId], references: [id])
-
-  type        String   // PRODUCT | SERVICE
+  type        String
   description String
   quantity    Float
   unitPrice   Float
   subtotal    Float
-
   productId   Int?
-  product     Product? @relation(fields: [productId], references: [id])
-
   workOrderId Int?
+  product     Product?   @relation(fields: [productId], references: [id])
+  sale        Sale       @relation(fields: [saleId], references: [id])
   workOrder   WorkOrder? @relation(fields: [workOrderId], references: [id])
 }
 
-
 model User {
-  id            Int      @id @default(autoincrement())
+  id            Int            @id @default(autoincrement())
   name          String?
-  username      String   @unique
+  username      String         @unique
   passwordHash  String
-  role          String   @default("EMPLOYEE") // ADMIN, EMPLOYEE
-  active        Boolean  @default(true)
-  createdAt     DateTime @default(now())
-  
+  role          String         @default("EMPLOYEE")
+  active        Boolean        @default(true)
+  createdAt     DateTime       @default(now())
   auditLogs     AuditLog[]
-  sales         Sale[]
-  workOrders    WorkOrder[]
-  
-  assignedCases LeadCase[]
   createdLogs   CaseLog[]
+  assignedCases LeadCase[]
   notifications Notification[]
   pendingSales  PendingSale[]
+  sales         Sale[]
+  workOrders    WorkOrder[]
 }
 
 model AuditLog {
   id        Int      @id @default(autoincrement())
   userId    Int
-  action    String   // CREATE, UPDATE, DELETE, LOGIN, CHECKOUT
-  entity    String   // SALE, PRODUCT, CLIENT, etc.
-  entityId  String?  // ID del recurso afectado
-  details   String?  // JSON o texto con detalles del cambio
+  action    String
+  entity    String
+  entityId  String?
+  details   String?
   timestamp DateTime @default(now())
-
   user      User     @relation(fields: [userId], references: [id])
 }
 
 model PaymentPlan {
-  id            Int      @id @default(autoincrement())
-  name          String
-  installments  Int
-  interestRate  Float    // Percentage, e.g. 10.5 for 10.5%
-  active        Boolean  @default(true)
+  id           Int     @id @default(autoincrement())
+  name         String
+  installments Int
+  interestRate Float
+  active       Boolean @default(true)
+}
+
+model WorkOrderAttachment {
+  id          Int       @id @default(autoincrement())
+  url         String
+  type        String
+  description String?
+  workOrderId Int
+  createdAt   DateTime  @default(now())
+  workOrder   WorkOrder @relation(fields: [workOrderId], references: [id])
+}
+
+model LeadCase {
+  id               String              @id @default(cuid())
+  type             CaseType
+  status           CaseStatus          @default(NEW)
+  priority         Priority            @default(MEDIUM)
+  serviceCategory  ServiceCategory
+  summary          String
+  notes            String?
+  slaDueAt         DateTime
+  lastContactAt    DateTime?
+  assignedToUserId Int?
+  clientId         Int?
+  vehicleId        Int?
+  intakeRawText    String?
+  intakeParsedJson Json?
+  closeReason      String?
+  closeDetail      String?
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  appointment      Appointment?
+  checklist        CaseChecklistItem[]
+  logs             CaseLog[]
+  assignedToUser   User?               @relation(fields: [assignedToUserId], references: [id])
+  client           Client?             @relation(fields: [clientId], references: [id])
+  vehicle          Vehicle?            @relation(fields: [vehicleId], references: [id])
+  quote            Quote?
+}
+
+model CaseLog {
+  id           String     @id @default(cuid())
+  leadCaseId   String
+  authorUserId Int
+  channel      LogChannel
+  message      String
+  createdAt    DateTime   @default(now())
+  authorUser   User       @relation(fields: [authorUserId], references: [id])
+  leadCase     LeadCase   @relation(fields: [leadCaseId], references: [id])
+}
+
+model Quote {
+  id           String      @id @default(cuid())
+  leadCaseId   String      @unique
+  subtotal     Float       @default(0)
+  discount     Float?      @default(0)
+  total        Float       @default(0)
+  paymentTerms String?
+  validUntil   DateTime?
+  status       QuoteStatus @default(DRAFT)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  leadCase     LeadCase    @relation(fields: [leadCaseId], references: [id])
+  items        QuoteItem[]
+}
+
+model QuoteItem {
+  id          String @id @default(cuid())
+  quoteId     String
+  description String
+  quantity    Float
+  unitPrice   Float
+  lineTotal   Float
+  kind        String @default("PRODUCT")
+  quote       Quote  @relation(fields: [quoteId], references: [id])
+}
+
+model CaseChecklistItem {
+  id          String            @id @default(cuid())
+  leadCaseId  String
+  templateKey ChecklistTemplate
+  key         String
+  label       String
+  value       String?
+  inputType   InputType
+  options     Json?
+  isRequired  Boolean           @default(false)
+  isDone      Boolean           @default(false)
+  sortOrder   Int               @default(0)
+  createdAt   DateTime          @default(now())
+  leadCase    LeadCase          @relation(fields: [leadCaseId], references: [id])
+}
+
+model Notification {
+  id         String   @id @default(cuid())
+  userId     Int
+  leadCaseId String?
+  type       String
+  message    String
+  isRead     Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id])
+}
+
+model PendingSale {
+  id          Int                @id @default(autoincrement())
+  status      PendingSaleStatus  @default(DRAFT)
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  createdById Int
+  channel     PendingSaleChannel @default(POS)
+  workOrderId Int?
+  clientId    Int?
+  vehicleId   Int?
+  notes       String?
+  currency    String             @default("ARS")
+  saleId      Int?               @unique
+  version     Int                @default(1)
+  client      Client?            @relation(fields: [clientId], references: [id])
+  createdBy   User               @relation(fields: [createdById], references: [id])
+  sale        Sale?              @relation(fields: [saleId], references: [id])
+  vehicle     Vehicle?           @relation(fields: [vehicleId], references: [id])
+  workOrder   WorkOrder?         @relation(fields: [workOrderId], references: [id])
+  items       PendingSaleItem[]
+
+  @@index([status])
+  @@index([createdById, status])
+  @@index([clientId])
+}
+
+model PendingSaleItem {
+  id             Int         @id @default(autoincrement())
+  pendingSaleId  Int
+  productId      Int?
+  nameSnapshot   String
+  skuSnapshot    String?
+  unitSnapshot   String?
+  quantity       Decimal     @db.Decimal(10, 2)
+  unitPrice      Decimal     @db.Decimal(12, 2)
+  discount       Decimal?    @db.Decimal(12, 2)
+  subtotal       Decimal     @db.Decimal(14, 2)
+  isUncataloged  Boolean     @default(false)
+  sourceMetadata Json?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  pendingSale    PendingSale @relation(fields: [pendingSaleId], references: [id], onDelete: Cascade)
+  product        Product?    @relation(fields: [productId], references: [id])
+
+  @@index([pendingSaleId])
+  @@index([productId])
 }
 
 enum AppointmentStatus {
@@ -271,26 +375,11 @@ enum AppointmentStatus {
 }
 
 enum WorkOrderStatus {
-  PENDING      // Ingresó
-  IN_PROGRESS  // En Servicio
-  COMPLETED    // Listo
-  DELIVERED    // Entregado
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  DELIVERED
 }
-
-model WorkOrderAttachment {
-  id          Int      @id @default(autoincrement())
-  url         String
-  type        String   // IMAGE, VIDEO
-  description String?
-  
-  workOrderId Int
-  workOrder   WorkOrder @relation(fields: [workOrderId], references: [id])
-  
-  createdAt   DateTime @default(now())
-}
-
-
-// --- REDES / INBOX MODULE ---
 
 enum CaseType {
   APPOINTMENT
@@ -352,120 +441,6 @@ enum InputType {
   MULTISELECT
 }
 
-model LeadCase {
-  id              String          @id @default(cuid())
-  type            CaseType
-  status          CaseStatus      @default(NEW)
-  priority        Priority        @default(MEDIUM)
-  serviceCategory ServiceCategory
-  summary         String
-  notes           String?
-  
-  slaDueAt        DateTime
-  lastContactAt   DateTime?
-  
-  // Relations
-  assignedToUserId Int?
-  assignedToUser   User?   @relation(fields: [assignedToUserId], references: [id])
-  
-  clientId        Int?
-  client          Client? @relation(fields: [clientId], references: [id])
-  
-  vehicleId       Int?
-  vehicle         Vehicle? @relation(fields: [vehicleId], references: [id])
-  
-  intakeRawText   String?
-  intakeParsedJson Json?
-  
-  closeReason     String?
-  closeDetail     String?
-  
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  
-  logs            CaseLog[]
-  quote           Quote?
-  checklist       CaseChecklistItem[]
-  appointment     Appointment?
-}
-
-model CaseLog {
-  id           String      @id @default(cuid())
-  leadCaseId   String
-  leadCase     LeadCase    @relation(fields: [leadCaseId], references: [id])
-  
-  authorUserId Int
-  authorUser   User        @relation(fields: [authorUserId], references: [id])
-  
-  channel      LogChannel
-  message      String
-  
-  createdAt    DateTime    @default(now())
-}
-
-model Quote {
-  id           String      @id @default(cuid())
-  leadCaseId   String      @unique
-  leadCase     LeadCase    @relation(fields: [leadCaseId], references: [id])
-  
-  subtotal     Float       @default(0)
-  discount     Float?      @default(0)
-  total        Float       @default(0)
-  paymentTerms String?
-  validUntil   DateTime?
-  status       QuoteStatus @default(DRAFT)
-  
-  items        QuoteItem[]
-  
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
-}
-
-model QuoteItem {
-  id          String  @id @default(cuid())
-  quoteId     String
-  quote       Quote   @relation(fields: [quoteId], references: [id])
-  
-  description String
-  quantity    Float
-  unitPrice   Float
-  lineTotal   Float
-  kind        String  @default("PRODUCT") // PRODUCT | LABOR | OTHER
-}
-
-model CaseChecklistItem {
-  id           String            @id @default(cuid())
-  leadCaseId   String
-  leadCase     LeadCase          @relation(fields: [leadCaseId], references: [id])
-  
-  templateKey  ChecklistTemplate
-  key          String
-  label        String
-  value        String?
-  inputType    InputType
-  options      Json?             // Array of strings for SELECT
-  isRequired   Boolean           @default(false)
-  isDone       Boolean           @default(false)
-  sortOrder    Int               @default(0)
-  
-  createdAt    DateTime          @default(now())
-}
-
-model Notification {
-  id           String   @id @default(cuid())
-  userId       Int
-  user         User     @relation(fields: [userId], references: [id])
-  
-  leadCaseId   String?
-  type         String   // SLA_DUE | CASE_ASSIGNED | REMINDER_DUE
-  message      String
-  isRead       Boolean  @default(false)
-  
-  createdAt    DateTime @default(now())
-}
-
-// --- PENDING SALE / DRAFT ARCHITECTURE ---
-
 enum PendingSaleStatus {
   DRAFT
   CONFIRMING
@@ -477,69 +452,4 @@ enum PendingSaleChannel {
   POS
   EMPLOYEE
   ADMIN
-}
-
-model PendingSale {
-  id            Int                @id @default(autoincrement())
-  status        PendingSaleStatus  @default(DRAFT)
-
-  createdAt     DateTime           @default(now())
-  updatedAt     DateTime           @updatedAt
-  
-  createdById   Int
-  createdBy     User               @relation(fields: [createdById], references: [id])
-
-  channel       PendingSaleChannel @default(POS)
-  
-  workOrderId   Int?
-  workOrder     WorkOrder?         @relation(fields: [workOrderId], references: [id])
-  
-  clientId      Int?
-  client        Client?            @relation(fields: [clientId], references: [id])
-  
-  vehicleId     Int?
-  vehicle       Vehicle?           @relation(fields: [vehicleId], references: [id])
-
-  notes         String?
-  currency      String             @default("ARS")
-
-  saleId        Int?               @unique
-  sale          Sale?              @relation(fields: [saleId], references: [id])
-
-  items         PendingSaleItem[]
-
-  version       Int                @default(1)
-
-  @@index([status])
-  @@index([createdById, status])
-  @@index([clientId])
-}
-
-model PendingSaleItem {
-  id            Int          @id @default(autoincrement())
-  pendingSaleId Int
-  pendingSale   PendingSale  @relation(fields: [pendingSaleId], references: [id], onDelete: Cascade)
-
-  productId     Int?
-  product       Product?     @relation(fields: [productId], references: [id])
-
-  nameSnapshot  String
-  skuSnapshot   String?
-  unitSnapshot  String? 
-
-  quantity      Decimal      @db.Decimal(10,2) // Precision is key
-  unitPrice     Decimal      @db.Decimal(12,2)
-  discount      Decimal?     @db.Decimal(12,2)
-  subtotal      Decimal      @db.Decimal(14,2)
-
-  isUncataloged Boolean      @default(false)
-  
-  // To link back if this item came from a specific WorkOrder detail (optional but good for trace)
-  sourceMetadata Json?
-
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
-
-  @@index([pendingSaleId])
-  @@index([productId])
 }

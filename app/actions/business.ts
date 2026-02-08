@@ -23,6 +23,7 @@ interface WorkOrderInput {
     price: number;
     attachments?: { url: string; type: string; description?: string }[];
     serviceDetails?: any;
+    date?: Date | string; // Allow manual date override
 }
 
 interface SaleItemInput {
@@ -61,6 +62,7 @@ export async function createWorkOrder(data: WorkOrderInput): Promise<ActionRespo
                 appointmentId: data.appointmentId ? Number(data.appointmentId) : undefined,
                 price: Number(data.price),
                 serviceDetails: data.serviceDetails,
+                date: data.date ? new Date(data.date) : undefined, // Set creation date if provided
                 attachments: data.attachments ? {
                     create: data.attachments.map(a => ({
                         url: a.url,

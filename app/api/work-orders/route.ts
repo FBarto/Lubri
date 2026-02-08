@@ -55,6 +55,11 @@ export async function POST(request: Request) {
         if (body.serviceId) body.serviceId = parseInt(body.serviceId);
         if (body.appointmentId) body.appointmentId = parseInt(body.appointmentId);
 
+        // Handle historical date
+        if (body.date) {
+            body.date = new Date(body.date);
+        }
+
         const result = await createWorkOrder(body);
 
         if (!result.success) {

@@ -22,7 +22,8 @@ function NewWorkOrderForm() {
         notes: '',
         clientName: '',
         vehiclePlate: '',
-        serviceName: ''
+        serviceName: '',
+        date: new Date().toISOString().split('T')[0] // Default to today
     });
 
     useEffect(() => {
@@ -46,7 +47,8 @@ function NewWorkOrderForm() {
                     notes: '',
                     clientName: data.client.name,
                     vehiclePlate: data.vehicle.plate,
-                    serviceName: data.service.name
+                    serviceName: data.service.name,
+                    date: new Date().toISOString().split('T')[0]
                 });
             }
         } catch (e) {
@@ -71,6 +73,7 @@ function NewWorkOrderForm() {
                     price: formData.price,
                     mileage: formData.mileage,
                     notes: formData.notes,
+                    date: formData.date, // Pass the date
                     appointmentId: appointmentId // Link it!
                 })
             });
@@ -140,6 +143,18 @@ function NewWorkOrderForm() {
                         required
                     />
                     <p className="text-xs text-slate-400 mt-1">Podés ajustar el precio si hubo adicionales o descuentos.</p>
+                </div>
+
+                {/* Date (Historical Entry) */}
+                <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-2">Fecha del Servicio</label>
+                    <input
+                        type="date"
+                        value={formData.date}
+                        onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                        className="w-full p-4 rounded-xl border border-slate-200 text-lg font-medium focus:ring-2 focus:ring-blue-500 outline-none"
+                    />
+                    <p className="text-xs text-slate-400 mt-1">Dejar hoy para servicio actual, o cambiar para cargar historial viejo.</p>
                 </div>
 
                 {/* Notes */}
