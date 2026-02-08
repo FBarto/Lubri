@@ -28,7 +28,13 @@ function NewWorkOrderForm() {
         clientName: '',
         vehiclePlate: '',
         serviceName: '',
-        date: new Date().toISOString().split('T')[0] // Default to today
+        date: new Date().toISOString().split('T')[0], // Default to today
+        serviceDetails: {
+            oil: { brand: '', liters: '', type: 'SINTETICO' },
+            filters: { air: false, oil: false, fuel: false, cabin: false },
+            filterDetails: { air: '', oil: '', fuel: '', cabin: '' },
+            battery: { voltage: '' }
+        }
     });
 
     useEffect(() => {
@@ -109,7 +115,13 @@ function NewWorkOrderForm() {
                     clientName: data.client.name,
                     vehiclePlate: data.vehicle.plate,
                     serviceName: data.service.name,
-                    date: new Date().toISOString().split('T')[0]
+                    date: new Date().toISOString().split('T')[0],
+                    serviceDetails: data.serviceDetails || {
+                        oil: { brand: '', liters: '', type: 'SINTETICO' },
+                        filters: { air: false, oil: false, fuel: false, cabin: false },
+                        filterDetails: { air: '', oil: '', fuel: '', cabin: '' },
+                        battery: { voltage: '' }
+                    }
                 });
             }
         } catch (e) {
@@ -134,15 +146,21 @@ function NewWorkOrderForm() {
                     price: formData.price,
                     mileage: formData.mileage,
                     notes: formData.notes,
-                    date: formData.date, // Pass the date
+                    date: formData.date,
+                    serviceDetails: formData.serviceDetails, // Pass the details!
                     appointmentId: appointmentId // Link it!
                 })
             });
 
             if (res.ok) {
+                const newOrder = await res.json();
                 if (isMassLoad) {
-                    // Success feedback and reset for next entry
-                    alert(`¡Orden de ${formData.vehiclePlate} guardada con éxito!`);
+                    setLastSavedOrder({
+                        id: newOrder.id,
+                        plate: formData.vehiclePlate,
+                        clientPhone: formData.vehicleId ? (await (await fetch(`/api/vehicles/${formData.vehicleId}`)).json()).client.phone : ''
+                    });
+
                     setFormData(prev => ({
                         ...prev,
                         vehiclePlate: '',
@@ -150,8 +168,13 @@ function NewWorkOrderForm() {
                         clientId: '',
                         clientName: '',
                         mileage: '',
-                        notes: ''
-                        // Keep Date and Service for consecutive same-type entries
+                        notes: '',
+                        serviceDetails: { // Reset details but keep structure
+                            oil: { brand: '', liters: prev.serviceDetails.oil.liters, type: prev.serviceDetails.oil.type },
+                            filters: { air: false, oil: false, fuel: false, cabin: false },
+                            filterDetails: { air: '', oil: '', fuel: '', cabin: '' },
+                            battery: { voltage: '' }
+                        }
                     }));
                 } else {
                     router.push('/admin/dashboard');
@@ -304,6 +327,125 @@ function NewWorkOrderForm() {
                             <option key={s.id} value={s.id}>{s.name} - ${s.price}</option>
                         ))}
                     </select>
+                </div>
+
+                {/* Technical Details */}
+                <div className="bg-slate-50 p-6 rounded-[2rem] border border-slate-200 space-y-6">
+                    <h3 className="text-xs font-black text-slate-400 uppercase tracking-wider flex items-center gap-2">
+                        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" /></svg>
+                        Detalle Técnico del Service
+                    </h3>
+
+                    {/* Oil Section */}
+                    <div className="space-y-4">
+                        <label className="block text-xs font-black uppercase text-slate-500">Aceite de Motor</label>
+                        <div className="grid grid-cols-2 gap-3">
+                            <input
+                                type="text"
+                                placeholder="Marca / Viscosidad (Ej: Shell 10W40)"
+                                className="w-full p-3 rounded-xl border border-slate-200 text-sm font-bold bg-white"
+                                value={formData.serviceDetails.oil.brand}
+                                onChange={e => setFormData({
+                                    ...formData,
+                                    serviceDetails: {
+                                        ...formData.serviceDetails,
+                                        oil: { ...formData.serviceDetails.oil, brand: e.target.value }
+                                    }
+                                })}
+                            />
+                            <div className="flex gap-2">
+                                <input
+                                    type="text"
+                                    placeholder="Litros"
+                                    className="w-20 p-3 rounded-xl border border-slate-200 text-sm font-bold bg-white"
+                                    value={formData.serviceDetails.oil.liters}
+                                    onChange={e => setFormData({
+                                        ...formData,
+                                        serviceDetails: {
+                                            ...formData.serviceDetails,
+                                            oil: { ...formData.serviceDetails.oil, liters: e.target.value }
+                                        }
+                                    })}
+                                />
+                                <select
+                                    className="flex-1 p-3 rounded-xl border border-slate-200 text-sm font-bold bg-white"
+                                    value={formData.serviceDetails.oil.type}
+                                    onChange={e => setFormData({
+                                        ...formData,
+                                        serviceDetails: {
+                                            ...formData.serviceDetails,
+                                            oil: { ...formData.serviceDetails.oil, type: e.target.value }
+                                        }
+                                    })}
+                                >
+                                    <option value="SINTETICO">Sintético</option>
+                                    <option value="SEMI">Semi-Sint.</option>
+                                    <option value="MINERAL">Mineral</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Filters Section */}
+                    <div className="space-y-4">
+                        <label className="block text-xs font-black uppercase text-slate-500">Filtros Cambiados</label>
+                        <div className="grid grid-cols-2 gap-3">
+                            {(['air', 'oil', 'fuel', 'cabin'] as const).map(f => (
+                                <div key={f} className="space-y-2">
+                                    <label className={`flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer ${formData.serviceDetails.filters[f] ? 'bg-blue-50 border-blue-200' : 'bg-white border-slate-200'}`}>
+                                        <input
+                                            type="checkbox"
+                                            className="w-5 h-5 rounded text-blue-600 focus:ring-0"
+                                            checked={formData.serviceDetails.filters[f]}
+                                            onChange={e => setFormData({
+                                                ...formData,
+                                                serviceDetails: {
+                                                    ...formData.serviceDetails,
+                                                    filters: { ...formData.serviceDetails.filters, [f]: e.target.checked }
+                                                }
+                                            })}
+                                        />
+                                        <span className="text-[10px] font-black uppercase text-slate-700">
+                                            {f === 'air' ? 'Aire' : f === 'oil' ? 'Aceite' : f === 'fuel' ? 'Combustible' : 'Habitáculo'}
+                                        </span>
+                                    </label>
+                                    {formData.serviceDetails.filters[f] && (
+                                        <input
+                                            type="text"
+                                            placeholder="Código/Marca"
+                                            className="w-full p-2 bg-white rounded-lg border border-slate-200 text-[10px] font-bold uppercase"
+                                            value={formData.serviceDetails.filterDetails[f]}
+                                            onChange={e => setFormData({
+                                                ...formData,
+                                                serviceDetails: {
+                                                    ...formData.serviceDetails,
+                                                    filterDetails: { ...formData.serviceDetails.filterDetails, [f]: e.target.value }
+                                                }
+                                            })}
+                                        />
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Battery Section */}
+                    <div>
+                        <label className="block text-xs font-black uppercase text-slate-500 mb-2">Batería (Voltios)</label>
+                        <input
+                            type="text"
+                            placeholder="Ej: 12.6"
+                            className="w-full p-3 rounded-xl border border-slate-200 text-sm font-bold bg-white"
+                            value={formData.serviceDetails.battery.voltage}
+                            onChange={e => setFormData({
+                                ...formData,
+                                serviceDetails: {
+                                    ...formData.serviceDetails,
+                                    battery: { voltage: e.target.value }
+                                }
+                            })}
+                        />
+                    </div>
                 </div>
 
                 {/* Editable Fields */}
