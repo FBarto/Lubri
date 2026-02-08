@@ -32,6 +32,8 @@ function NewWorkOrderForm() {
         vehiclePlate: '',
         vehicleBrand: '',
         vehicleModel: '',
+        vehicleFuelType: 'NAFTA',
+        vehicleEngine: '',
         serviceName: '',
         date: new Date().toISOString().split('T')[0], // Default to today
         serviceDetails: {
@@ -144,7 +146,9 @@ function NewWorkOrderForm() {
                     clientName: '',
                     clientPhone: '',
                     vehicleBrand: '',
-                    vehicleModel: ''
+                    vehicleModel: '',
+                    vehicleFuelType: 'NAFTA',
+                    vehicleEngine: ''
                 }));
                 setError('Vehículo no encontrado. Podés registrarlo ahora.');
             }
@@ -173,14 +177,16 @@ function NewWorkOrderForm() {
                     vehiclePlate: data.vehicle.plate,
                     vehicleBrand: data.vehicle.brand || '', // Added
                     vehicleModel: data.vehicle.model || '', // Added
+                    vehicleFuelType: data.vehicle.specifications?.fuelType || 'NAFTA',
+                    vehicleEngine: data.vehicle.specifications?.engine || '',
                     serviceName: data.service.name,
                     date: new Date().toISOString().split('T')[0],
                     serviceDetails: data.serviceDetails || {
                         oil: { brand: '', liters: '', type: 'SINTETICO' },
                         filters: { air: false, oil: false, fuel: false, cabin: false },
                         filterDetails: { air: '', oil: '', fuel: '', cabin: '' },
-                        fluids: { coolant: true, brakes: true, gearbox: true, differential: true, hydraulic: true }, // Updated
-                        additives: []
+                        fluids: { coolant: true, brakes: true, gearbox: true, differential: true, hydraulic: true },
+                        additives: [] as any[]
                     }
                 });
                 setIsNewVehicle(false); // Ensure reset
@@ -209,6 +215,8 @@ function NewWorkOrderForm() {
                     plate: formData.vehiclePlate,
                     brand: formData.vehicleBrand,
                     model: formData.vehicleModel,
+                    fuelType: formData.vehicleFuelType,
+                    engine: formData.vehicleEngine,
                     clientId: formData.clientId ? Number(formData.clientId) : undefined
                 });
 
@@ -509,14 +517,38 @@ function NewWorkOrderForm() {
                                 />
                             </div>
                             <div className="space-y-1">
-                                <label className="text-[10px] font-black uppercase text-slate-500 ml-1">Modelo / Año</label>
+                                <label className="text-[10px] font-black uppercase text-slate-500 ml-1">Modelo del Vehículo</label>
                                 <input
                                     type="text"
-                                    placeholder="Ej: Hilux 2022"
+                                    placeholder="Ej: Corolla"
                                     required
                                     className="w-full p-4 rounded-xl border border-slate-200 text-sm font-bold bg-white outline-none focus:ring-2 focus:ring-blue-500 transition-all placeholder:text-slate-300"
                                     value={formData.vehicleModel}
                                     onChange={e => setFormData({ ...formData, vehicleModel: e.target.value })}
+                                />
+                            </div>
+                            <div className="space-y-1">
+                                <label className="text-[10px] font-black uppercase text-slate-500 ml-1">Combustible</label>
+                                <select
+                                    className="w-full p-4 rounded-xl border border-slate-200 text-sm font-bold bg-white outline-none focus:ring-2 focus:ring-blue-500 transition-all focus:border-blue-500 text-slate-700 appearance-none"
+                                    value={formData.vehicleFuelType}
+                                    onChange={e => setFormData({ ...formData, vehicleFuelType: e.target.value })}
+                                >
+                                    <option value="NAFTA">NAFTA</option>
+                                    <option value="DIESEL">DIESEL</option>
+                                    <option value="GNC">GNC</option>
+                                    <option value="ELECTRICO">ELECTRICO</option>
+                                    <option value="HIBRIDO">HIBRIDO</option>
+                                </select>
+                            </div>
+                            <div className="space-y-1">
+                                <label className="text-[10px] font-black uppercase text-slate-500 ml-1">Motor</label>
+                                <input
+                                    type="text"
+                                    placeholder="Ej: 1.6"
+                                    className="w-full p-4 rounded-xl border border-slate-200 text-sm font-bold bg-white outline-none focus:ring-2 focus:ring-blue-500 transition-all placeholder:text-slate-300"
+                                    value={formData.vehicleEngine}
+                                    onChange={e => setFormData({ ...formData, vehicleEngine: e.target.value })}
                                 />
                             </div>
                         </div>

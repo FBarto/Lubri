@@ -605,7 +605,7 @@ export async function getDuplicatePlates(): Promise<ActionResponse> {
 /**
  * Quick client and vehicle creation for ServiceModal
  */
-export async function createQuickClient(data: { name: string; phone: string; plate?: string; brand?: string; model?: string; clientId?: number }): Promise<ActionResponse> {
+export async function createQuickClient(data: { name: string; phone: string; plate?: string; brand?: string; model?: string; clientId?: number; fuelType?: string; engine?: string }): Promise<ActionResponse> {
     try {
         let client = null;
 
@@ -641,7 +641,11 @@ export async function createQuickClient(data: { name: string; phone: string; pla
                         plate: data.plate,
                         brand: data.brand,
                         model: data.model,
-                        clientId: client.id
+                        clientId: client.id,
+                        specifications: {
+                            fuelType: data.fuelType,
+                            engine: data.engine
+                        }
                     }
                 });
             }
