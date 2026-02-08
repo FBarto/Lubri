@@ -42,7 +42,26 @@ function NewWorkOrderForm() {
         try {
             const res = await fetch('/api/services');
             const data = await res.json();
-            if (Array.isArray(data)) setAvailableServices(data);
+            if (Array.isArray(data)) {
+                setAvailableServices(data);
+
+                // Pre-select service if not coming from appointment
+                if (!appointmentId && data.length > 0) {
+                    const defaultService = data.find(s =>
+                        s.name.toLowerCase().includes('service') ||
+                        s.name.toLowerCase().includes('aceite')
+                    ) || data[0];
+
+                    if (defaultService) {
+                        setFormData(prev => ({
+                            ...prev,
+                            serviceId: defaultService.id.toString(),
+                            serviceName: defaultService.name,
+                            price: defaultService.price.toString()
+                        }));
+                    }
+                }
+            }
         } catch (e) {
             console.error('Error fetching services', e);
         }
