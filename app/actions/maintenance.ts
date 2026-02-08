@@ -722,7 +722,12 @@ export async function updateWorkOrderMaintenanceDetails(workOrderId: number, ite
             }
         });
 
-        revalidatePath('/portal');
+        // Force revalidate everything related to portal
+        revalidatePath('/portal', 'layout');
+        revalidatePath('/portal/[token]', 'page');
+        revalidatePath(`/admin/work-orders/${workOrderId}`, 'page');
+        revalidatePath('/admin/dashboard');
+
         return { success: true };
 
     } catch (error) {

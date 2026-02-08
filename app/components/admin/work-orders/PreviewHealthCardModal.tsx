@@ -124,7 +124,7 @@ export default function PreviewHealthCardModal({
                                         return (
                                             <div key={item.key} className={`flex items-center gap-4 p-4 rounded-xl border ${isOk ? 'border-emerald-100 bg-emerald-50/50' : 'border-red-100 bg-red-50/50'} transition-colors`}>
                                                 <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${isOk ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600'}`}>
-                                                    <span className="material-symbols-outlined text-xl">{isOk ? 'check' : 'priority_high'}</span>
+                                                    <span className="material-symbols-outlined text-xl leading-none">{isOk ? 'check' : 'priority_high'}</span>
                                                 </div>
                                                 <div className="flex-1">
                                                     <div className="flex justify-between items-center mb-1">
@@ -160,7 +160,7 @@ export default function PreviewHealthCardModal({
                                         return (
                                             <div key={item.key} className={`flex items-center gap-4 p-4 rounded-xl border ${isOk ? 'border-emerald-100 bg-emerald-50/50' : 'border-red-100 bg-red-50/50'} transition-colors`}>
                                                 <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${isOk ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600'}`}>
-                                                    <span className="material-symbols-outlined text-xl">{item.key === 'engine_oil' ? 'oil_barrel' : 'water_drop'}</span>
+                                                    <span className="material-symbols-outlined text-xl leading-none">{item.key === 'engine_oil' ? 'oil_barrel' : 'water_drop'}</span>
                                                 </div>
                                                 <div className="flex-1">
                                                     <div className="flex justify-between items-center mb-1">

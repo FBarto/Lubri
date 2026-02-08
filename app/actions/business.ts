@@ -63,6 +63,7 @@ export async function createWorkOrder(data: WorkOrderInput): Promise<ActionRespo
                 price: Number(data.price),
                 serviceDetails: data.serviceDetails,
                 date: data.date ? new Date(data.date) : undefined, // Set creation date if provided
+                status: 'COMPLETED', // Fix: Ensure new WOs are marked as completed so they appear in history
                 attachments: data.attachments ? {
                     create: data.attachments.map(a => ({
                         url: a.url,
