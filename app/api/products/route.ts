@@ -14,10 +14,10 @@ export async function GET(request: Request) {
 
         if (search) {
             where.OR = [
-                { name: { contains: search } },
-                { code: { contains: search } },
-                { barcode: { contains: search } },
-                { category: { contains: search } }
+                { name: { contains: search, mode: 'insensitive' } },
+                { code: { contains: search, mode: 'insensitive' } },
+                { barcode: { contains: search, mode: 'insensitive' } },
+                { category: { contains: search, mode: 'insensitive' } }
             ];
         }
 
