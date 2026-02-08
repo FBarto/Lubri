@@ -66,44 +66,53 @@ export async function getVehicleMaintenanceHistory(vehicleId: number): Promise<A
                     // Extra specific logic for details from serviceDetails (Historical)
                     let detail = foundItem?.description || null;
                     let extractedLiters = null;
+                    let isValidMatch = true; // Assume valid unless proven otherwise (e.g. detailed boolean check fails)
 
                     if (wo.serviceDetails) {
                         const sd = wo.serviceDetails as any;
-                        // Precision mapping using the category key
-                        if (key === 'engine_oil' && sd.oil?.type) {
-                            detail = sd.oil.type;
-                            extractedLiters = sd.oil.liters || extractCapacity(sd.oil.type);
+
+                        // Strict Checks for Filter/Fluid Booleans to avoid False Positives on JSON keywords
+                        if (key === 'oil_filter') {
+                            if (sd.filters && sd.filters.oil === false) isValidMatch = false;
+                            else if (sd.filters?.oil) detail = sd.filterDetails?.oil || sd.filters.oilCode || (typeof sd.filters.oil === 'string' ? sd.filters.oil : 'Reemplazado');
                         }
-                        // Handle Filters (which might be boolean true/false in Legacy Data)
-                        // If boolean true, try to find the code (e.g. oilCode) or default to 'Reemplazado'
-                        // Handle Filters
-                        // Support both legacy (oilCode) and new (filterDetails.oil) structures
-                        if (key === 'oil_filter' && sd.filters?.oil) {
-                            detail = sd.filterDetails?.oil || sd.filters.oilCode || (typeof sd.filters.oil === 'string' ? sd.filters.oil : 'Reemplazado');
+                        else if (key === 'air_filter') {
+                            if (sd.filters && sd.filters.air === false) isValidMatch = false;
+                            else if (sd.filters?.air) detail = sd.filterDetails?.air || sd.filters.airCode || (typeof sd.filters.air === 'string' ? sd.filters.air : 'Reemplazado');
                         }
-                        if (key === 'air_filter' && sd.filters?.air) {
-                            detail = sd.filterDetails?.air || sd.filters.airCode || (typeof sd.filters.air === 'string' ? sd.filters.air : 'Reemplazado');
+                        else if (key === 'fuel_filter') {
+                            if (sd.filters && sd.filters.fuel === false) isValidMatch = false;
+                            else if (sd.filters?.fuel) detail = sd.filterDetails?.fuel || sd.filters.fuelCode || (typeof sd.filters.fuel === 'string' ? sd.filters.fuel : 'Reemplazado');
                         }
-                        if (key === 'fuel_filter' && sd.filters?.fuel) {
-                            detail = sd.filterDetails?.fuel || sd.filters.fuelCode || (typeof sd.filters.fuel === 'string' ? sd.filters.fuel : 'Reemplazado');
-                        }
-                        if (key === 'cabin_filter' && sd.filters?.cabin) {
-                            detail = sd.filterDetails?.cabin || sd.filters.cabinCode || (typeof sd.filters.cabin === 'string' ? sd.filters.cabin : 'Reemplazado');
+                        else if (key === 'cabin_filter') {
+                            if (sd.filters && sd.filters.cabin === false) isValidMatch = false;
+                            else if (sd.filters?.cabin) detail = sd.filterDetails?.cabin || sd.filters.cabinCode || (typeof sd.filters.cabin === 'string' ? sd.filters.cabin : 'Reemplazado');
                         }
 
-                        if (key === 'gearbox_oil' && sd.fluids?.gearbox) detail = (typeof sd.fluids.gearbox === 'string' ? sd.fluids.gearbox : 'Revisado');
-                        if (key === 'coolant' && sd.fluids?.coolant) detail = (typeof sd.fluids.coolant === 'string' ? sd.fluids.coolant : 'Revisado');
-                        if (key === 'brake_fluid' && sd.fluids?.brakes) detail = (typeof sd.fluids.brakes === 'string' ? sd.fluids.brakes : 'Revisado');
-                        // hydraulic and differential aren't explicitly in the portal gauges yet, but we track them
+                        // Engine Oil Logic
+                        else if (key === 'engine_oil') {
+                            if (sd.oil?.type) {
+                                detail = sd.oil.type; // e.g. "SINTETICO"
+                                // Try to append Brand if available
+                                if (sd.oil.brand) detail = `${sd.oil.brand} ${detail}`;
+                                extractedLiters = sd.oil.liters || extractCapacity(sd.oil.type);
+                            }
+                        }
+
+                        else if (key === 'gearbox_oil' && sd.fluids?.gearbox) detail = (typeof sd.fluids.gearbox === 'string' ? sd.fluids.gearbox : 'Revisado');
+                        else if (key === 'coolant' && sd.fluids?.coolant) detail = (typeof sd.fluids.coolant === 'string' ? sd.fluids.coolant : 'Revisado');
+                        else if (key === 'brake_fluid' && sd.fluids?.brakes) detail = (typeof sd.fluids.brakes === 'string' ? sd.fluids.brakes : 'Revisado');
                     }
 
-                    return {
-                        date: wo.date,
-                        mileage: wo.mileage,
-                        daysAgo,
-                        detail,
-                        liters: extractedLiters
-                    };
+                    if (isValidMatch) {
+                        return {
+                            date: wo.date,
+                            mileage: wo.mileage,
+                            daysAgo,
+                            detail,
+                            liters: extractedLiters
+                        };
+                    }
                 }
             }
             return null;

@@ -600,12 +600,35 @@ function NewWorkOrderForm() {
                                 <label className="text-[10px] font-black uppercase text-slate-500 ml-1">Marca del Vehículo</label>
                                 <input
                                     type="text"
+                                    list="vehicle-brands"
                                     placeholder="Ej: Toyota"
                                     required
                                     className="w-full p-4 rounded-xl border border-slate-200 text-sm font-bold bg-white outline-none focus:ring-2 focus:ring-blue-500 transition-all placeholder:text-slate-300"
                                     value={formData.vehicleBrand}
                                     onChange={e => setFormData({ ...formData, vehicleBrand: e.target.value })}
                                 />
+                                <datalist id="vehicle-brands">
+                                    <option value="Toyota" />
+                                    <option value="Volkswagen" />
+                                    <option value="Ford" />
+                                    <option value="Chevrolet" />
+                                    <option value="Fiat" />
+                                    <option value="Renault" />
+                                    <option value="Peugeot" />
+                                    <option value="Citroen" />
+                                    <option value="Honda" />
+                                    <option value="Nissan" />
+                                    <option value="Jeep" />
+                                    <option value="RAM" />
+                                    <option value="Mercedes-Benz" />
+                                    <option value="BMW" />
+                                    <option value="Audi" />
+                                    <option value="Hyundai" />
+                                    <option value="Kia" />
+                                    <option value="Chery" />
+                                    <option value="Suzuki" />
+                                    <option value="Mitsubishi" />
+                                </datalist>
                             </div>
                             <div className="space-y-1">
                                 <label className="text-[10px] font-black uppercase text-slate-500 ml-1">Modelo del Vehículo</label>

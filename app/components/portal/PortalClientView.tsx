@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
+import html2canvas from 'html2canvas';
 /* eslint-disable @next/next/no-img-element */
 
 interface PortalData {
@@ -38,8 +39,61 @@ export default function PortalClientView({ data }: { data: PortalData }) {
         window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
     };
 
+    const contentRef = useRef<HTMLDivElement>(null);
+    const [isSharing, setIsSharing] = useState(false);
+
+    const handleShareImage = async () => {
+        if (!contentRef.current) return;
+        setIsSharing(true);
+
+        try {
+            // Wait a bit for any images or fonts (optional but can help)
+            await new Promise(resolve => setTimeout(resolve, 100));
+
+            const canvas = await html2canvas(contentRef.current, {
+                backgroundColor: '#120909', // Force dark background
+                scale: 2, // High resolution
+                useCORS: true, // Allow fetching cross-origin images if any
+            });
+
+            canvas.toBlob(async (blob) => {
+                if (!blob) return;
+
+                const file = new File([blob], `health-card-${vehicle.plate}.png`, { type: 'image/png' });
+
+                // Try Native Share
+                if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                    try {
+                        await navigator.share({
+                            files: [file],
+                            title: 'Tarjeta de Salud Digital',
+                            text: `Hola! Acá tenés la tarjeta de salud actualizada de tu ${vehicle.brand} ${vehicle.model}.`
+                        });
+                    } catch (err) {
+                        console.log('Share cancelled or failed', err);
+                    }
+                } else {
+                    // Fallback to Download
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `health-card-${vehicle.plate}.png`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                }
+                setIsSharing(false);
+            }, 'image/png');
+
+        } catch (error) {
+            console.error('Error generating image:', error);
+            setIsSharing(false);
+        }
+    };
+
     return (
-        <div className="font-sans text-slate-900 dark:text-slate-100 min-h-screen bg-[#f8f6f6] dark:bg-[#120909]">
+        <div ref={contentRef} className="font-sans text-slate-900 dark:text-slate-100 min-h-screen bg-[#f8f6f6] dark:bg-[#120909]">
             <style jsx global>{`
                 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&display=swap');
                 @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0');
@@ -75,8 +129,16 @@ export default function PortalClientView({ data }: { data: PortalData }) {
                         <p className="text-[#eb4037] text-[10px] font-bold">PROFESSIONAL REPORT</p>
                     </div>
                     <div className="flex items-center justify-end w-10 h-10">
-                        <button className="text-white hover:bg-white/10 p-2 rounded-full transition-colors">
-                            <span className="material-symbols-outlined">settings</span>
+                        <button
+                            onClick={handleShareImage}
+                            disabled={isSharing}
+                            className="text-white hover:bg-white/10 p-2 rounded-full transition-colors relative"
+                        >
+                            {isSharing ? (
+                                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                            ) : (
+                                <span className="material-symbols-outlined">share</span>
+                            )}
                         </button>
                     </div>
                 </div>
@@ -122,22 +184,39 @@ export default function PortalClientView({ data }: { data: PortalData }) {
                     </div>
                     <div className="grid grid-cols-1 gap-3">
                         {/* Oil Status */}
-                        <div className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/5">
-                            <div className="flex items-center gap-3">
-                                <span className="material-symbols-outlined text-slate-400">oil_barrel</span>
-                                <p className="text-sm font-medium text-white">Aceite de Motor</p>
-                            </div>
-                            <span className={`px-3 py-1 rounded-full text-[10px] font-bold border ${oilLife > 20 ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 'bg-[#eb4037]/10 text-[#eb4037] border-[#eb4037]/20'}`}>
-                                {oilLife > 20 ? 'OK' : 'CAMBIO'}
-                            </span>
-                        </div>
+                        {(() => {
+                            const oilStatus = vehicle?.maintenanceStatus?.fluids?.find((f: any) => f.key === 'engine_oil');
+                            return (
+                                <div className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/5">
+                                    <div className="flex items-center gap-3">
+                                        <span className="material-symbols-outlined text-slate-400">oil_barrel</span>
+                                        <div className="overflow-hidden">
+                                            <p className="text-sm font-bold text-white">Aceite de Motor</p>
+                                            {oilStatus?.detail && (
+                                                <p className="text-[10px] text-slate-400 uppercase tracking-wide truncate max-w-[180px]">
+                                                    {oilStatus.detail}
+                                                </p>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <span className={`px-3 py-1 rounded-full text-[10px] font-bold border ${oilLife > 20 ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 'bg-[#eb4037]/10 text-[#eb4037] border-[#eb4037]/20'}`}>
+                                        {oilLife > 20 ? 'OK' : 'CAMBIO'}
+                                    </span>
+                                </div>
+                            );
+                        })()}
 
                         {/* Filters Status - Dynamic */}
                         {vehicle?.maintenanceStatus?.filters?.map((f: any, idx: number) => (
                             <div key={idx} className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/5">
                                 <div className="flex items-center gap-3">
                                     <span className="material-symbols-outlined text-slate-400">filter_alt</span>
-                                    <p className="text-sm font-medium text-white truncate max-w-[150px]">{f.label}</p>
+                                    <div className="overflow-hidden">
+                                        <p className="text-sm font-bold text-white truncate max-w-[150px]">{f.label}</p>
+                                        {f.detail && (
+                                            <p className="text-[10px] text-slate-400 uppercase tracking-wide truncate max-w-[150px]">{f.detail}</p>
+                                        )}
+                                    </div>
                                 </div>
                                 <span className={`px-3 py-1 rounded-full text-[10px] font-bold border ${f.status === 'OK' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 'bg-[#eb4037]/10 text-[#eb4037] border-[#eb4037]/20'}`}>
                                     {f.status === 'OK' ? 'OK' : 'REVISAR'}
