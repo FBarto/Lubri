@@ -54,30 +54,26 @@ export async function getVehicleMaintenanceHistory(vehicleId: number): Promise<A
                     keywords.some(k => item.description.toLowerCase().includes(k))
                 );
 
+                // Check if any keyword matches structured data or notes
+                // For filters, "oil":true in JSON will match "oil" keyword
                 const foundNote = keywords.some(k =>
                     (wo.notes?.toLowerCase().includes(k)) ||
                     (wo.service.name.toLowerCase().includes(k)) ||
                     (wo.serviceDetails && JSON.stringify(wo.serviceDetails).toLowerCase().includes(k))
                 );
 
+                // If we found a relevant item OR a note/data match, investigate deeper to confirm validity
                 if (foundItem || foundNote) {
                     const daysAgo = Math.floor((Date.now() - new Date(wo.date).getTime()) / (1000 * 60 * 60 * 24));
 
-                    // Extra specific logic for details from serviceDetails (Historical)
                     let detail = foundItem?.description || null;
                     let extractedLiters = null;
-
-                    // VALIDITY CHECK: 
-                    // 1. Explicitly Billed Item found? -> VALID
-                    // 2. Checklist Checked? -> VALID
-                    // 3. Detail Text Filled (e.g. "203")? -> VALID
                     let isValidMatch = !!foundItem;
 
                     if (wo.serviceDetails) {
                         const sd = wo.serviceDetails as any;
 
-                        // Detail Extraction Logic
-                        // Engine Oil
+                        // --- Engine Oil ---
                         if (key === 'engine_oil') {
                             if (sd.oil?.type || sd.oil?.brand) {
                                 const parts = [];
@@ -85,34 +81,36 @@ export async function getVehicleMaintenanceHistory(vehicleId: number): Promise<A
                                 if (sd.oil.type) parts.push(sd.oil.type);
                                 if (parts.length > 0) {
                                     detail = parts.join(' ');
-                                    // If we have details, it's valid even if not billed (e.g. historical data)
                                     isValidMatch = true;
                                 }
                                 extractedLiters = sd.oil.liters || (sd.oil.type ? extractCapacity(sd.oil.type) : null);
                             }
                         }
-                        // Filters
+
+                        // --- Filters ---
+                        // Force validation if checkbox is checked, regardless of item match
                         else if (key === 'oil_filter') {
                             const txt = sd.filterDetails?.oil || sd.filters?.oilCode;
                             if (txt && txt.length > 1) { detail = txt; isValidMatch = true; }
-                            if (sd.filters?.oil === true) { isValidMatch = true; if (!detail) detail = 'Cambiado'; }
+                            if (sd.filters?.oil === true) { isValidMatch = true; if (!detail || detail.length < 2) detail = 'Cambiado'; }
                         }
                         else if (key === 'air_filter') {
                             const txt = sd.filterDetails?.air || sd.filters?.airCode;
                             if (txt && txt.length > 1) { detail = txt; isValidMatch = true; }
-                            if (sd.filters?.air === true) { isValidMatch = true; if (!detail) detail = 'Cambiado'; }
+                            if (sd.filters?.air === true) { isValidMatch = true; if (!detail || detail.length < 2) detail = 'Cambiado'; }
                         }
                         else if (key === 'fuel_filter') {
                             const txt = sd.filterDetails?.fuel || sd.filters?.fuelCode;
                             if (txt && txt.length > 1) { detail = txt; isValidMatch = true; }
-                            if (sd.filters?.fuel === true) { isValidMatch = true; if (!detail) detail = 'Cambiado'; }
+                            if (sd.filters?.fuel === true) { isValidMatch = true; if (!detail || detail.length < 2) detail = 'Cambiado'; }
                         }
                         else if (key === 'cabin_filter') {
                             const txt = sd.filterDetails?.cabin || sd.filters?.cabinCode;
                             if (txt && txt.length > 1) { detail = txt; isValidMatch = true; }
-                            if (sd.filters?.cabin === true) { isValidMatch = true; if (!detail) detail = 'Cambiado'; }
+                            if (sd.filters?.cabin === true) { isValidMatch = true; if (!detail || detail.length < 2) detail = 'Cambiado'; }
                         }
 
+                        // --- Fluids ---
                         else if (key === 'gearbox_oil' && sd.fluids?.gearbox) { detail = (typeof sd.fluids.gearbox === 'string' ? sd.fluids.gearbox : 'Revisado'); isValidMatch = true; }
                         else if (key === 'coolant' && sd.fluids?.coolant) { detail = (typeof sd.fluids.coolant === 'string' ? sd.fluids.coolant : 'Revisado'); isValidMatch = true; }
                         else if (key === 'brake_fluid' && sd.fluids?.brakes) { detail = (typeof sd.fluids.brakes === 'string' ? sd.fluids.brakes : 'Revisado'); isValidMatch = true; }
