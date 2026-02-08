@@ -174,30 +174,65 @@ function NewWorkOrderForm() {
                 const vehicle = await res.json();
 
                 // Autofill logic from last service
-                let lastServiceDetails = {};
+                let lastServiceDetails: any = null;
+
                 if (vehicle.workOrders && vehicle.workOrders.length > 0) {
                     const lastWO = vehicle.workOrders[0];
+
+                    // 1. Try Structured Data first
                     if (lastWO.serviceDetails) {
-                        const ls = lastWO.serviceDetails;
-                        // Map last service details to current form structure
-                        // We reset booleans to false (as they need to be checked again for new service)
-                        // But we KEEP the types/brands to save typing
+                        const ls = lastWO.serviceDetails as any;
                         lastServiceDetails = {
                             oil: {
                                 brand: ls.oil?.brand || '',
                                 liters: ls.oil?.liters || '',
                                 type: ls.oil?.type || 'SINTETICO'
                             },
-                            filters: { air: false, oil: false, fuel: false, cabin: false }, // Reset checks
+                            filters: { air: false, oil: false, fuel: false, cabin: false },
                             filterDetails: {
-                                air: ls.filterDetails?.air || '',
-                                oil: ls.filterDetails?.oil || '',
-                                fuel: ls.filterDetails?.fuel || '',
-                                cabin: ls.filterDetails?.cabin || ''
+                                air: ls.filterDetails?.air || ls.filters?.airCode || '',
+                                oil: ls.filterDetails?.oil || ls.filters?.oilCode || '',
+                                fuel: ls.filterDetails?.fuel || ls.filters?.fuelCode || '',
+                                cabin: ls.filterDetails?.cabin || ls.filters?.cabinCode || ''
                             },
                             fluids: { coolant: true, brakes: true, gearbox: true, differential: true, hydraulic: true },
                             additives: []
                         };
+                    }
+
+                    // 2. Fallback/Enhancement: Check Sale Items if details are missing
+                    // This covers cases where they just billed "Filter Wega ..." but didn't fill the details form.
+                    if (lastWO.saleItems && lastWO.saleItems.length > 0) {
+                        if (!lastServiceDetails) {
+                            lastServiceDetails = {
+                                oil: { brand: '', liters: '', type: 'SINTETICO' },
+                                filters: { air: false, oil: false, fuel: false, cabin: false },
+                                filterDetails: { air: '', oil: '', fuel: '', cabin: '' },
+                                fluids: { coolant: true, brakes: true, gearbox: true, differential: true, hydraulic: true },
+                                additives: []
+                            };
+                        }
+
+                        lastWO.saleItems.forEach((item: any) => {
+                            const desc = item.description.toLowerCase();
+
+                            // Oil extraction (simplistic)
+                            if (desc.includes('aceite') || desc.includes('synthetic') || desc.includes('semi') || desc.includes('mineral')) {
+                                if (!lastServiceDetails.oil.brand) lastServiceDetails.oil.brand = item.description;
+
+                                // Liters?
+                                const literMatch = desc.match(/(\d+([.,]\d+)?)\s*(l|lt|litro)/);
+                                if (literMatch && !lastServiceDetails.oil.liters) lastServiceDetails.oil.liters = literMatch[1];
+                            }
+
+                            // Filters
+                            if (desc.includes('filtro')) {
+                                if (desc.includes('aceite') && !lastServiceDetails.filterDetails.oil) lastServiceDetails.filterDetails.oil = item.description;
+                                else if (desc.includes('aire') && !lastServiceDetails.filterDetails.air) lastServiceDetails.filterDetails.air = item.description;
+                                else if ((desc.includes('combustible') || desc.includes('nafta') || desc.includes('gasoil')) && !lastServiceDetails.filterDetails.fuel) lastServiceDetails.filterDetails.fuel = item.description;
+                                else if ((desc.includes('habitaculo') || desc.includes('cabina') || desc.includes('polen')) && !lastServiceDetails.filterDetails.cabin) lastServiceDetails.filterDetails.cabin = item.description;
+                            }
+                        });
                     }
                 }
 
@@ -211,10 +246,10 @@ function NewWorkOrderForm() {
                     vehicleBrand: vehicle.brand || '',
                     vehicleModel: vehicle.model || '',
                     mileage: vehicle.mileage || '',
-                    serviceDetails: {
+                    serviceDetails: lastServiceDetails ? {
                         ...prev.serviceDetails,
                         ...lastServiceDetails
-                    }
+                    } : prev.serviceDetails
                 }));
                 setIsNewVehicle(false);
             } else {

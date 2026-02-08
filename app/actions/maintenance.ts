@@ -95,22 +95,22 @@ export async function getVehicleMaintenanceHistory(vehicleId: number): Promise<A
                         else if (key === 'oil_filter') {
                             const txt = sd.filterDetails?.oil || sd.filters?.oilCode;
                             if (txt && txt.length > 1) { detail = txt; isValidMatch = true; }
-                            if (sd.filters?.oil === true) isValidMatch = true;
+                            if (sd.filters?.oil === true) { isValidMatch = true; if (!detail) detail = 'Cambiado'; }
                         }
                         else if (key === 'air_filter') {
                             const txt = sd.filterDetails?.air || sd.filters?.airCode;
                             if (txt && txt.length > 1) { detail = txt; isValidMatch = true; }
-                            if (sd.filters?.air === true) isValidMatch = true;
+                            if (sd.filters?.air === true) { isValidMatch = true; if (!detail) detail = 'Cambiado'; }
                         }
                         else if (key === 'fuel_filter') {
                             const txt = sd.filterDetails?.fuel || sd.filters?.fuelCode;
                             if (txt && txt.length > 1) { detail = txt; isValidMatch = true; }
-                            if (sd.filters?.fuel === true) isValidMatch = true;
+                            if (sd.filters?.fuel === true) { isValidMatch = true; if (!detail) detail = 'Cambiado'; }
                         }
                         else if (key === 'cabin_filter') {
                             const txt = sd.filterDetails?.cabin || sd.filters?.cabinCode;
                             if (txt && txt.length > 1) { detail = txt; isValidMatch = true; }
-                            if (sd.filters?.cabin === true) isValidMatch = true;
+                            if (sd.filters?.cabin === true) { isValidMatch = true; if (!detail) detail = 'Cambiado'; }
                         }
 
                         else if (key === 'gearbox_oil' && sd.fluids?.gearbox) { detail = (typeof sd.fluids.gearbox === 'string' ? sd.fluids.gearbox : 'Revisado'); isValidMatch = true; }
