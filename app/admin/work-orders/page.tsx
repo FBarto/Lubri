@@ -4,6 +4,8 @@ import { useState, useEffect, useMemo, Suspense } from 'react';
 import Link from 'next/link';
 import { Search, Calendar, Filter, ChevronDown, ChevronUp, FileText, CheckCircle, Clock, XCircle, AlertCircle, Share2, Printer } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
+import { generatePortalLinkForVehicle } from '@/app/actions/portal';
+import WhatsAppEditorModal from '@/app/components/whatsapp/WhatsAppEditorModal';
 
 function WorkOrdersContent() {
     const searchParams = useSearchParams();
@@ -19,6 +21,10 @@ function WorkOrdersContent() {
 
     // UX State
     const [expandedRow, setExpandedRow] = useState<number | null>(null);
+    const [whatsappPreviewModal, setWhatsappPreviewModal] = useState(false);
+    const [waMessage, setWaMessage] = useState('');
+    const [targetOrder, setTargetOrder] = useState<any>(null);
+    const [preparingWA, setPreparingWA] = useState(false);
 
     const fetchOrders = async () => {
         setLoading(true);
@@ -77,6 +83,42 @@ function WorkOrdersContent() {
 
     const toggleExpand = (id: number) => {
         setExpandedRow(expandedRow === id ? null : id);
+    };
+
+    const handleSendWhatsApp = async (wo: any) => {
+        setTargetOrder(wo);
+        setPreparingWA(true);
+        try {
+            const resLink = await generatePortalLinkForVehicle(wo.vehicleId);
+            if (resLink.success && resLink.data?.url) {
+                const origin = window.location.origin;
+                const fullLink = `${origin}${resLink.data.url}`;
+
+                const carName = [wo.vehicle.brand, wo.vehicle.model].filter(Boolean).join(' ') || 'vehículo';
+
+                const message = `¡Hola ${wo.client.name}! 👋 Te paso la Libreta Digital de tu ${carName} para que lleves el control de tus services en FB Lubricentro 🛠️.\n\nAcá tenés el link: ${fullLink}\n\nGuardalo para tu próximo service. ¡Te esperamos! 🚗`;
+
+                setWaMessage(message);
+                setWhatsappPreviewModal(true);
+            } else {
+                alert('Error al generar el link: ' + resLink.error);
+            }
+        } catch (e) {
+            console.error(e);
+            alert('Error al preparar el mensaje de WhatsApp.');
+        } finally {
+            setPreparingWA(false);
+        }
+    };
+
+    const handleFinalWAShare = () => {
+        const encodedMsg = encodeURIComponent(waMessage);
+        const phone = targetOrder.client.phone;
+        const cleanPhone = phone.replace(/\D/g, '');
+        const waLink = `https://wa.me/${cleanPhone}?text=${encodedMsg}`;
+
+        window.open(waLink, '_blank');
+        setWhatsappPreviewModal(false);
     };
 
     const getStatusBadge = (status: string) => {
@@ -237,8 +279,12 @@ function WorkOrdersContent() {
                                                             <Link href={`/admin/work-orders/${wo.id}`} className="flex items-center gap-2 text-sm font-bold text-blue-600 hover:bg-blue-50 px-4 py-2 rounded-lg transition-colors">
                                                                 <FileText size={16} /> Ver Detalles Completos
                                                             </Link>
-                                                            <button className="flex items-center gap-2 text-sm font-bold text-emerald-600 hover:bg-emerald-50 px-4 py-2 rounded-lg transition-colors">
-                                                                <Share2 size={16} /> Enviar Comprobante (WhatsApp)
+                                                            <button
+                                                                onClick={() => handleSendWhatsApp(wo)}
+                                                                disabled={preparingWA}
+                                                                className="flex items-center gap-2 text-sm font-bold text-emerald-600 hover:bg-emerald-50 px-4 py-2 rounded-lg transition-colors disabled:opacity-50"
+                                                            >
+                                                                <Share2 size={16} /> {preparingWA && targetOrder?.id === wo.id ? 'Preparando...' : 'Enviar Comprobante (WhatsApp)'}
                                                             </button>
                                                             <button className="flex items-center gap-2 text-sm font-bold text-slate-600 hover:bg-slate-100 px-4 py-2 rounded-lg transition-colors">
                                                                 <Printer size={16} /> Imprimir Orden
@@ -275,6 +321,14 @@ function WorkOrdersContent() {
                     </table>
                 </div>
             )}
+            {/* WhatsApp Preview & Editor Modal */}
+            <WhatsAppEditorModal
+                isOpen={whatsappPreviewModal}
+                onClose={() => setWhatsappPreviewModal(false)}
+                message={waMessage}
+                onMessageChange={setWaMessage}
+                onSend={handleFinalWAShare}
+            />
         </div>
     );
 }
