@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { createQuickClient } from '@/app/actions/business';
+import { createQuickClient, sendWorkOrderWhatsApp } from '@/app/actions/business';
 
 function NewWorkOrderForm() {
     const router = useRouter();
@@ -274,20 +274,16 @@ function NewWorkOrderForm() {
         if (!lastSavedOrder?.id) return;
         setSendingWhatsApp(true);
         try {
-            const res = await fetch(`/api/wa/send-book`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    workOrderId: lastSavedOrder.id,
-                    phone: lastSavedOrder.clientPhone
-                })
-            });
-            if (res.ok) {
-                alert('Libreta enviada por WhatsApp');
+            const res = await sendWorkOrderWhatsApp(lastSavedOrder.id, lastSavedOrder.clientPhone);
+            if (res.success) {
+                alert('Libreta enviada por WhatsApp ✅');
                 setLastSavedOrder(null);
+            } else {
+                alert('Error al enviar WhatsApp: ' + res.error);
             }
         } catch (e) {
             console.error(e);
+            alert('Error de red al intentar enviar el mensaje.');
         } finally {
             setSendingWhatsApp(false);
         }

@@ -669,3 +669,62 @@ export async function getConsumidorFinal(): Promise<ActionResponse> {
         return { success: false, error: 'Failed' };
     }
 }
+
+/**
+ * Sends the Digital Health Booklet for a specific Work Order.
+ */
+export async function sendWorkOrderWhatsApp(workOrderId: number, phone: string): Promise<ActionResponse> {
+    try {
+        const wo = await prisma.workOrder.findUnique({
+            where: { id: workOrderId },
+            include: { vehicle: true, client: true }
+        });
+
+        if (!wo) return { success: false, error: 'Orden no encontrada' };
+
+        const vehicle = wo.vehicle;
+        const details = (wo.serviceDetails as any) || {};
+        const oil = details.oil || {};
+        const filters = details.filters || {};
+        const fluids = details.fluids || {};
+        const additives = details.additives || [];
+
+        let message = `*Hola ${wo.client.name}!* 👋\n\n` +
+            `🚗 *Service Completado:* ${vehicle.brand} ${vehicle.model} (${vehicle.plate})\n\n` +
+            `🛢️ *Aceite:* ${oil.brand || 'S/D'} ${oil.type || ''} ${oil.liters ? `(${oil.liters}L)` : ''}\n`;
+
+        if (filters.air || filters.oil || filters.fuel || filters.cabin) {
+            message += `\n⚙️ *Filtros:* ` +
+                (filters.air ? 'Aire ✅ ' : '') +
+                (filters.oil ? 'Aceite ✅ ' : '') +
+                (filters.fuel ? 'Comb. ✅ ' : '') +
+                (filters.cabin ? 'Habit. ✅ ' : '') + '\n';
+        }
+
+        if (additives.length > 0) {
+            message += `🧪 *Aditivos:* ${additives.map((a: any) => a.name).join(', ')}\n`;
+        }
+
+        message += `\n📍 *Kilometraje:* ${wo.mileage?.toLocaleString() ?? 'S/D'} km\n`;
+
+        // Portal Link
+        const portalRes = await generatePortalLinkForVehicle(vehicle.id);
+        if (portalRes.success && portalRes.data?.url) {
+            const fullUrl = `https://lubricentro-fb.com${portalRes.data.url}`;
+            message += `\n📚 *Libreta de Salud Digital:*\nAcceda al historial completo de su vehículo aquí:\n${fullUrl}\n`;
+        }
+
+        message += `\n¡Gracias por confiar en FB Lubricentro! 🙌`;
+
+        const res = await WhatsAppService.sendServiceReport(phone, message);
+
+        if (res.success) {
+            return { success: true };
+        } else {
+            return { success: false, error: 'Meta API Error: ' + JSON.stringify(res.error) };
+        }
+    } catch (error: any) {
+        console.error('WhatsApp Send Error:', error);
+        return { success: false, error: error.message };
+    }
+}
