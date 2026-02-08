@@ -137,6 +137,28 @@ export class WhatsAppService {
                             where: { id: msg.id },
                             data: { status: 'FAILED', error: JSON.stringify(res.error) }
                         });
+                        await prisma.whatsAppMessage.update({
+                            where: { id: msg.id },
+                            data: { status: 'FAILED', error: JSON.stringify(res.error) }
+                        });
+                        results.push({ id: msg.id, status: 'FAILED', error: res.error });
+                    }
+                } else if (msg.template === 'ADMIN_ALERT') {
+                    // Handle Admin Alert (Text Message)
+                    const vars = JSON.parse(msg.variables as string || '{}');
+                    const res = await this.sendServiceReport(msg.phone, vars.body);
+
+                    if (res.success) {
+                        await prisma.whatsAppMessage.update({
+                            where: { id: msg.id },
+                            data: { status: 'SENT', sentAt: new Date() }
+                        });
+                        results.push({ id: msg.id, status: 'SENT' });
+                    } else {
+                        await prisma.whatsAppMessage.update({
+                            where: { id: msg.id },
+                            data: { status: 'FAILED', error: JSON.stringify(res.error) }
+                        });
                         results.push({ id: msg.id, status: 'FAILED', error: res.error });
                     }
                 } else {
@@ -197,5 +219,36 @@ export class WhatsAppService {
             type: 'text',
             text: { body: text }
         });
+    }
+
+    static async sendAdminAlert(appointment: any) {
+        try {
+            const adminPhone = process.env.ADMIN_PHONE;
+            if (!adminPhone) {
+                console.warn('[WhatsAppService] No ADMIN_PHONE configured for alerts');
+                return;
+            }
+
+            const message = `🚨 *NUEVO TURNO WEB*\n\n` +
+                `👤 *Cliente:* ${appointment.client.name}\n` +
+                `🚘 *Vehículo:* ${appointment.vehicle.brand} ${appointment.vehicle.model} (${appointment.vehicle.plate})\n` +
+                `🛠 *Servicio:* ${appointment.service.name}\n` +
+                `📅 *Fecha:* ${new Date(appointment.date).toLocaleDateString('es-AR')}\n` +
+                `⏰ *Hora:* ${new Date(appointment.date).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}\n`;
+
+            await prisma.whatsAppMessage.create({
+                data: {
+                    phone: adminPhone,
+                    template: 'ADMIN_ALERT',
+                    variables: JSON.stringify({ body: message }),
+                    status: 'PENDING',
+                    scheduledAt: new Date(),
+                    appointmentId: appointment.id
+                }
+            });
+            console.log(`[WhatsAppService] Admin alert scheduled for ${adminPhone}`);
+        } catch (error) {
+            console.error('[WhatsAppService] Failed to send admin alert:', error);
+        }
     }
 }

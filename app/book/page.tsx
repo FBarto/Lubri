@@ -752,10 +752,31 @@ export default function BookAppointment() {
                                         setPlate(val);
                                         if (plateError) setPlateError(validatePlate(val));
                                     }}
-                                    onBlur={() => setPlateError(validatePlate(plate))}
+
                                     placeholder="Ej: AA123BB"
                                     className={`w-full p-4 rounded-xl border ${plateError ? 'border-red-500 focus:ring-red-200' : 'border-slate-200 focus:ring-blue-500'} text-lg font-black uppercase tracking-widest text-center focus:outline-none focus:ring-2 placeholder:text-slate-200 transition-all`}
                                     autoFocus
+                                    onBlur={async () => {
+                                        setPlateError(validatePlate(plate));
+                                        // Trigger Smart Lookup on Blur
+                                        if (plate.length >= 6 && !vehicle && !loading) {
+                                            try {
+                                                // setIsLookingUp(true)
+                                                console.log("Looking up vehicle...");
+                                                const res = await fetch(`/api/public/vehicle-lookup?plate=${plate}`);
+                                                const data = await res.json();
+                                                if (data.found) {
+                                                    setVehicleInfo(prev => ({
+                                                        ...prev,
+                                                        brand: data.brand || prev.brand,
+                                                        model: data.model || prev.model
+                                                    }));
+                                                }
+                                            } catch (e) {
+                                                console.error(e);
+                                            }
+                                        }
+                                    }}
                                 />
                                 {plateError && (
                                     <p className="text-center text-xs font-bold text-red-500 mt-2 animate-in slide-in-from-top-1">
@@ -783,8 +804,9 @@ export default function BookAppointment() {
                                                     onBlur={() => setTimeout(() => setActiveField(null), 200)}
                                                     placeholder="Marca (Ej: Toyota)"
                                                     className="w-full p-3 rounded-lg border border-indigo-200 font-medium bg-white"
+                                                // Auto-Look up Model on focus? No, better on Plate Blur.
                                                 />
-                                                {activeField === 'brand' && vehicleInfo.brand.length > 0 && (
+                                                {activeField === 'brand' && (
                                                     <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-100 shadow-xl rounded-xl max-h-48 overflow-y-auto z-50">
                                                         {Object.keys(VEHICLE_DATA)
                                                             .filter(b => b.toLowerCase().includes(vehicleInfo.brand.toLowerCase()))
@@ -878,248 +900,270 @@ export default function BookAppointment() {
                                 {loading ? '...' : vehicle === null ? 'Guardar y Seguir' : 'Siguiente'}
                             </button>
                         </div>
-                    </div>
-                )}
+                    </div >
+                )
+                }
 
                 {/* --- STEP 3: SERVICE --- */}
-                {step === 3 && (
-                    <div className="fade-in">
-                        <button onClick={() => setStep(isReturning ? 1.5 : 2)} className="text-sm text-slate-400 mb-4 hover:text-red-600 flex items-center gap-1 font-bold uppercase tracking-wide">← Volver</button>
-                        <h2 className="text-2xl font-black italic uppercase mb-2">Servicio 🔧</h2>
-                        <p className="text-slate-500 mb-6 font-medium">Seleccioná qué necesitás realizar.</p>
+                {
+                    step === 3 && (
+                        <div className="fade-in">
+                            <button onClick={() => setStep(isReturning ? 1.5 : 2)} className="text-sm text-slate-400 mb-4 hover:text-red-600 flex items-center gap-1 font-bold uppercase tracking-wide">← Volver</button>
+                            <h2 className="text-2xl font-black italic uppercase mb-2">Servicio 🔧</h2>
+                            <p className="text-slate-500 mb-6 font-medium">Seleccioná qué necesitás realizar.</p>
 
-                        <div className="space-y-4">
-                            {/* SMART QUOTE CARD */}
-                            {loadingQuote && (
-                                <div className="bg-slate-50 border-2 border-slate-100 rounded-2xl p-6 animate-pulse">
-                                    <div className="h-6 bg-slate-200 rounded w-1/3 mb-4"></div>
-                                    <div className="h-4 bg-slate-200 rounded w-2/3 mb-2"></div>
-                                    <div className="h-4 bg-slate-200 rounded w-1/2"></div>
-                                </div>
-                            )}
-
-                            {!loadingQuote && smartQuote?.success && smartQuote.items?.length > 0 && (
-                                <button
-                                    onClick={() => selectService({ id: -1, name: 'Smart Quote', category: 'SMART', price: smartQuote.items.reduce((sum: number, i: any) => sum + (i.price * i.quantity), 0), duration: 45, active: true })}
-                                    className="w-full relative overflow-hidden bg-gradient-to-br from-indigo-600 to-blue-700 text-white p-6 rounded-2xl shadow-lg border-2 border-transparent hover:scale-[1.02] transition-all text-left group"
-                                >
-                                    <div className="absolute top-0 right-0 p-4 opacity-10">
-                                        <div className="bg-white p-2 rounded-full">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" /></svg>
-                                        </div>
-                                    </div>
-
-                                    <span className="inline-block bg-white/20 backdrop-blur-sm text-white text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded mb-3">
-                                        Recomendado para vos
-                                    </span>
-
-                                    <h3 className="text-xl font-black mb-1">Presupuesto Inteligente</h3>
-                                    <p className="text-indigo-100 text-sm mb-4 font-medium opacity-90 line-clamp-2">
-                                        {smartQuote.items.map((i: any) => i.name).join(' + ')}
-                                    </p>
-
-                                    <div className="flex items-end justify-between mt-2">
-                                        <div className="text-3xl font-black">
-                                            $ {smartQuote.items.reduce((sum: number, i: any) => sum + (i.price * i.quantity), 0).toLocaleString()}
-                                        </div>
-                                        <span className="bg-white text-blue-700 px-4 py-2 rounded-xl font-bold text-sm shadow-sm group-hover:bg-blue-50 transition-colors">
-                                            Seleccionar
-                                        </span>
-                                    </div>
-                                </button>
-                            )}
-
-                            {services
-                                .filter(s => {
-                                    if (!vehicle?.type) return true;
-                                    const vType = vehicle.type.toUpperCase();
-                                    const sCat = s.category.toUpperCase();
-
-                                    if (sCat === 'GENERAL') return true;
-                                    if (vType === 'AUTO' && sCat === 'MOTO') return false;
-                                    if (vType === 'MOTO' && sCat === 'AUTO') return false;
-                                    if (vType === 'CAMIONETA' && sCat === 'MOTO') return false;
-
-                                    return true;
-                                })
-                                .map(s => (
-                                    <button
-                                        key={s.id}
-                                        onClick={() => selectService(s)}
-                                        className="w-full bg-white p-6 rounded-2xl shadow-sm border-2 border-slate-100 hover:border-red-600 hover:shadow-md transition-all text-left flex justify-between items-center group"
-                                    >
-                                        <div>
-                                            <h3 className="text-lg font-black text-slate-900 mb-1 group-hover:text-red-700 transition-colors">{s.name}</h3>
-                                            <p className="text-slate-400 text-sm font-bold">{s.duration} min</p>
-                                        </div>
-                                        <span className="text-xl font-black text-red-600 group-hover:scale-110 transition-transform">
-                                            ${s.price.toLocaleString()}
-                                        </span>
-                                    </button>
-                                ))}
-                        </div>
-                    </div>
-                )}
-
-                {/* --- STEP 4: DATE/SLOTS --- */}
-                {step === 4 && (
-                    <div className="fade-in">
-                        <button onClick={() => setStep(3)} className="text-sm text-slate-400 mb-4 hover:text-red-600 flex items-center gap-1 font-bold uppercase tracking-wide">← Volver</button>
-                        <h2 className="text-2xl font-black italic uppercase mb-2">Fecha y Hora 📅</h2>
-                        <p className="text-slate-500 mb-6 font-medium">Elegí cuándo venir.</p>
-
-                        <div className="mb-6">
-                            <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Fecha</label>
-                            <input
-                                type="date"
-                                className="w-full p-4 rounded-xl border border-slate-200 text-lg font-medium outline-none focus:border-red-600"
-                                onChange={(e) => fetchSlots(e.target.value)}
-                                min={new Date().toISOString().split('T')[0]}
-                            />
-                        </div>
-
-                        {loading && <p className="text-center text-slate-400 animate-pulse">Buscando horarios...</p>}
-
-                        {date && !loading && (
-                            <div className="grid grid-cols-3 gap-3">
-                                {slots.length > 0 ? slots.map((slot: any) => {
-                                    const time = new Date(slot).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
-                                    const isSelected = selectedSlot === slot;
-                                    return (
-                                        <button
-                                            key={slot}
-                                            onClick={() => setSelectedSlot(slot)}
-                                            className={`p-3 rounded-lg font-bold text-sm transition-all border-2 ${isSelected
-                                                ? 'bg-neutral-900 border-neutral-900 text-white shadow-lg scale-105'
-                                                : 'bg-white border-slate-200 text-slate-700 hover:border-red-600'
-                                                }`}
-                                        >
-                                            {time}
-                                        </button>
-                                    );
-                                }) : (
-                                    <div className="col-span-3 text-center space-y-4 py-8 px-4 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200">
-                                        <p className="text-slate-400 font-bold uppercase tracking-tight text-sm">No hay turnos disponibles online</p>
-                                        <button
-                                            onClick={() => {
-                                                const fallbackTime = `${date}T08:30:00.000Z`;
-                                                setSelectedSlot(fallbackTime);
-                                                setIsSoftBooking(true);
-                                            }}
-                                            className="bg-white text-red-600 border-2 border-red-600 px-6 py-3 rounded-xl font-black text-sm hover:bg-red-50 transition-all uppercase italic"
-                                        >
-                                            Solicitar sobre-turno (Manual)
-                                        </button>
-                                        <p className="text-[10px] text-slate-400 leading-tight">Tu pedido entrará como pendiente y te confirmaremos la hora exacta por WhatsApp.</p>
+                            <div className="space-y-4">
+                                {/* SMART QUOTE CARD */}
+                                {loadingQuote && (
+                                    <div className="bg-slate-50 border-2 border-slate-100 rounded-2xl p-6 animate-pulse">
+                                        <div className="h-6 bg-slate-200 rounded w-1/3 mb-4"></div>
+                                        <div className="h-4 bg-slate-200 rounded w-2/3 mb-2"></div>
+                                        <div className="h-4 bg-slate-200 rounded w-1/2"></div>
                                     </div>
                                 )}
-                            </div>
-                        )}
 
-                        {isSoftBooking && (
-                            <div className="mt-6 bg-amber-50 border-2 border-amber-200 p-4 rounded-2xl flex items-start gap-3 animate-in fade-in slide-in-from-bottom-2">
-                                <AlertCircle className="text-amber-500 shrink-0" size={20} />
-                                <div>
-                                    <p className="text-amber-900 font-black text-xs uppercase italic">Reserva en espera</p>
-                                    <p className="text-amber-700 text-[11px] font-medium leading-tight mt-0.5">Te asignamos un horario tentativo, pero un asesor se comunicará con vos para confirmarlo.</p>
+                                {!loadingQuote && smartQuote?.success && smartQuote.items?.length > 0 && (
+                                    <button
+                                        onClick={() => selectService({ id: -1, name: 'Smart Quote', category: 'SMART', price: smartQuote.items.reduce((sum: number, i: any) => sum + (i.price * i.quantity), 0), duration: 45, active: true })}
+                                        className="w-full relative overflow-hidden bg-gradient-to-br from-indigo-600 to-blue-700 text-white p-6 rounded-2xl shadow-lg border-2 border-transparent hover:scale-[1.02] transition-all text-left group"
+                                    >
+                                        <div className="absolute top-0 right-0 p-4 opacity-10">
+                                            <div className="bg-white p-2 rounded-full">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" /></svg>
+                                            </div>
+                                        </div>
+
+                                        <span className="inline-block bg-white/20 backdrop-blur-sm text-white text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded mb-3">
+                                            Recomendado para vos
+                                        </span>
+
+                                        <h3 className="text-xl font-black mb-1">Presupuesto Inteligente</h3>
+                                        <p className="text-indigo-100 text-sm mb-4 font-medium opacity-90 line-clamp-2">
+                                            {smartQuote.items.map((i: any) => i.name).join(' + ')}
+                                        </p>
+
+                                        <div className="flex items-end justify-between mt-2">
+                                            <div className="text-3xl font-black">
+                                                $ {smartQuote.items.reduce((sum: number, i: any) => sum + (i.price * i.quantity), 0).toLocaleString()}
+                                            </div>
+                                            <span className="bg-white text-blue-700 px-4 py-2 rounded-xl font-bold text-sm shadow-sm group-hover:bg-blue-50 transition-colors">
+                                                Seleccionar
+                                            </span>
+                                        </div>
+                                    </button>
+                                )}
+
+                                {services
+                                    .filter(s => {
+                                        if (!vehicle?.type) return true;
+                                        const vType = vehicle.type.toUpperCase();
+                                        const sCat = s.category.toUpperCase();
+
+                                        if (sCat === 'GENERAL') return true;
+                                        if (vType === 'AUTO' && sCat === 'MOTO') return false;
+                                        if (vType === 'MOTO' && sCat === 'AUTO') return false;
+                                        if (vType === 'CAMIONETA' && sCat === 'MOTO') return false;
+
+                                        return true;
+                                    })
+                                    .map(s => (
+                                        <button
+                                            key={s.id}
+                                            onClick={() => selectService(s)}
+                                            className="w-full bg-white p-6 rounded-2xl shadow-sm border-2 border-slate-100 hover:border-red-600 hover:shadow-md transition-all text-left flex justify-between items-center group"
+                                        >
+                                            <div>
+                                                <h3 className="text-lg font-black text-slate-900 mb-1 group-hover:text-red-700 transition-colors">{s.name}</h3>
+                                                <p className="text-slate-400 text-sm font-bold">{s.duration} min</p>
+                                            </div>
+                                            <span className="text-xl font-black text-red-600 group-hover:scale-110 transition-transform">
+                                                ${s.price.toLocaleString()}
+                                            </span>
+                                        </button>
+                                    ))}
+                            </div>
+                        </div>
+                    )
+                }
+
+                {/* --- STEP 4: DATE/SLOTS --- */}
+                {
+                    step === 4 && (
+                        <div className="fade-in">
+                            <button onClick={() => setStep(3)} className="text-sm text-slate-400 mb-4 hover:text-red-600 flex items-center gap-1 font-bold uppercase tracking-wide">← Volver</button>
+                            <h2 className="text-2xl font-black italic uppercase mb-2">Fecha y Hora 📅</h2>
+                            <p className="text-slate-500 mb-6 font-medium">Elegí cuándo venir.</p>
+
+                            <div className="mb-6">
+                                <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Fecha</label>
+                                <input
+                                    type="date"
+                                    className="w-full p-4 rounded-xl border border-slate-200 text-lg font-medium outline-none focus:border-red-600"
+                                    onChange={(e) => fetchSlots(e.target.value)}
+                                    min={new Date().toISOString().split('T')[0]}
+                                />
+                            </div>
+
+                            {loading && <p className="text-center text-slate-400 animate-pulse">Buscando horarios...</p>}
+
+                            {date && !loading && (
+                                <div className="grid grid-cols-3 gap-3">
+                                    {slots.length > 0 ? slots.map((slot: any) => {
+                                        const time = new Date(slot).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+                                        const isSelected = selectedSlot === slot;
+                                        return (
+                                            <button
+                                                key={slot}
+                                                onClick={() => setSelectedSlot(slot)}
+                                                className={`p-3 rounded-lg font-bold text-sm transition-all border-2 ${isSelected
+                                                    ? 'bg-neutral-900 border-neutral-900 text-white shadow-lg scale-105'
+                                                    : 'bg-white border-slate-200 text-slate-700 hover:border-red-600'
+                                                    }`}
+                                            >
+                                                {time}
+                                            </button>
+                                        );
+                                    }) : (
+                                        <div className="col-span-3 text-center space-y-4 py-8 px-4 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200">
+                                            <p className="text-slate-400 font-bold uppercase tracking-tight text-sm">No hay turnos disponibles online</p>
+                                            <button
+                                                onClick={() => {
+                                                    const fallbackTime = `${date}T08:30:00.000Z`;
+                                                    setSelectedSlot(fallbackTime);
+                                                    setIsSoftBooking(true);
+                                                }}
+                                                className="bg-white text-red-600 border-2 border-red-600 px-6 py-3 rounded-xl font-black text-sm hover:bg-red-50 transition-all uppercase italic"
+                                            >
+                                                Solicitar sobre-turno (Manual)
+                                            </button>
+                                            <p className="text-[10px] text-slate-400 leading-tight">Tu pedido entrará como pendiente y te confirmaremos la hora exacta por WhatsApp.</p>
+                                        </div>
+                                    )}
                                 </div>
-                            </div>
-                        )}
+                            )}
 
-                        <button
-                            onClick={() => setStep(5)}
-                            disabled={!selectedSlot}
-                            className="mt-8 w-full bg-red-600 text-white p-4 rounded-xl font-black text-lg shadow-xl shadow-red-600/20 disabled:opacity-50 disabled:shadow-none hover:bg-red-700 active:scale-[0.98] transition-all uppercase tracking-wide"
-                        >
-                            Continuar
-                        </button>
-                    </div>
-                )}
+                            {isSoftBooking && (
+                                <div className="mt-6 bg-amber-50 border-2 border-amber-200 p-4 rounded-2xl flex items-start gap-3 animate-in fade-in slide-in-from-bottom-2">
+                                    <AlertCircle className="text-amber-500 shrink-0" size={20} />
+                                    <div>
+                                        <p className="text-amber-900 font-black text-xs uppercase italic">Reserva en espera</p>
+                                        <p className="text-amber-700 text-[11px] font-medium leading-tight mt-0.5">Te asignamos un horario tentativo, pero un asesor se comunicará con vos para confirmarlo.</p>
+                                    </div>
+                                </div>
+                            )}
+
+                            <button
+                                onClick={() => setStep(5)}
+                                disabled={!selectedSlot}
+                                className="mt-8 w-full bg-red-600 text-white p-4 rounded-xl font-black text-lg shadow-xl shadow-red-600/20 disabled:opacity-50 disabled:shadow-none hover:bg-red-700 active:scale-[0.98] transition-all uppercase tracking-wide"
+                            >
+                                Continuar
+                            </button>
+                        </div>
+                    )
+                }
 
                 {/* --- STEP 5: CONFIRM --- */}
-                {step === 5 && (
-                    <div className="fade-in">
-                        <button onClick={() => setStep(4)} className="text-sm text-slate-400 mb-4 hover:text-red-600 flex items-center gap-1 font-bold uppercase tracking-wide">← Volver</button>
-                        <h2 className="text-2xl font-black italic uppercase mb-6">Confirmar ✅</h2>
+                {
+                    step === 5 && (
+                        <div className="fade-in">
+                            <button onClick={() => setStep(4)} className="text-sm text-slate-400 mb-4 hover:text-red-600 flex items-center gap-1 font-bold uppercase tracking-wide">← Volver</button>
+                            <h2 className="text-2xl font-black italic uppercase mb-6">Confirmar ✅</h2>
 
-                        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 space-y-4 mb-8">
-                            <div>
-                                <p className="text-xs text-slate-400 uppercase font-bold tracking-wider">Cliente</p>
-                                <p className="font-black text-lg text-slate-900">{client?.name}</p>
-                            </div>
-                            <div className="h-px bg-slate-100" />
-                            <div>
-                                <p className="text-xs text-slate-400 uppercase font-bold tracking-wider">Vehículo</p>
-                                <p className="font-black text-lg text-slate-900 uppercase">{plate} <span className="text-slate-400 font-medium normal-case">({vehicle?.brand} {vehicle?.model})</span></p>
-                            </div>
-                            <div className="h-px bg-slate-100" />
-                            <div>
-                                <p className="text-xs text-slate-400 uppercase font-bold tracking-wider">Servicio</p>
-                                <div className="flex justify-between items-center">
-                                    <p className="font-black text-lg text-slate-900">{selectedService?.name}</p>
-                                    <p className="font-black text-green-600 text-lg">${selectedService?.price}</p>
+                            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 space-y-4 mb-8">
+                                <div>
+                                    <p className="text-xs text-slate-400 uppercase font-bold tracking-wider">Cliente</p>
+                                    <p className="font-black text-lg text-slate-900">{client?.name}</p>
+                                </div>
+                                <div className="h-px bg-slate-100" />
+                                <div>
+                                    <p className="text-xs text-slate-400 uppercase font-bold tracking-wider">Vehículo</p>
+                                    <p className="font-black text-lg text-slate-900 uppercase">{plate} <span className="text-slate-400 font-medium normal-case">({vehicle?.brand} {vehicle?.model})</span></p>
+                                </div>
+                                <div className="h-px bg-slate-100" />
+                                <div>
+                                    <p className="text-xs text-slate-400 uppercase font-bold tracking-wider">Servicio</p>
+                                    <div className="flex justify-between items-center">
+                                        <p className="font-black text-lg text-slate-900">{selectedService?.name}</p>
+                                        <p className="font-black text-green-600 text-lg">${selectedService?.price}</p>
+                                    </div>
+                                </div>
+                                <div className="h-px bg-slate-100" />
+                                <div>
+                                    <p className="text-xs text-slate-400 uppercase font-bold tracking-wider">Turno</p>
+                                    <p className="font-black text-lg text-blue-600 uppercase">
+                                        {selectedSlot && new Date(selectedSlot).toLocaleString('es-AR', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}
+                                    </p>
+                                    <p className="text-xs text-slate-400 mt-1 font-medium">Asunción 505, Villa Carlos Paz</p>
                                 </div>
                             </div>
-                            <div className="h-px bg-slate-100" />
-                            <div>
-                                <p className="text-xs text-slate-400 uppercase font-bold tracking-wider">Turno</p>
-                                <p className="font-black text-lg text-blue-600 uppercase">
-                                    {selectedSlot && new Date(selectedSlot).toLocaleString('es-AR', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}
-                                </p>
-                                <p className="text-xs text-slate-400 mt-1 font-medium">Asunción 505, Villa Carlos Paz</p>
-                            </div>
-                        </div>
 
-                        <button
-                            onClick={confirmAppointment}
-                            disabled={loading}
-                            className="w-full bg-red-600 text-white p-4 rounded-xl font-black text-lg shadow-xl shadow-red-600/20 disabled:opacity-50 hover:bg-red-700 active:scale-[0.98] transition-all uppercase tracking-wide"
-                        >
-                            {loading ? 'Confirmando...' : 'Confirmar Reserva'}
-                        </button>
-                    </div>
-                )}
+                            <button
+                                onClick={confirmAppointment}
+                                disabled={loading}
+                                className="w-full bg-red-600 text-white p-4 rounded-xl font-black text-lg shadow-xl shadow-red-600/20 disabled:opacity-50 hover:bg-red-700 active:scale-[0.98] transition-all uppercase tracking-wide"
+                            >
+                                {loading ? 'Confirmando...' : 'Confirmar Reserva'}
+                            </button>
+                        </div>
+                    )
+                }
 
                 {/* --- STEP 6: SUCCESS --- */}
-                {step === 6 && (
-                    <div className="fade-in text-center py-10">
-                        <div className="w-24 h-24 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-4xl mx-auto mb-6 shadow-xl shadow-green-100 animate-bounce">
-                            🎉
-                        </div>
-                        <h2 className="text-3xl font-black text-slate-900 mb-2 italic uppercase">¡Solicitud Enviada!</h2>
-                        <p className="text-slate-500 text-lg mb-8 font-medium">Hemos recibido tu solicitud. Te confirmaremos por WhatsApp a la brevedad.</p>
+                {
+                    step === 6 && (
+                        <div className="fade-in text-center py-10">
+                            <div className="w-24 h-24 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-4xl mx-auto mb-6 shadow-xl shadow-green-100 animate-bounce">
+                                🎉
+                            </div>
+                            <h2 className="text-3xl font-black text-slate-900 mb-2 italic uppercase">¡Solicitud Enviada!</h2>
+                            <p className="text-slate-500 text-lg mb-8 font-medium">Hemos recibido tu solicitud. Te confirmaremos por WhatsApp a la brevedad.</p>
 
-                        <div className="space-y-3">
-                            <button
-                                onClick={async () => {
-                                    const caseId = (window as any).lastCaseId;
-                                    if (caseId) {
-                                        const res = await generateWhatsAppLink(caseId);
-                                        if (res.success) {
-                                            const url = res.data?.url;
-                                            if (url) window.open(url, '_blank');
+                            <div className="space-y-3">
+                                {/* Google Calendar Integration */}
+                                {(selectedSlot && selectedService && vehicle) && (
+                                    <a
+                                        href={`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent('Turno: ' + selectedService.name + ' - FB Lubricentro')}&dates=${new Date(selectedSlot).toISOString().replace(/-|:|\.\d\d\d/g, '').slice(0, 15) + 'Z'}/${new Date(new Date(selectedSlot).getTime() + (selectedService.duration * 60000)).toISOString().replace(/-|:|\.\d\d\d/g, '').slice(0, 15) + 'Z'}&details=${encodeURIComponent('Vehículo: ' + vehicle.plate + ' (' + vehicle.brand + ' ' + vehicle.model + ')\nServicio: ' + selectedService.name + '\nDirección: Asunción 505, Villa Carlos Paz\n\nTe esperamos!')}&location=${encodeURIComponent('Asunción 505, Villa Carlos Paz, Córdoba')}&sf=true&output=xml`}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="w-full bg-blue-50 text-blue-600 p-4 rounded-xl font-bold text-lg hover:bg-blue-100 transition-all flex items-center justify-center gap-2 border border-blue-200"
+                                    >
+                                        <span>📅</span>
+                                        Agendar en Google Calendar
+                                    </a>
+                                )}
+
+                                <button
+                                    onClick={async () => {
+                                        const caseId = (window as any).lastCaseId;
+                                        if (caseId) {
+                                            const res = await generateWhatsAppLink(caseId);
+                                            if (res.success) {
+                                                const url = res.data?.url;
+                                                if (url) window.open(url, '_blank');
+                                            }
+                                            router.push(`/admin/inbox/${caseId}`);
+                                        } else {
+                                            router.push('/admin/inbox');
                                         }
-                                        router.push(`/admin/inbox/${caseId}`);
-                                    } else {
-                                        router.push('/admin/inbox');
-                                    }
-                                }}
-                                className="w-full bg-green-600 text-white p-4 rounded-xl font-black text-lg shadow-xl shadow-green-600/20 hover:bg-green-700 active:scale-[0.98] transition-all uppercase tracking-wide flex items-center justify-center gap-2"
-                            >
-                                <MessageCircle size={20} />
-                                Confirmar por WhatsApp
-                            </button>
+                                    }}
+                                    className="w-full bg-green-600 text-white p-4 rounded-xl font-black text-lg shadow-xl shadow-green-600/20 hover:bg-green-700 active:scale-[0.98] transition-all uppercase tracking-wide flex items-center justify-center gap-2"
+                                >
+                                    <MessageCircle size={20} />
+                                    Confirmar por WhatsApp
+                                </button>
 
-                            <button
-                                onClick={() => router.push('/')}
-                                className="w-full bg-slate-100 text-slate-500 p-4 rounded-xl font-bold text-lg hover:bg-slate-200 transition-all font-medium"
-                            >
-                                Volver al Inicio
-                            </button>
+                                <button
+                                    onClick={() => router.push('/')}
+                                    className="w-full bg-slate-100 text-slate-500 p-4 rounded-xl font-bold text-lg hover:bg-slate-200 transition-all font-medium"
+                                >
+                                    Volver al Inicio
+                                </button>
+                            </div>
                         </div>
-                    </div>
-                )}
-            </main>
-        </div>
+                    )
+                }
+            </main >
+        </div >
     );
 }

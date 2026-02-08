@@ -26,7 +26,7 @@ export default function PortalClientView({ data }: { data: PortalData }) {
 
     // Simulate Battery Voltage (Mock for "Live" Telemetry vibe)
     // In a real app, this would come from the last check or a connected device
-    const batteryVoltage = "12.6";
+    const batteryVoltage = vehicle?.maintenanceStatus?.batteryVoltage || "12.6";
 
     return (
         <div className="flex flex-col h-full bg-[#0A0A0A] text-white min-h-screen font-sans selection:bg-[#E20613] selection:text-white">

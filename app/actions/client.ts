@@ -45,10 +45,18 @@ export async function getClientProfile(clientId: number): Promise<ActionResponse
             return { success: false, error: 'Cliente no encontrado' };
         }
 
-        // Calculate Lifetime Value (approx)
-        const totalSales = client.sales.reduce((sum, sale) => sum + sale.total, 0);
-        const totalWorkOrders = client.workOrders.reduce((sum, wo) => sum + wo.price, 0);
-        const lifetimeValue = totalSales + totalWorkOrders;
+
+        // Calculate Lifetime Value (accurate via aggregation)
+        const salesAgg = await prisma.sale.aggregate({
+            where: { clientId, status: 'COMPLETED' },
+            _sum: { total: true }
+        });
+        const woAgg = await prisma.workOrder.aggregate({
+            where: { clientId, status: 'COMPLETED' },
+            _sum: { price: true }
+        });
+
+        const lifetimeValue = (salesAgg._sum.total || 0) + (woAgg._sum.price || 0);
 
         // Merge History for unified timeline
         const history = [

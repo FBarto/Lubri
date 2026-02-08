@@ -8,6 +8,7 @@ import PostClientActionModal from './PostClientActionModal';
 import CreateVehicleModal from './CreateVehicleModal';
 import ClientHistoryModal from './ClientHistoryModal';
 import LegacyServiceModal from '../clients/LegacyServiceModal';
+import SharePortalButton from '../clients/SharePortalButton';
 
 interface Client {
     id: number;
@@ -210,6 +211,9 @@ export default function EmployeeClientList({ onClientAction }: EmployeeClientLis
                                                     >
                                                         <History size={12} strokeWidth={3} /> Historial
                                                     </button>
+                                                    <div className="w-full">
+                                                        <SharePortalButton vehicleId={v.id} phone={client.phone} />
+                                                    </div>
                                                 </div>
                                             </div>
                                         ))}
@@ -311,17 +315,19 @@ export default function EmployeeClientList({ onClientAction }: EmployeeClientLis
                 onSuccess={handleVehicleCreated}
             />
 
-            {legacyVehicle && (
-                <LegacyServiceModal
-                    vehicleId={legacyVehicle.id}
-                    clientId={selectedClient?.id || createdClient?.id || 0}
-                    onClose={() => setLegacyVehicle(null)}
-                    onSuccess={() => {
-                        setLegacyVehicle(null);
-                        alert('Historial actualizado correctamente');
-                    }}
-                />
-            )}
+            {
+                legacyVehicle && (
+                    <LegacyServiceModal
+                        vehicleId={legacyVehicle.id}
+                        clientId={selectedClient?.id || createdClient?.id || 0}
+                        onClose={() => setLegacyVehicle(null)}
+                        onSuccess={() => {
+                            setLegacyVehicle(null);
+                            alert('Historial actualizado correctamente');
+                        }}
+                    />
+                )
+            }
 
         </div >
     );

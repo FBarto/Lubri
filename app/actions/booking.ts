@@ -333,6 +333,11 @@ export async function createAppointment(data: CreateAppointmentInput): Promise<A
             console.error('Failed to schedule WA notifications:', e)
         );
 
+        // Notify Admin
+        WhatsAppService.sendAdminAlert(appointment).catch(e =>
+            console.error('Failed to send admin alert:', e)
+        );
+
         safeRevalidate('/admin/calendar');
         return { success: true, data: { appointment, caseId: finalCaseId } };
 

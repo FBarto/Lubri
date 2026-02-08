@@ -34,7 +34,8 @@ export default function ServiceModal({ isOpen, onClose, onConfirm, service, init
         oil: { brand: '', liters: '', type: 'SINTETICO' },
         filters: { air: false, oil: false, fuel: false, cabin: false },
         filterDetails: { air: '', oil: '', fuel: '', cabin: '' },
-        fluids: { brakes: false, coolant: false, hydraulic: false }
+        fluids: { brakes: false, coolant: false, hydraulic: false },
+        battery: { voltage: '' }
     });
 
     // Search Results
@@ -560,6 +561,25 @@ export default function ServiceModal({ isOpen, onClose, onConfirm, service, init
                                         )}
                                     </div>
                                 ))}
+                            </div>
+
+                            {/* Battery Voltage Input */}
+                            <div className="mt-6 border-t border-slate-200 pt-6">
+                                <label className="label text-[10px] font-bold uppercase text-slate-500 mb-2 block flex items-center gap-2">
+                                    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="text-red-500"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                                    Carga de Batería (Voltaje)
+                                </label>
+                                <div className="relative">
+                                    <input
+                                        type="number"
+                                        placeholder="Ej: 12.6"
+                                        step="0.1"
+                                        className="w-full p-3 rounded-xl border border-slate-200 text-sm font-bold placeholder:font-normal"
+                                        value={serviceDetails.battery?.voltage || ''}
+                                        onChange={e => setServiceDetails({ ...serviceDetails, battery: { ...serviceDetails.battery, voltage: e.target.value } })}
+                                    />
+                                    <div className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">Volts</div>
+                                </div>
                             </div>
                         </div>
                     </div>

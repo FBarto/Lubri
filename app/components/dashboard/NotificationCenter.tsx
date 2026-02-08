@@ -35,7 +35,11 @@ export default function NotificationCenter() {
     }, []);
 
     const sendWhatsApp = (notif: Notification) => {
-        const phone = notif.clientPhone.replace(/[^0-9]/g, '');
+        let phone = notif.clientPhone.replace(/[^0-9]/g, '');
+        // Argentina heuristic
+        if (!phone.startsWith('54')) {
+            phone = '549' + phone;
+        }
         let text = '';
 
         if (notif.type === 'READY') {

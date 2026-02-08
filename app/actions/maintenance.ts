@@ -132,11 +132,22 @@ export async function getVehicleMaintenanceHistory(vehicleId: number): Promise<A
             });
         };
 
+        // Battery Voltage Extraction
+        let detectedVoltage: string | null = null;
+        for (const wo of workOrders) {
+            const sd = wo.serviceDetails as any;
+            if (sd?.battery?.voltage) {
+                detectedVoltage = sd.battery.voltage;
+                break;
+            }
+        }
+
         const resData = {
             filters: processCategory(MAINTENANCE_ITEMS.filters),
             fluids: processCategory(MAINTENANCE_ITEMS.fluids),
             services: processCategory(MAINTENANCE_ITEMS.services),
-            oilCapacity: detectedLiters
+            oilCapacity: detectedLiters,
+            batteryVoltage: detectedVoltage
         };
 
         return {
