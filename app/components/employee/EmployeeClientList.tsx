@@ -212,7 +212,13 @@ export default function EmployeeClientList({ onClientAction }: EmployeeClientLis
                                                         <History size={12} strokeWidth={3} /> Historial
                                                     </button>
                                                     <div className="w-full">
-                                                        <SharePortalButton vehicleId={v.id} phone={client.phone} />
+                                                        <SharePortalButton
+                                                            vehicleId={v.id}
+                                                            phone={client.phone}
+                                                            clientName={client.name}
+                                                            vehicleBrand={v.brand}
+                                                            vehicleModel={v.model}
+                                                        />
                                                     </div>
                                                 </div>
                                             </div>

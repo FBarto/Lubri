@@ -5,7 +5,21 @@ import { useState } from 'react';
 import { generatePortalLinkForVehicle } from '@/app/actions/portal';
 import { Send, CheckCircle, Smartphone } from 'lucide-react';
 
-export default function SharePortalButton({ vehicleId, phone }: { vehicleId: number, phone: string }) {
+interface SharePortalButtonProps {
+    vehicleId: number;
+    phone: string;
+    clientName?: string;
+    vehicleBrand?: string | null;
+    vehicleModel?: string | null;
+}
+
+export default function SharePortalButton({
+    vehicleId,
+    phone,
+    clientName = 'Cliente',
+    vehicleBrand,
+    vehicleModel
+}: SharePortalButtonProps) {
     const [loading, setLoading] = useState(false);
     const [sent, setSent] = useState(false);
 
@@ -14,22 +28,24 @@ export default function SharePortalButton({ vehicleId, phone }: { vehicleId: num
         try {
             const res = await generatePortalLinkForVehicle(vehicleId);
             if (res.success && res.data?.url) {
-                // Determine base URL (localhost, or production domain)
-                // For client side, window.location.origin is best
                 const origin = window.location.origin;
                 const fullLink = `${origin}${res.data.url}`;
 
-                // Format message
-                const message = `Hola! Aquí tienes tu Libreta Digital de Mantenimiento para tu vehículo: ${fullLink}`;
-                const encodedMsg = encodeURIComponent(message);
+                // Construct vehicle string (e.g., "Toyota Corolla" or just "Vehículo")
+                const carName = [vehicleBrand, vehicleModel].filter(Boolean).join(' ') || 'vehículo';
 
-                // Clean phone
-                const cleanPhone = phone.replace(/\D/g, ''); // 5493541...
+                // personalized message
+                const message = `¡Hola ${clientName}! 👋 Te paso la Libreta Digital de tu ${carName} para que lleves el control de tus services en FB Lubricentro 🛠️.\n\nAcá tenés el link: ${fullLink}\n\nGuardalo para tu próximo service. ¡Te esperamos! 🚗`;
+
+                const encodedMsg = encodeURIComponent(message);
+                const cleanPhone = phone.replace(/\D/g, '');
                 const waLink = `https://wa.me/${cleanPhone}?text=${encodedMsg}`;
 
-                // Open WhatsApp
                 window.open(waLink, '_blank');
                 setSent(true);
+
+                // Optional: Save to localStorage if we want persistence across reloads
+                // localStorage.setItem(`sent_book_${vehicleId}`, 'true');
             } else {
                 alert('Error al generar el link: ' + res.error);
             }
@@ -43,7 +59,10 @@ export default function SharePortalButton({ vehicleId, phone }: { vehicleId: num
 
     if (sent) {
         return (
-            <button className="flex items-center gap-2 text-emerald-600 font-bold text-xs bg-emerald-50 px-3 py-2 rounded-lg transition-all animate-in fade-in">
+            <button
+                onClick={handleShare} // Allow re-sending if needed? Or just show status.
+                className="flex items-center gap-2 text-emerald-700 font-bold text-xs bg-emerald-100 border border-emerald-200 px-3 py-2 rounded-lg transition-all animate-in fade-in"
+            >
                 <CheckCircle size={14} /> Enviado
             </button>
         );
@@ -54,6 +73,7 @@ export default function SharePortalButton({ vehicleId, phone }: { vehicleId: num
             onClick={handleShare}
             disabled={loading}
             className="flex items-center gap-2 text-indigo-600 font-bold text-xs bg-indigo-50 hover:bg-indigo-100 hover:text-indigo-800 px-3 py-2 rounded-lg transition-all"
+            title="Enviar Libreta Digital por WhatsApp"
         >
             {loading ? <span className="animate-spin">⌛</span> : <Smartphone size={14} />}
             Enviar Libreta
