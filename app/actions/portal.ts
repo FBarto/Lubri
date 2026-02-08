@@ -81,17 +81,17 @@ export async function getClientDataByToken(token: string): Promise<ActionRespons
     }
 }
 
-export async function generatePortalLinkForVehicle(vehicleId: number): Promise<ActionResponse> {
+export async function generatePortalLinkForVehicle(vehicleId: number | string): Promise<ActionResponse> {
     try {
+        const vId = Number(vehicleId);
         const vehicle = await prisma.vehicle.findUnique({
-            where: { id: vehicleId },
+            where: { id: vId },
             include: { client: true }
         });
 
         if (!vehicle) return { success: false, error: 'Vehicle not found' };
 
         // 1. Try to find an existing valid token for this vehicle (via any active appointment)
-        // This is a bit indirect, but we look for a token linked to an appointment for this vehicle
         const existingToken = await prisma.whatsAppToken.findFirst({
             where: {
                 appointment: { vehicleId: vehicle.id },
@@ -105,7 +105,6 @@ export async function generatePortalLinkForVehicle(vehicleId: number): Promise<A
         }
 
         // 2. If no token, create a dummy appointment (or use latest) to attach a token
-        // Use latest appointment if exists
         let appointment = await prisma.appointment.findFirst({
             where: { vehicleId: vehicle.id },
             orderBy: { date: 'desc' }
@@ -118,7 +117,7 @@ export async function generatePortalLinkForVehicle(vehicleId: number): Promise<A
                 data: {
                     clientId: vehicle.clientId,
                     vehicleId: vehicle.id,
-                    serviceId: service?.id || 1,
+                    serviceId: service?.id || 1, // Fallback to 1 if no active service
                     date: new Date(),
                     status: 'CONFIRMED',
                     notes: 'System generated for Portal Access'
