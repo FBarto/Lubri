@@ -54,6 +54,21 @@ function NewWorkOrderForm() {
     const [clientResults, setClientResults] = useState<any[]>([]);
     const [activeSearchField, setActiveSearchField] = useState<string | null>(null);
 
+    // Initial Date Persistence Logic
+    useEffect(() => {
+        const savedDate = localStorage.getItem('lastWorkOrderDate');
+        if (savedDate) {
+            setFormData(prev => ({ ...prev, date: savedDate }));
+        }
+    }, []);
+
+    // Sync Date to localStorage
+    useEffect(() => {
+        if (formData.date) {
+            localStorage.setItem('lastWorkOrderDate', formData.date);
+        }
+    }, [formData.date]);
+
     const searchProduct = async (val: string) => {
         if (val.length > 2) {
             try {
