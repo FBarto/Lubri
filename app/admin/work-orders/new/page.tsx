@@ -195,11 +195,11 @@ function NewWorkOrderForm() {
                     model: formData.vehicleModel
                 });
 
-                if (registration.success) {
-                    currentClientId = registration.data.clientId.toString();
-                    currentVehicleId = registration.data.vehicleId.toString();
+                if (registration.success && registration.data.client && registration.data.vehicle) {
+                    currentClientId = registration.data.client.id.toString();
+                    currentVehicleId = registration.data.vehicle.id.toString();
                 } else {
-                    setError('Error al registrar cliente: ' + (registration.error || 'Desconocido'));
+                    setError('Error al registrar cliente: ' + (registration.error || 'No se pudo crear el vehículo'));
                     setSubmitting(false);
                     return;
                 }
