@@ -26,7 +26,7 @@ export default function PortalClientView({ data }: { data: PortalData }) {
     const oilLife = calculateLife(vehicle?.lastServiceMileage, vehicle?.mileage);
 
     const handleOpenWhatsApp = (action: string, detail?: string) => {
-        const phone = '5493512597960'; // FB Lubricentro Phone (replace with env var if needed)
+        const phone = '5493516756248'; // FB Lubricentro Phone (replace with env var if needed)
         let message = '';
         if (action === 'technical_sheet') {
             message = `Hola! 👋 Necesito la ficha técnica del servicio *${detail}* para mi vehículo ${vehicle.plate}.`;
@@ -34,6 +34,8 @@ export default function PortalClientView({ data }: { data: PortalData }) {
             message = `🆘 *URGENCIA MECÁNICA* \nHola, necesito ayuda con mi vehículo ${vehicle.brand} ${vehicle.model} (${vehicle.plate}).`;
         } else if (action === 'appointment') {
             message = `Hola! Quiero agendar un nuevo turno para mi ${vehicle.brand} ${vehicle.model}.`;
+        } else if (action === 'history') {
+            message = `Hola! Quisiera solicitar el historial completo de servicios de mi ${vehicle.brand} ${vehicle.model} (${vehicle.plate}).`;
         }
 
         window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
@@ -42,7 +44,7 @@ export default function PortalClientView({ data }: { data: PortalData }) {
     const contentRef = useRef<HTMLDivElement>(null);
     const [isSharing, setIsSharing] = useState(false);
 
-    const handleShareImage = async () => {
+    const handleGenerateImage = async (mode: 'share' | 'download') => {
         if (!contentRef.current) return;
         setIsSharing(true);
 
@@ -61,8 +63,8 @@ export default function PortalClientView({ data }: { data: PortalData }) {
 
                 const file = new File([blob], `health-card-${vehicle.plate}.png`, { type: 'image/png' });
 
-                // Try Native Share
-                if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                if (mode === 'share' && navigator.canShare && navigator.canShare({ files: [file] })) {
+                    // Try Native Share
                     try {
                         await navigator.share({
                             files: [file],
@@ -73,7 +75,7 @@ export default function PortalClientView({ data }: { data: PortalData }) {
                         console.log('Share cancelled or failed', err);
                     }
                 } else {
-                    // Fallback to Download
+                    // Fallback to Download (or explicit download)
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement('a');
                     a.href = url;
@@ -128,11 +130,24 @@ export default function PortalClientView({ data }: { data: PortalData }) {
                         <h1 className="text-white text-sm font-bold uppercase tracking-widest">FB Service Ledger</h1>
                         <p className="text-[#eb4037] text-[10px] font-bold">PROFESSIONAL REPORT</p>
                     </div>
-                    <div className="flex items-center justify-end w-10 h-10">
+                    <div className="flex items-center justify-end gap-2">
                         <button
-                            onClick={handleShareImage}
+                            onClick={() => handleGenerateImage('download')}
                             disabled={isSharing}
                             className="text-white hover:bg-white/10 p-2 rounded-full transition-colors relative"
+                            title="Descargar Imagen"
+                        >
+                            {isSharing ? (
+                                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                            ) : (
+                                <span className="material-symbols-outlined">download</span>
+                            )}
+                        </button>
+                        <button
+                            onClick={() => handleGenerateImage('share')}
+                            disabled={isSharing}
+                            className="text-white hover:bg-white/10 p-2 rounded-full transition-colors relative"
+                            title="Compartir"
                         >
                             {isSharing ? (
                                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -237,36 +252,50 @@ export default function PortalClientView({ data }: { data: PortalData }) {
                         <div className="absolute left-2.5 top-2 bottom-0 timeline-line opacity-30"></div>
 
                         {data.workOrders.length > 0 ? (
-                            data.workOrders.map((wo: any, index: number) => (
-                                <div key={wo.id} className="relative mb-8 last:mb-0">
-                                    <div className={`absolute -left-[27px] top-1.5 size-4 rounded-full border-4 border-[#120909] ${index === 0 ? 'bg-[#eb4037] shadow-[0_0_10px_rgba(235,64,55,0.5)]' : 'bg-slate-700'}`}></div>
-                                    <div className={`p-5 rounded-xl ${index === 0 ? 'glass-card' : 'bg-white/[0.02] border border-white/5'}`}>
-                                        <div className="flex justify-between items-start mb-2">
-                                            <div>
-                                                <h4 className={`font-bold text-base ${index === 0 ? 'text-white' : 'text-white/80'}`}>
-                                                    {wo.serviceName}
-                                                </h4>
-                                                <p className="text-slate-400 text-xs">
-                                                    {new Date(wo.date).toLocaleDateString()}
-                                                </p>
+                            <>
+                                {data.workOrders.slice(0, 1).map((wo: any, index: number) => (
+                                    <div key={wo.id} className="relative mb-8 last:mb-0">
+                                        <div className={`absolute -left-[27px] top-1.5 size-4 rounded-full border-4 border-[#120909] ${index === 0 ? 'bg-[#eb4037] shadow-[0_0_10px_rgba(235,64,55,0.5)]' : 'bg-slate-700'}`}></div>
+                                        <div className={`p-5 rounded-xl ${index === 0 ? 'glass-card' : 'bg-white/[0.02] border border-white/5'}`}>
+                                            <div className="flex justify-between items-start mb-2">
+                                                <div>
+                                                    <h4 className={`font-bold text-base ${index === 0 ? 'text-white' : 'text-white/80'}`}>
+                                                        {wo.serviceName}
+                                                    </h4>
+                                                    <p className="text-slate-400 text-xs">
+                                                        {new Date(wo.date).toLocaleDateString()}
+                                                    </p>
+                                                </div>
+                                                <span className={`font-mono text-xs font-bold ${index === 0 ? 'text-[#eb4037]' : 'text-slate-500'}`}>
+                                                    #{wo.id}
+                                                </span>
                                             </div>
-                                            <span className={`font-mono text-xs font-bold ${index === 0 ? 'text-[#eb4037]' : 'text-slate-500'}`}>
-                                                #{wo.id}
-                                            </span>
+                                            <p className="text-slate-300 text-sm mb-4 leading-relaxed line-clamp-2">
+                                                {wo.serviceDetails?.notes || 'Servicio de mantenimiento técnico especializado.'}
+                                            </p>
+                                            <button
+                                                onClick={() => handleOpenWhatsApp('technical_sheet', `#${wo.id} - ${wo.serviceName}`)}
+                                                className={`w-full flex items-center justify-center gap-2 border text-[11px] font-bold py-2.5 rounded transition-all uppercase tracking-widest ${index === 0 ? 'border-[#eb4037]/40 text-[#eb4037] hover:bg-[#eb4037]/10' : 'border-white/10 text-white/40 hover:bg-white/5'}`}
+                                            >
+                                                <span className="material-symbols-outlined text-sm">description</span>
+                                                SOLICITAR FICHA TÉCNICA
+                                            </button>
                                         </div>
-                                        <p className="text-slate-300 text-sm mb-4 leading-relaxed line-clamp-2">
-                                            {wo.serviceDetails?.notes || 'Servicio de mantenimiento técnico especializado.'}
-                                        </p>
-                                        <button
-                                            onClick={() => handleOpenWhatsApp('technical_sheet', `#${wo.id} - ${wo.serviceName}`)}
-                                            className={`w-full flex items-center justify-center gap-2 border text-[11px] font-bold py-2.5 rounded transition-all uppercase tracking-widest ${index === 0 ? 'border-[#eb4037]/40 text-[#eb4037] hover:bg-[#eb4037]/10' : 'border-white/10 text-white/40 hover:bg-white/5'}`}
-                                        >
-                                            <span className="material-symbols-outlined text-sm">description</span>
-                                            SOLICITAR FICHA TÉCNICA
-                                        </button>
                                     </div>
+                                ))}
+
+                                {/* Request Full History Button */}
+                                <div className="mt-6 text-center">
+                                    <p className="text-slate-500 text-xs mb-3">¿Necesitás ver servicios anteriores?</p>
+                                    <button
+                                        onClick={() => handleOpenWhatsApp('history')}
+                                        className="w-full flex items-center justify-center gap-2 bg-[#120909] border border-white/10 text-white py-4 rounded-xl font-bold hover:bg-white/5 transition-colors uppercase tracking-widest text-xs"
+                                    >
+                                        <span className="material-symbols-outlined text-sm">history</span>
+                                        SOLICITAR HISTORIAL COMPLETO
+                                    </button>
                                 </div>
-                            ))
+                            </>
                         ) : (
                             <div className="text-center py-8">
                                 <p className="text-slate-500 text-sm">Sin historial registrado.</p>
