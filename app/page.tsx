@@ -47,7 +47,7 @@ export default async function Home() {
               </h1>
             </div>
 
-            <p className="text-xl md:text-2xl text-neutral-400 mb-12 max-w-2xl mx-auto font-light leading-relaxed">
+            <p className="text-xl md:text-2xl text-neutral-300 mb-12 max-w-2xl mx-auto font-light leading-relaxed">
               Mantenimiento preventivo oficial en el corazón de Carlos Paz. <span className="text-white font-semibold">Cuidamos tu auto</span> para que solo te preocupes por disfrutar el viaje.
             </p>
 
@@ -104,8 +104,8 @@ export default async function Home() {
                   <Clock size={24} />
                 </div>
                 <div>
-                  <h4 className="font-bold text-white uppercase tracking-tighter italic">Service en el Acto</h4>
-                  <p className="text-xs text-neutral-500 font-medium">Sin vueltas. Mantenimiento rápido mientras esperás.</p>
+                  <h3 className="font-bold text-white uppercase tracking-tighter italic">Service en el Acto</h3>
+                  <p className="text-xs text-neutral-400 font-medium">Sin vueltas. Mantenimiento rápido mientras esperás.</p>
                 </div>
               </div>
               <div className="flex items-center gap-4 group cursor-default">
@@ -113,8 +113,8 @@ export default async function Home() {
                   <Award size={24} />
                 </div>
                 <div>
-                  <h4 className="font-bold text-white uppercase tracking-tighter italic">Marcas Líderes</h4>
-                  <p className="text-xs text-neutral-500 font-medium">Total, Elaion y repuestos originales para tu motor.</p>
+                  <h3 className="font-bold text-white uppercase tracking-tighter italic">Marcas Líderes</h3>
+                  <p className="text-xs text-neutral-400 font-medium">Total, Elaion y repuestos originales para tu motor.</p>
                 </div>
               </div>
               <div className="flex items-center gap-4 group cursor-default">
@@ -122,8 +122,8 @@ export default async function Home() {
                   <Shield size={24} />
                 </div>
                 <div>
-                  <h4 className="font-bold text-white uppercase tracking-tighter italic">Control Preventivo</h4>
-                  <p className="text-xs text-neutral-500 font-medium">Chequeo general de fluidos y sistemas visibles.</p>
+                  <h3 className="font-bold text-white uppercase tracking-tighter italic">Control Preventivo</h3>
+                  <p className="text-xs text-neutral-400 font-medium">Chequeo general de fluidos y sistemas visibles.</p>
                 </div>
               </div>
             </div>
@@ -139,7 +139,7 @@ export default async function Home() {
             <p className="text-xl text-neutral-300 leading-relaxed mb-6">
               En <strong>FB Lubricentro</strong>, entendemos que tu auto es mucho más que un vehículo: es tu herramienta de trabajo o el compañero de tus vacaciones. Por eso, en nuestro local de <strong>Asunción 505</strong>, ofrecemos atención directa y honesta.
             </p>
-            <p className="text-neutral-400">
+            <p className="text-neutral-300">
               Somos vecinos de Carlos Paz apasionados por lo que hacemos. Nos especializamos en que salgas a la ruta con la tranquilidad de que tu motor, tus frenos y tu batería están en perfectas condiciones. Atención personalizada y repuestos originales son nuestro sello.
             </p>
           </div>
@@ -224,12 +224,12 @@ export default async function Home() {
         <div className="container mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
           <div className="md:col-span-1">
             <h3 className="text-2xl font-black italic tracking-tighter text-white mb-6">FB Lubricentro</h3>
-            <p className="text-neutral-500 mb-6">
+            <p className="text-neutral-400 mb-6">
               Asunción 505, Villa Carlos Paz.<br />
               Expertos en tu vehículo.
             </p>
             <div className="flex gap-4">
-              <a href="https://wa.me/5493516756248" target="_blank" className="w-10 h-10 bg-neutral-900 rounded-full flex items-center justify-center text-neutral-400 hover:bg-[#25D366] hover:text-white transition-colors"><MessageCircle size={20} /></a>
+              <a href="https://wa.me/5493516756248" target="_blank" aria-label="WhatsApp" className="w-10 h-10 bg-neutral-900 rounded-full flex items-center justify-center text-neutral-400 hover:bg-[#25D366] hover:text-white transition-colors"><MessageCircle size={20} /></a>
             </div>
           </div>
 
@@ -318,7 +318,7 @@ function ServiceCard({ icon, title, desc, tag }: { icon: any, title: string, des
         <h3 className="text-2xl font-black text-white mb-4 italic uppercase tracking-tighter leading-tight group-hover:text-red-500 transition-colors">
           {title}
         </h3>
-        <p className="text-neutral-400 leading-relaxed text-sm font-medium opacity-80 group-hover:opacity-100 transition-opacity">
+        <p className="text-neutral-300 leading-relaxed text-sm font-medium opacity-80 group-hover:opacity-100 transition-opacity">
           {desc}
         </p>
 
@@ -343,7 +343,7 @@ function FAQItem({ question, answer }: { question: string, answer: string }) {
         {question}
         <ChevronDown className="w-5 h-5 text-neutral-500 group-open:rotate-180 transition-transform group-open:text-red-600" />
       </summary>
-      <div className="px-6 pb-6 text-neutral-400 leading-relaxed">
+      <div className="px-6 pb-6 text-neutral-300 leading-relaxed">
         {answer}
       </div>
     </details>

@@ -10,6 +10,11 @@ import { updateVehicleProjections } from './maintenance';
 import { WhatsAppService } from '../lib/whatsapp/service';
 import { ActionResponse } from './types';
 
+// Extended Response for Legacy Import
+interface LegacyActionResponse extends ActionResponse {
+    skipped?: boolean;
+}
+
 // --- Types ---
 
 interface WorkOrderInput {
@@ -443,10 +448,31 @@ export async function createLegacyWorkOrder(input: {
     // New parameters
     nextServiceMileage?: number;
     sendWhatsApp?: boolean;
-}): Promise<ActionResponse> {
+}): Promise<LegacyActionResponse> {
     try {
         const vehicleId = Number(input.vehicleId);
         const clientId = Number(input.clientId);
+        const performedDate = new Date(input.date);
+
+        // 1. Deduplication Check (Idempotency)
+        const checkExisting = await prisma.workOrder.findFirst({
+            where: {
+                vehicleId,
+                // Check for exact date (00:00:00 UTC usually) or within a small range if needed. 
+                // Since input.date is YYYY-MM-DD, new Date(input.date) is 00:00 UTC.
+                // We check for exact equality on the stored timestamp.
+                date: performedDate,
+                service: {
+                    name: 'Service Histórico Importado'
+                }
+            },
+            include: { service: true }
+        });
+
+        if (checkExisting) {
+            console.log(`[LEGACY IMPORT] Skipped duplicate for Vehicle ${vehicleId} on ${input.date}`);
+            return { success: true, data: checkExisting, skipped: true };
+        }
 
         // Find or Create a dedicated "Legacy Service" so it appears correctly in reports
         let service = await prisma.service.findFirst({
@@ -465,12 +491,13 @@ export async function createLegacyWorkOrder(input: {
             });
         }
 
-        const performedDate = new Date(input.date);
+        // const performedDate = new Date(input.date); // Moved up for dedupe check
 
         // Enrich serviceDetails with manual next service mileage if provided
         const enrichedDetails = {
             ...input.serviceDetails,
-            nextServiceMileage: input.nextServiceMileage
+            nextServiceMileage: input.nextServiceMileage,
+            legacy: true, // Mark as legacy in JSON
         };
 
         const wo = await prisma.workOrder.create({
